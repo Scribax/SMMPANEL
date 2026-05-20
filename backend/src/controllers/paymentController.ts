@@ -391,6 +391,62 @@ export const handleWebhook = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+export const verifyDeposit = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { paymentId } = req.body;
+  const userId = req.user!.id;
+
+  if (!paymentId) {
+    res.status(400).json({ success: false, message: 'paymentId is required' });
+    return;
+  }
+
+  try {
+    const mpPayment = await getPaymentDetails(String(paymentId));
+    const externalRef = mpPayment.external_reference;
+    const mpStatus = mpPayment.status;
+
+    if (!externalRef?.startsWith('deposit_') || mpStatus !== 'approved') {
+      res.status(400).json({ success: false, message: 'Payment not approved or not a deposit' });
+      return;
+    }
+
+    const depositId = externalRef.replace('deposit_', '');
+    const depResult = await query<{ user_id: string; amount: number; status: string }>(
+      'SELECT user_id, amount, status FROM deposits WHERE id = $1',
+      [depositId]
+    );
+
+    if (!depResult.rows.length) {
+      res.status(404).json({ success: false, message: 'Deposit not found' });
+      return;
+    }
+
+    const dep = depResult.rows[0];
+
+    if (dep.user_id !== userId) {
+      res.status(403).json({ success: false, message: 'Forbidden' });
+      return;
+    }
+
+    if (dep.status !== 'pending') {
+      res.json({ success: true, alreadyProcessed: true, amount: dep.amount });
+      return;
+    }
+
+    await query(
+      `UPDATE deposits SET status = 'approved', external_id = $1, updated_at = NOW() WHERE id = $2`,
+      [String(paymentId), depositId]
+    );
+    await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [dep.amount, dep.user_id]);
+
+    logger.info('Deposit verified and credited via fallback', { depositId, amount: dep.amount, userId });
+    res.json({ success: true, amount: dep.amount });
+  } catch (err) {
+    logger.error('Error verifying deposit', { error: err });
+    res.status(500).json({ success: false, message: 'Error verifying payment' });
+  }
+};
+
 export const getPaymentStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   const { orderId } = req.params;
   const result = await query(

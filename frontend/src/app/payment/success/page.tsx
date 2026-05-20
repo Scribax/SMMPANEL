@@ -10,11 +10,22 @@ import { formatCurrency, STATUS_LABELS } from '@/lib/utils';
 
 function PaymentSuccessContent() {
   const params = useSearchParams();
-  const orderId = params.get('order_id') ?? params.get('external_reference') ?? '';
+  const externalRef = params.get('external_reference') ?? '';
+  const paymentId = params.get('payment_id') ?? params.get('collection_id') ?? '';
+  const orderId = params.get('order_id') ?? externalRef;
+  const isDeposit = externalRef.startsWith('deposit_');
   const [order, setOrder] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [depositCredited, setDepositCredited] = useState(false);
 
   useEffect(() => {
+    if (isDeposit && paymentId) {
+      paymentsApi.verifyDeposit(paymentId)
+        .then(() => setDepositCredited(true))
+        .catch(() => {})
+        .finally(() => setLoading(false));
+      return;
+    }
     if (!orderId) { setLoading(false); return; }
     const fetch = () => {
       paymentsApi.getStatus(orderId)
@@ -25,7 +36,7 @@ function PaymentSuccessContent() {
     fetch();
     const timer = setTimeout(fetch, 3000);
     return () => clearTimeout(timer);
-  }, [orderId]);
+  }, [orderId, isDeposit, paymentId]);
 
   return (
     <div className="min-h-screen bg-dark-300 flex items-center justify-center px-4">
@@ -57,7 +68,13 @@ function PaymentSuccessContent() {
         {loading ? (
           <div className="glass-card p-6 mb-8 flex items-center justify-center gap-3">
             <Loader2 className="w-5 h-5 text-primary-400 animate-spin" />
-            <span className="text-slate-400">Cargando detalles del pedido...</span>
+            <span className="text-slate-400">{isDeposit ? 'Acreditando saldo...' : 'Cargando detalles del pedido...'}</span>
+          </div>
+        ) : isDeposit ? (
+          <div className="glass-card p-6 mb-8 text-center">
+            <p className="text-green-400 font-semibold text-lg">
+              {depositCredited ? '¡Saldo acreditado en tu cuenta!' : 'El saldo será acreditado en breve.'}
+            </p>
           </div>
         ) : order ? (
           <div className="glass-card p-6 mb-8 text-left space-y-3">

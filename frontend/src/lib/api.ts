@@ -69,6 +69,7 @@ export const paymentsApi = {
   getStatus: (orderId: string) => apiClient.get(`/payments/status/${orderId}`),
   createDeposit: (amount: number) => apiClient.post('/payments/deposit', { amount }),
   getDeposits: () => apiClient.get('/payments/deposits'),
+  verifyDeposit: (paymentId: string) => apiClient.post('/payments/verify-deposit', { paymentId }),
 };
 
 export const couponsApi = {
