@@ -6,7 +6,7 @@ import {
   adminGetServices, adminCreateService, adminUpdateService, adminDeleteService,
   adminGetProviders, adminCreateProvider, adminUpdateProvider,
   adminGetProviderBalance, adminSyncProviderServices,
-  adminGetOrders, adminUpdateOrderStatus, adminRefundOrder,
+  adminGetOrders, adminUpdateOrderStatus, adminRefundOrder, adminRetryOrder,
   adminGetUsers, adminToggleUser,
   adminGetCoupons, adminCreateCoupon, adminUpdateCoupon,
 } from '../controllers/adminController';
@@ -31,6 +31,7 @@ router.post('/providers/:id/sync-services', adminSyncProviderServices);
 router.get('/orders', adminGetOrders);
 router.put('/orders/:id/status', adminUpdateOrderStatus);
 router.post('/orders/:id/refund', adminRefundOrder);
+router.post('/orders/:id/retry', adminRetryOrder);
 
 router.get('/users', adminGetUsers);
 router.post('/users/:id/toggle', adminToggleUser);

@@ -312,6 +312,55 @@ export const adminRefundOrder = async (req: Request, res: Response): Promise<voi
   res.json({ success: true, message: 'Order refunded. Credit added to user balance.' });
 };
 
+export const adminRetryOrder = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  const orderResult = await query<{
+    id: string; link: string; quantity: number; status: string;
+    provider_id: string; provider_service_id: number;
+  }>(
+    `SELECT o.id, o.link, o.quantity, o.status,
+            s.provider_id, s.provider_service_id
+     FROM orders o
+     JOIN services s ON o.service_id = s.id
+     WHERE o.id = $1`,
+    [id]
+  );
+
+  if (!orderResult.rows.length) {
+    res.status(404).json({ success: false, message: 'Order not found' });
+    return;
+  }
+
+  const order = orderResult.rows[0];
+
+  if (!order.provider_id || !order.provider_service_id) {
+    res.status(400).json({ success: false, message: 'No provider configured for this service' });
+    return;
+  }
+
+  try {
+    const { sendOrderToProvider } = await import('../services/providerService');
+    const providerResult = await sendOrderToProvider({
+      providerId: order.provider_id,
+      serviceId: order.provider_service_id,
+      link: order.link,
+      quantity: order.quantity,
+    });
+
+    await query(
+      `UPDATE orders SET provider_order_id = $1, status = 'processing', updated_at = NOW() WHERE id = $2`,
+      [String(providerResult.orderId), id]
+    );
+
+    logger.info('Order retried by admin', { orderId: id, providerOrderId: providerResult.orderId });
+    res.json({ success: true, message: 'Pedido reenviado al proveedor', providerOrderId: providerResult.orderId });
+  } catch (err) {
+    logger.error('Retry order failed', { orderId: id, error: err });
+    res.status(400).json({ success: false, message: `Error del proveedor: ${String(err)}` });
+  }
+};
+
 // ─── USERS MANAGEMENT ────────────────────────────────────────────────────────
 
 export const adminGetUsers = async (req: Request, res: Response): Promise<void> => {

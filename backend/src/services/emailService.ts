@@ -58,17 +58,17 @@ export const sendOrderConfirmation = async (
     await transporter.sendMail({
       from: env.SMTP_FROM,
       to: email,
-      subject: '✅ Order Confirmed — BoostIns',
+      subject: '✅ Pedido confirmado — BoostIns',
       html: baseTemplate(`
-        <h2>Order Confirmed!</h2>
-        <p>Hi <strong>${name}</strong>, your order has been received and is being processed.</p>
+        <h2>¡Pedido confirmado!</h2>
+        <p>Hola <strong>${name}</strong>, tu pedido fue recibido y está siendo procesado.</p>
         <table style="width:100%;border-collapse:collapse;margin:20px 0;">
-          <tr><td style="padding:8px;color:#94a3b8;">Order ID</td><td style="padding:8px;color:#e2e8f0;"><code>${orderId}</code></td></tr>
-          <tr><td style="padding:8px;color:#94a3b8;">Service</td><td style="padding:8px;color:#e2e8f0;">${serviceName}</td></tr>
-          <tr><td style="padding:8px;color:#94a3b8;">Quantity</td><td style="padding:8px;color:#e2e8f0;">${quantity.toLocaleString()}</td></tr>
-          <tr><td style="padding:8px;color:#94a3b8;">Amount Paid</td><td style="padding:8px;color:#e2e8f0;font-weight:700;">R$ ${price.toFixed(2)}</td></tr>
+          <tr><td style="padding:8px;color:#94a3b8;">N° de pedido</td><td style="padding:8px;color:#e2e8f0;"><code>${orderId}</code></td></tr>
+          <tr><td style="padding:8px;color:#94a3b8;">Servicio</td><td style="padding:8px;color:#e2e8f0;">${serviceName}</td></tr>
+          <tr><td style="padding:8px;color:#94a3b8;">Cantidad</td><td style="padding:8px;color:#e2e8f0;">${quantity.toLocaleString()}</td></tr>
+          <tr><td style="padding:8px;color:#94a3b8;">Total pagado</td><td style="padding:8px;color:#e2e8f0;font-weight:700;">$ ${price.toFixed(2)} ARS</td></tr>
         </table>
-        <p>You can track your order status in your <a href="${env.FRONTEND_URL}/dashboard" style="color:#a5b4fc;">dashboard</a>.</p>
+        <p>Podés ver el estado de tu pedido en tu <a href="${env.FRONTEND_URL}/dashboard" style="color:#a5b4fc;">panel de control</a>.</p>
       `),
     });
   } catch (err) {
@@ -95,17 +95,49 @@ export const sendOrderStatusUpdate = async (
     await transporter.sendMail({
       from: env.SMTP_FROM,
       to: email,
-      subject: `Order Update: ${label} — BoostIns`,
+      subject: `Actualización de pedido: ${label} — BoostIns`,
       html: baseTemplate(`
-        <h2>Order Status Update</h2>
-        <p>Hi <strong>${name}</strong>, your order status has been updated.</p>
-        <p>Order ID: <code>${orderId}</code></p>
-        <p>New Status: <span class="badge">${label}</span></p>
-        <a href="${env.FRONTEND_URL}/dashboard" class="btn">View Dashboard</a>
+        <h2>Estado actualizado</h2>
+        <p>Hola <strong>${name}</strong>, el estado de tu pedido fue actualizado.</p>
+        <p>N° de pedido: <code>${orderId}</code></p>
+        <p>Nuevo estado: <span class="badge">${label}</span></p>
+        <a href="${env.FRONTEND_URL}/dashboard" class="btn">Ver mi panel</a>
       `),
     });
   } catch (err) {
     logger.error('Failed to send status update email', { email, error: err });
+  }
+};
+
+export const sendAdminProviderFailAlert = async (
+  orderId: string,
+  serviceName: string,
+  quantity: number,
+  link: string,
+  errorMessage: string
+): Promise<void> => {
+  if (!env.SMTP_USER || !env.ADMIN_EMAIL) return;
+  try {
+    await transporter.sendMail({
+      from: env.SMTP_FROM,
+      to: env.ADMIN_EMAIL,
+      subject: '⚠️ Pedido fallido — sin saldo en proveedor',
+      html: baseTemplate(`
+        <h2>⚠️ Pedido no ejecutado</h2>
+        <p>Un pedido no pudo ser enviado al proveedor. Probablemente por <strong>saldo insuficiente en SMM Engineer</strong>.</p>
+        <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+          <tr><td style="padding:8px;color:#94a3b8;">N° de pedido</td><td style="padding:8px;color:#e2e8f0;"><code>${orderId}</code></td></tr>
+          <tr><td style="padding:8px;color:#94a3b8;">Servicio</td><td style="padding:8px;color:#e2e8f0;">${serviceName}</td></tr>
+          <tr><td style="padding:8px;color:#94a3b8;">Cantidad</td><td style="padding:8px;color:#e2e8f0;">${quantity.toLocaleString()}</td></tr>
+          <tr><td style="padding:8px;color:#94a3b8;">Link</td><td style="padding:8px;color:#e2e8f0;">${link}</td></tr>
+          <tr><td style="padding:8px;color:#94a3b8;">Error</td><td style="padding:8px;color:#f87171;">${errorMessage}</td></tr>
+        </table>
+        <p>Recargá saldo en <a href="https://smmengineer.com" style="color:#a5b4fc;">smmengineer.com</a> y luego reintentá el pedido desde el panel admin.</p>
+        <a href="${env.FRONTEND_URL}/admin" class="btn">Ir al panel admin</a>
+      `),
+    });
+  } catch (err) {
+    logger.error('Failed to send admin provider fail alert', { error: err });
   }
 };
 
@@ -119,13 +151,13 @@ export const sendWelcomeEmail = async (
     await transporter.sendMail({
       from: env.SMTP_FROM,
       to: email,
-      subject: '🚀 Welcome to BoostIns!',
+      subject: '🚀 ¡Bienvenido a BoostIns!',
       html: baseTemplate(`
-        <h2>Welcome to BoostIns, ${name}!</h2>
-        <p>You're now part of the fastest growing social media growth platform. Start boosting your presence today.</p>
-        <p>Your referral code: <span class="badge">${referralCode}</span></p>
-        <p>Share it and earn <strong>R$ ${env.REFERRAL_REWARD_AMOUNT}</strong> for every friend who makes their first order!</p>
-        <a href="${env.FRONTEND_URL}/services" class="btn">Browse Services</a>
+        <h2>¡Bienvenido a BoostIns, ${name}!</h2>
+        <p>Ya sos parte de la plataforma de crecimiento en redes sociales más rápida. ¡Empezá a crecer hoy!</p>
+        <p>Tu código de referido: <span class="badge">${referralCode}</span></p>
+        <p>Compartilo y ganás <strong>$ ${env.REFERRAL_REWARD_AMOUNT} ARS</strong> por cada amigo que haga su primer pedido.</p>
+        <a href="${env.FRONTEND_URL}/order" class="btn">Hacer un pedido</a>
       `),
     });
   } catch (err) {

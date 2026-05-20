@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { servicesApi, paymentsApi, couponsApi } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 import { getStoredUser, isAuthenticated } from '@/lib/auth';
 import { Service } from '@/types';
 import { formatCurrency, formatNumber } from '@/lib/utils';
@@ -42,6 +43,7 @@ const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
 
 function OrderContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [services, setServices]           = useState<Service[]>([]);
   const [platform,  setPlatform]          = useState('');
@@ -134,6 +136,11 @@ function OrderContent() {
   const hasEnoughBalance = loggedIn && userBalance >= finalPrice && finalPrice > 0;
 
   const handleCheckout = async () => {
+    if (!loggedIn) {
+      toast.error('Necesitás una cuenta para hacer pedidos');
+      router.push('/register?redirect=/order');
+      return;
+    }
     if (!link.trim())  { toast.error('Ingresá tu usuario o link'); return; }
     if (!email.trim()) { toast.error('Ingresá tu email'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Email inválido'); return; }

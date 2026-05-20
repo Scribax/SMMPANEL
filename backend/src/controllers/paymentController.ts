@@ -3,7 +3,7 @@ import { query } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 import { createPaymentPreference, getPaymentDetails } from '../services/paymentService';
 import { sendOrderToProvider } from '../services/providerService';
-import { sendOrderConfirmation } from '../services/emailService';
+import { sendOrderConfirmation, sendAdminProviderFailAlert } from '../services/emailService';
 import { logger } from '../utils/logger';
 
 interface ServiceRow {
@@ -199,6 +199,7 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
       } catch (provErr) {
         logger.error('Provider error on balance checkout', { orderId, error: provErr });
         await query(`UPDATE orders SET status = 'failed', notes = $1 WHERE id = $2`, [String(provErr), orderId]);
+        sendAdminProviderFailAlert(orderId, service.name, qty, normalizedLink, String(provErr)).catch(() => {});
       }
 
       sendOrderConfirmation(email, req.user.name, orderId, service.name, qty, finalPrice).catch(() => {});

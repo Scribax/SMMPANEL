@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Package, Users, Tag, Settings,
   TrendingUp, DollarSign, ShoppingCart, UserCheck,
   ChevronDown, ChevronUp, RefreshCw, Trash2, Plus,
-  Edit, Eye, X, Loader2, CheckCircle,
+  Edit, Eye, X, Loader2, CheckCircle, RotateCcw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminApi } from '@/lib/api';
@@ -189,6 +189,17 @@ export default function AdminPage() {
     } catch { toast.error('Failed to update order'); }
   };
 
+  const retryOrder = async (orderId: string) => {
+    try {
+      const res = await adminApi.retryOrder(orderId);
+      toast.success(`✅ Reenviado al proveedor #${res.data.providerOrderId}`);
+      loadOrders(ordersPage, statusFilter);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al reintentar';
+      toast.error(msg);
+    }
+  };
+
   const NAV_ITEMS: { id: AdminTab; label: string; icon: React.ElementType }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
@@ -307,7 +318,7 @@ export default function AdminPage() {
                       <span className="text-primary-400">{formatCurrency(order.price)}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
                     <span className="text-slate-500 text-xs">{formatDate(order.created_at)}</span>
                     <select
                       defaultValue={order.status}
@@ -318,6 +329,13 @@ export default function AdminPage() {
                         <option key={v} value={v}>{l}</option>
                       ))}
                     </select>
+                    <button
+                      onClick={() => retryOrder(order.id)}
+                      title="Reintentar en proveedor"
+                      className="p-1.5 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors border border-orange-500/20"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}

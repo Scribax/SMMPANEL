@@ -91,6 +91,7 @@ export const adminApi = {
   updateOrderStatus: (id: string, status: string) =>
     apiClient.put(`/admin/orders/${id}/status`, { status }),
   refundOrder: (id: string) => apiClient.post(`/admin/orders/${id}/refund`),
+  retryOrder: (id: string) => apiClient.post(`/admin/orders/${id}/retry`),
   getUsers: (page = 1, limit = 20) =>
     apiClient.get('/admin/users', { params: { page, limit } }),
   toggleUser: (id: string) => apiClient.post(`/admin/users/${id}/toggle`),
