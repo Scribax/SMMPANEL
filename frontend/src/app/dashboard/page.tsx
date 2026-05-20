@@ -45,6 +45,7 @@ export default function DashboardPage() {
     setUser(u);
     fetchOrders(1);
     fetchDeposits();
+    refreshBalance();
   }, []);
 
   const fetchDeposits = async () => {
