@@ -66,8 +66,8 @@ export default function Footer() {
             © {new Date().getFullYear()} BoostIns. Todos los derechos reservados.
           </p>
           <div className="flex items-center gap-6">
-            <a href="#" className="text-slate-500 hover:text-slate-400 text-sm transition-colors">Política de privacidad</a>
-            <a href="#" className="text-slate-500 hover:text-slate-400 text-sm transition-colors">Términos de uso</a>
+            <Link href="/privacy" className="text-slate-500 hover:text-slate-400 text-sm transition-colors">Política de privacidad</Link>
+            <Link href="/terms" className="text-slate-500 hover:text-slate-400 text-sm transition-colors">Términos de uso</Link>
           </div>
         </div>
       </div>
