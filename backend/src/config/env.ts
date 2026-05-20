@@ -22,6 +22,7 @@ export const env = {
 
   MP_ACCESS_TOKEN: process.env.MP_ACCESS_TOKEN || '',
   MP_PUBLIC_KEY: process.env.MP_PUBLIC_KEY || '',
+  MP_WEBHOOK_URL: process.env.MP_WEBHOOK_URL || '',
 
   SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
   SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),

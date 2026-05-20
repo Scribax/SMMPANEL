@@ -48,7 +48,7 @@ export const createPaymentPreference = async (
         pending: `${env.FRONTEND_URL}/payment/pending`,
       },
       auto_return: 'approved',
-      notification_url: `${env.FRONTEND_URL?.replace('localhost:3000', 'localhost:4000')}/api/payments/webhook`,
+      notification_url: env.MP_WEBHOOK_URL || `${env.FRONTEND_URL}/api/payments/webhook`,
       statement_descriptor: 'BOOSTINS',
     },
   });
