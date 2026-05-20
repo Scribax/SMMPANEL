@@ -69,9 +69,7 @@ export default function DashboardPage() {
     setDepositLoading(true);
     try {
       const res = await paymentsApi.createDeposit(amount);
-      const url = process.env.NODE_ENV === 'production'
-        ? res.data.initPoint
-        : res.data.sandboxInitPoint ?? res.data.initPoint;
+      const url = res.data.initPoint;
       window.location.href = url;
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al crear la recarga';

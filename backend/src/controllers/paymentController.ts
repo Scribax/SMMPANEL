@@ -35,31 +35,41 @@ export const createDeposit = async (req: AuthRequest, res: Response): Promise<vo
     return;
   }
 
-  const depositResult = await query<{ id: string }>(
-    `INSERT INTO deposits (user_id, amount, status) VALUES ($1, $2, 'pending') RETURNING id`,
-    [userId, parsedAmount]
-  );
-  const depositId = depositResult.rows[0].id;
+  try {
+    const depositResult = await query<{ id: string }>(
+      `INSERT INTO deposits (user_id, amount, status) VALUES ($1, $2, 'pending') RETURNING id`,
+      [userId, parsedAmount]
+    );
+    const depositId = depositResult.rows[0].id;
 
-  const pref = await createPaymentPreference({
-    orderId: `deposit_${depositId}`,
-    title: 'Recarga de saldo — BoostIns',
-    quantity: 1,
-    unitPrice: parsedAmount,
-    payerEmail: req.user!.email,
-    payerName: req.user!.name,
-  });
+    const pref = await createPaymentPreference({
+      orderId: `deposit_${depositId}`,
+      title: 'Recarga de saldo — BoostIns',
+      quantity: 1,
+      unitPrice: parsedAmount,
+      payerEmail: req.user!.email,
+      payerName: req.user!.name,
+    });
 
-  await query(`UPDATE deposits SET preference_id = $1 WHERE id = $2`, [pref.id, depositId]);
+    await query(`UPDATE deposits SET preference_id = $1 WHERE id = $2`, [pref.id, depositId]);
 
-  logger.info('Deposit created', { depositId, amount: parsedAmount });
-  res.status(201).json({
-    success: true,
-    depositId,
-    preferenceId: pref.id,
-    initPoint: pref.initPoint,
-    sandboxInitPoint: pref.sandboxInitPoint,
-  });
+    logger.info('Deposit created', { depositId, amount: parsedAmount });
+    res.status(201).json({
+      success: true,
+      depositId,
+      preferenceId: pref.id,
+      initPoint: pref.initPoint,
+      sandboxInitPoint: pref.sandboxInitPoint,
+    });
+  } catch (err: unknown) {
+    const mpError = err as { message?: string; cause?: unknown; status?: number };
+    logger.error('Error creating deposit', {
+      message: mpError?.message,
+      cause: JSON.stringify(mpError?.cause ?? err),
+      status: mpError?.status,
+    });
+    res.status(500).json({ success: false, message: 'Error al procesar el pago con MercadoPago' });
+  }
 };
 
 export const getMyDeposits = async (req: AuthRequest, res: Response): Promise<void> => {
