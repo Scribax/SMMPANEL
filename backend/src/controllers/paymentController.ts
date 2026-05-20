@@ -198,7 +198,7 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
         );
       } catch (provErr) {
         logger.error('Provider error on balance checkout', { orderId, error: provErr });
-        await query(`UPDATE orders SET status = 'failed', notes = $1 WHERE id = $2`, [String(provErr), orderId]);
+        await query(`UPDATE orders SET status = 'pending', notes = $1 WHERE id = $2`, [String(provErr), orderId]);
         sendAdminProviderFailAlert(orderId, service.name, qty, normalizedLink, String(provErr)).catch(() => {});
       }
 
@@ -387,9 +387,16 @@ export const handleWebhook = async (req: Request, res: Response): Promise<void> 
       } catch (providerErr) {
         logger.error('Failed to send order to provider', { orderId, error: providerErr });
         await query(
-          `UPDATE orders SET status = 'failed', notes = $1, updated_at = NOW() WHERE id = $2`,
+          `UPDATE orders SET status = 'pending', notes = $1, updated_at = NOW() WHERE id = $2`,
           [`Provider error: ${String(providerErr)}`, orderId]
         );
+        sendAdminProviderFailAlert(
+          orderId,
+          order.service_name,
+          order.quantity,
+          order.link,
+          String(providerErr)
+        ).catch(() => {});
       }
     } else if (['rejected', 'cancelled'].includes(mpStatus ?? '')) {
       await query(
