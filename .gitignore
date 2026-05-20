@@ -28,6 +28,9 @@ npm-debug.log*
 Thumbs.db
 *.pid
 
+# SSL certificates — NEVER commit
+nginx/ssl/
+
 # IDE
 .vscode/
 .idea/
