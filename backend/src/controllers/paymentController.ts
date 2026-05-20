@@ -428,19 +428,22 @@ export const verifyDeposit = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    if (dep.status !== 'pending') {
+    const updated = await query<{ amount: number; user_id: string }>(
+      `UPDATE deposits SET status = 'approved', external_id = $1, updated_at = NOW()
+       WHERE id = $2 AND status = 'pending'
+       RETURNING amount, user_id`,
+      [String(paymentId), depositId]
+    );
+
+    if (!updated.rows.length) {
       res.json({ success: true, alreadyProcessed: true, amount: dep.amount });
       return;
     }
 
-    await query(
-      `UPDATE deposits SET status = 'approved', external_id = $1, updated_at = NOW() WHERE id = $2`,
-      [String(paymentId), depositId]
-    );
-    await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [dep.amount, dep.user_id]);
+    await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [updated.rows[0].amount, updated.rows[0].user_id]);
 
-    logger.info('Deposit verified and credited via fallback', { depositId, amount: dep.amount, userId });
-    res.json({ success: true, amount: dep.amount });
+    logger.info('Deposit verified and credited via fallback', { depositId, amount: updated.rows[0].amount, userId });
+    res.json({ success: true, amount: updated.rows[0].amount });
   } catch (err) {
     logger.error('Error verifying deposit', { error: err });
     res.status(500).json({ success: false, message: 'Error verifying payment' });
