@@ -36,7 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(globalLimiter);
 
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), service: 'boostins-api' });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), service: 'FollowArg-api' });
 });
 
 app.use('/api/auth', authRoutes);
@@ -65,7 +65,7 @@ const start = async (): Promise<void> => {
   }
 
   app.listen(env.PORT, () => {
-    logger.info(`BoostIns API running on port ${env.PORT} [${env.NODE_ENV}]`);
+    logger.info(`FollowArg API running on port ${env.PORT} [${env.NODE_ENV}]`);
   });
 
   startOrderStatusWorker();

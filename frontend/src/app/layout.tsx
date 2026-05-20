@@ -3,12 +3,12 @@ import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'BoostIns — Social Media Growth Platform',
+  title: 'FollowArg — Social Media Growth Platform',
   description:
     'Grow your Instagram, TikTok, and YouTube presence with real followers, likes, and views. Fast delivery, secure payments.',
   keywords: ['instagram followers', 'tiktok followers', 'youtube views', 'social media growth'],
   openGraph: {
-    title: 'BoostIns — Social Media Growth Platform',
+    title: 'FollowArg — Social Media Growth Platform',
     description: 'Boost your social media presence instantly.',
     type: 'website',
   },

@@ -49,7 +49,7 @@ export const createPaymentPreference = async (
       },
       auto_return: 'approved',
       notification_url: env.MP_WEBHOOK_URL || `${env.FRONTEND_URL}/api/payments/webhook`,
-      statement_descriptor: 'BOOSTINS',
+      statement_descriptor: 'FollowArg',
     },
   });
 

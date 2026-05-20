@@ -25,7 +25,7 @@ const TESTIMONIALS = [
     name: 'Ana Costa',
     role: 'Creadora de contenido',
     avatar: 'A',
-    text: '¡BoostIns es increíble! Mi Instagram creció de 2K a 50K seguidores en solo 3 semanas. La entrega es super rápida y la calidad es excelente.',
+    text: '¡FollowArg es increíble! Mi Instagram creció de 2K a 50K seguidores en solo 3 semanas. La entrega es super rápida y la calidad es excelente.',
     stars: 5,
     platform: 'instagram',
   },
@@ -33,7 +33,7 @@ const TESTIMONIALS = [
     name: 'Carlos Lima',
     role: 'Gerente de marca',
     avatar: 'C',
-    text: 'Usamos BoostIns para todas nuestras cuentas de marca. Los resultados son consistentes y el soporte siempre ayuda. La mejor inversión que hicimos.',
+    text: 'Usamos FollowArg para todas nuestras cuentas de marca. Los resultados son consistentes y el soporte siempre ayuda. La mejor inversión que hicimos.',
     stars: 5,
     platform: 'tiktok',
   },
@@ -41,7 +41,7 @@ const TESTIMONIALS = [
     name: 'Mariana Silva',
     role: 'YouTuber',
     avatar: 'M',
-    text: 'Mi canal de YouTube llegó a 100K vistas en mi nuevo video usando BoostIns. Realmente ayuda con el algoritmo. ¡Totalmente recomendado!',
+    text: 'Mi canal de YouTube llegó a 100K vistas en mi nuevo video usando FollowArg. Realmente ayuda con el algoritmo. ¡Totalmente recomendado!',
     stars: 5,
     platform: 'youtube',
   },
@@ -341,7 +341,7 @@ export default function HomePage() {
               Lo que dicen nuestros <span className="gradient-text">clientes</span>
             </h2>
             <p className="section-subtitle mx-auto">
-              Sumáte a miles de personas que ya hacen crecer sus redes con BoostIns.
+              Sumáte a miles de personas que ya hacen crecer sus redes con FollowArg.
             </p>
           </motion.div>
 
@@ -393,7 +393,7 @@ export default function HomePage() {
                 ¿Listo para <span className="gradient-text">crecer</span>?
               </h2>
               <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
-                Sumáte a +85.000 creadores y marcas que confían en BoostIns para crecer en redes.
+                Sumáte a +85.000 creadores y marcas que confían en FollowArg para crecer en redes.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/order" className="btn-primary text-lg px-10 py-4 flex items-center gap-2 justify-center">

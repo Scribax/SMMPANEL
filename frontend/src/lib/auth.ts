@@ -1,7 +1,7 @@
 import { User } from '@/types';
 
-const TOKEN_KEY = 'boostins_token';
-const USER_KEY = 'boostins_user';
+const TOKEN_KEY = 'FollowArg_token';
+const USER_KEY = 'FollowArg_user';
 
 export const setAuth = (token: string, user: User): void => {
   if (typeof window === 'undefined') return;

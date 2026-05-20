@@ -14,33 +14,39 @@ const transporter = nodemailer.createTransport({
 
 const baseTemplate = (content: string): string => `
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e2e8f0; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-    .header { text-align: center; margin-bottom: 32px; }
-    .logo { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(99,102,241,0.2); border-radius: 16px; padding: 32px; }
-    .btn { display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 16px 0; }
-    .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 13px; }
-    h2 { color: #a5b4fc; margin-top: 0; }
-    p { line-height: 1.6; color: #cbd5e1; }
-    .badge { display: inline-block; background: rgba(99,102,241,0.2); color: #a5b4fc; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
-  </style>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FollowArg</title>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="logo">⚡ BoostIns</div>
-    </div>
-    <div class="card">${content}</div>
-    <div class="footer">
-      <p>© ${new Date().getFullYear()} BoostIns — Social Media Growth Platform</p>
-      <p>If you did not request this email, please ignore it.</p>
-    </div>
-  </div>
+<body style="margin:0;padding:0;background:#f4f6fb;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <!-- Header -->
+        <tr>
+          <td align="center" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:16px 16px 0 0;padding:32px 40px;">
+            <div style="font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">⚡ FollowArg</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:4px;">Social Media Growth Platform</div>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="background:#ffffff;padding:40px;border-radius:0 0 16px 16px;border:1px solid #e2e8f0;border-top:none;">
+            ${content}
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="padding:24px 0;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} FollowArg — Social Media Growth Platform</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#cbd5e1;">Si no solicitaste este correo, podés ignorarlo.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
 </body>
 </html>
 `;
@@ -58,17 +64,17 @@ export const sendOrderConfirmation = async (
     await transporter.sendMail({
       from: env.SMTP_FROM,
       to: email,
-      subject: '✅ Pedido confirmado — BoostIns',
+      subject: '✅ Pedido confirmado — FollowArg',
       html: baseTemplate(`
-        <h2>¡Pedido confirmado!</h2>
-        <p>Hola <strong>${name}</strong>, tu pedido fue recibido y está siendo procesado.</p>
-        <table style="width:100%;border-collapse:collapse;margin:20px 0;">
-          <tr><td style="padding:8px;color:#94a3b8;">N° de pedido</td><td style="padding:8px;color:#e2e8f0;"><code>${orderId}</code></td></tr>
-          <tr><td style="padding:8px;color:#94a3b8;">Servicio</td><td style="padding:8px;color:#e2e8f0;">${serviceName}</td></tr>
-          <tr><td style="padding:8px;color:#94a3b8;">Cantidad</td><td style="padding:8px;color:#e2e8f0;">${quantity.toLocaleString()}</td></tr>
-          <tr><td style="padding:8px;color:#94a3b8;">Total pagado</td><td style="padding:8px;color:#e2e8f0;font-weight:700;">$ ${price.toFixed(2)} ARS</td></tr>
+        <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">¡Pedido confirmado!</h2>
+        <p style="margin:0 0 24px;color:#64748b;font-size:15px;">Hola <strong style="color:#1e293b;">${name}</strong>, tu pedido fue recibido y está siendo procesado.</p>
+        <table style="width:100%;border-collapse:collapse;margin:0 0 24px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
+          <tr style="background:#f8fafc;"><td style="padding:12px 16px;color:#64748b;font-size:13px;width:40%;">N° de pedido</td><td style="padding:12px 16px;color:#1e293b;font-size:13px;font-family:monospace;">${orderId.slice(0,8)}...</td></tr>
+          <tr><td style="padding:12px 16px;color:#64748b;font-size:13px;border-top:1px solid #f1f5f9;">Servicio</td><td style="padding:12px 16px;color:#1e293b;font-size:13px;border-top:1px solid #f1f5f9;">${serviceName}</td></tr>
+          <tr style="background:#f8fafc;"><td style="padding:12px 16px;color:#64748b;font-size:13px;">Cantidad</td><td style="padding:12px 16px;color:#1e293b;font-size:13px;">${quantity.toLocaleString()}</td></tr>
+          <tr><td style="padding:12px 16px;color:#64748b;font-size:13px;border-top:1px solid #f1f5f9;">Total pagado</td><td style="padding:12px 16px;color:#6366f1;font-size:15px;font-weight:700;border-top:1px solid #f1f5f9;">$ ${price.toFixed(2)} ARS</td></tr>
         </table>
-        <p>Podés ver el estado de tu pedido en tu <a href="${env.FRONTEND_URL}/dashboard" style="color:#a5b4fc;">panel de control</a>.</p>
+        <a href="${env.FRONTEND_URL}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Ver mis pedidos</a>
       `),
     });
   } catch (err) {
@@ -95,13 +101,13 @@ export const sendOrderStatusUpdate = async (
     await transporter.sendMail({
       from: env.SMTP_FROM,
       to: email,
-      subject: `Actualización de pedido: ${label} — BoostIns`,
+      subject: `Actualización de pedido: ${label} — FollowArg`,
       html: baseTemplate(`
-        <h2>Estado actualizado</h2>
-        <p>Hola <strong>${name}</strong>, el estado de tu pedido fue actualizado.</p>
-        <p>N° de pedido: <code>${orderId}</code></p>
-        <p>Nuevo estado: <span class="badge">${label}</span></p>
-        <a href="${env.FRONTEND_URL}/dashboard" class="btn">Ver mi panel</a>
+        <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Estado actualizado</h2>
+        <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Hola <strong style="color:#1e293b;">${name}</strong>, el estado de tu pedido fue actualizado.</p>
+        <p style="margin:0 0 8px;color:#64748b;font-size:13px;">N° de pedido: <span style="font-family:monospace;color:#1e293b;">${orderId.slice(0,8)}...</span></p>
+        <p style="margin:0 0 24px;">Nuevo estado: <span style="display:inline-block;background:#ede9fe;color:#6366f1;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:600;">${label}</span></p>
+        <a href="${env.FRONTEND_URL}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Ver mis pedidos</a>
       `),
     });
   } catch (err) {
@@ -121,19 +127,19 @@ export const sendAdminProviderFailAlert = async (
     await transporter.sendMail({
       from: env.SMTP_FROM,
       to: env.ADMIN_EMAIL,
-      subject: '⚠️ Pedido fallido — sin saldo en proveedor',
+      subject: '⚠️ Pedido fallido — revisá saldo en proveedor',
       html: baseTemplate(`
-        <h2>⚠️ Pedido no ejecutado</h2>
-        <p>Un pedido no pudo ser enviado al proveedor. Probablemente por <strong>saldo insuficiente en SMM Engineer</strong>.</p>
-        <table style="width:100%;border-collapse:collapse;margin:20px 0;">
-          <tr><td style="padding:8px;color:#94a3b8;">N° de pedido</td><td style="padding:8px;color:#e2e8f0;"><code>${orderId}</code></td></tr>
-          <tr><td style="padding:8px;color:#94a3b8;">Servicio</td><td style="padding:8px;color:#e2e8f0;">${serviceName}</td></tr>
-          <tr><td style="padding:8px;color:#94a3b8;">Cantidad</td><td style="padding:8px;color:#e2e8f0;">${quantity.toLocaleString()}</td></tr>
-          <tr><td style="padding:8px;color:#94a3b8;">Link</td><td style="padding:8px;color:#e2e8f0;">${link}</td></tr>
-          <tr><td style="padding:8px;color:#94a3b8;">Error</td><td style="padding:8px;color:#f87171;">${errorMessage}</td></tr>
+        <h2 style="margin:0 0 8px;color:#dc2626;font-size:22px;">⚠️ Pedido no ejecutado</h2>
+        <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Un pedido no pudo enviarse al proveedor, probablemente por <strong style="color:#1e293b;">saldo insuficiente en SMM Engineer</strong>.</p>
+        <table style="width:100%;border-collapse:collapse;margin:0 0 24px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
+          <tr style="background:#f8fafc;"><td style="padding:12px 16px;color:#64748b;font-size:13px;width:35%;">N° de pedido</td><td style="padding:12px 16px;color:#1e293b;font-size:13px;font-family:monospace;">${orderId.slice(0,8)}...</td></tr>
+          <tr><td style="padding:12px 16px;color:#64748b;font-size:13px;border-top:1px solid #f1f5f9;">Servicio</td><td style="padding:12px 16px;color:#1e293b;font-size:13px;border-top:1px solid #f1f5f9;">${serviceName}</td></tr>
+          <tr style="background:#f8fafc;"><td style="padding:12px 16px;color:#64748b;font-size:13px;">Cantidad</td><td style="padding:12px 16px;color:#1e293b;font-size:13px;">${quantity.toLocaleString()}</td></tr>
+          <tr><td style="padding:12px 16px;color:#64748b;font-size:13px;border-top:1px solid #f1f5f9;">Link</td><td style="padding:12px 16px;color:#1e293b;font-size:13px;border-top:1px solid #f1f5f9;">${link}</td></tr>
+          <tr style="background:#fef2f2;"><td style="padding:12px 16px;color:#64748b;font-size:13px;">Error</td><td style="padding:12px 16px;color:#dc2626;font-size:13px;">${errorMessage.slice(0,120)}</td></tr>
         </table>
-        <p>Recargá saldo en <a href="https://smmengineer.com" style="color:#a5b4fc;">smmengineer.com</a> y luego reintentá el pedido desde el panel admin.</p>
-        <a href="${env.FRONTEND_URL}/admin" class="btn">Ir al panel admin</a>
+        <p style="margin:0 0 20px;color:#64748b;font-size:14px;">Recargá saldo en <a href="https://smmengineer.com" style="color:#6366f1;">smmengineer.com</a> y luego reintentá el pedido desde el panel admin.</p>
+        <a href="${env.FRONTEND_URL}/admin" style="display:inline-block;background:#dc2626;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Ir al panel admin</a>
       `),
     });
   } catch (err) {
@@ -151,13 +157,14 @@ export const sendWelcomeEmail = async (
     await transporter.sendMail({
       from: env.SMTP_FROM,
       to: email,
-      subject: '🚀 ¡Bienvenido a BoostIns!',
+      subject: '🚀 ¡Bienvenido a FollowArg!',
       html: baseTemplate(`
-        <h2>¡Bienvenido a BoostIns, ${name}!</h2>
-        <p>Ya sos parte de la plataforma de crecimiento en redes sociales más rápida. ¡Empezá a crecer hoy!</p>
-        <p>Tu código de referido: <span class="badge">${referralCode}</span></p>
-        <p>Compartilo y ganás <strong>$ ${env.REFERRAL_REWARD_AMOUNT} ARS</strong> por cada amigo que haga su primer pedido.</p>
-        <a href="${env.FRONTEND_URL}/order" class="btn">Hacer un pedido</a>
+        <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">¡Bienvenido a FollowArg, ${name}!</h2>
+        <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Ya sos parte de la plataforma de crecimiento en redes sociales más rápida de Argentina. ¡Empezá a crecer hoy!</p>
+        <p style="margin:0 0 8px;color:#64748b;font-size:14px;">Tu código de referido:</p>
+        <p style="margin:0 0 20px;"><span style="display:inline-block;background:#ede9fe;color:#6366f1;padding:6px 18px;border-radius:20px;font-size:16px;font-weight:700;letter-spacing:1px;">${referralCode}</span></p>
+        <p style="margin:0 0 24px;color:#64748b;font-size:14px;">Compartilo y ganás <strong style="color:#1e293b;">$ ${env.REFERRAL_REWARD_AMOUNT} ARS</strong> por cada amigo que haga su primer pedido.</p>
+        <a href="${env.FRONTEND_URL}/order" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Hacer mi primer pedido</a>
       `),
     });
   } catch (err) {

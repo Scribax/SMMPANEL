@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
-export const metadata = { title: 'Política de Privacidad — BoostIns' };
+export const metadata = { title: 'Política de Privacidad — FollowArg' };
 
 export default function PrivacyPage() {
   return (
@@ -16,7 +16,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-white font-bold text-xl mb-3">1. Información que recopilamos</h2>
-            <p>Al usar BoostIns recopilamos la siguiente información:</p>
+            <p>Al usar FollowArg recopilamos la siguiente información:</p>
             <ul className="list-disc list-inside mt-3 space-y-1.5 text-slate-400">
               <li><strong className="text-slate-300">Datos de registro:</strong> nombre, dirección de correo electrónico y contraseña cifrada.</li>
               <li><strong className="text-slate-300">Datos de pedidos:</strong> usuario o enlace de red social, cantidad solicitada y correo de seguimiento.</li>

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
-export const metadata = { title: 'Términos de Uso — BoostIns' };
+export const metadata = { title: 'Términos de Uso — FollowArg' };
 
 export default function TermsPage() {
   return (
@@ -16,17 +16,17 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-white font-bold text-xl mb-3">1. Aceptación de los términos</h2>
-            <p>Al registrarte y usar BoostIns (followarg.com), aceptás estos Términos de Uso en su totalidad. Si no estás de acuerdo, no podés utilizar el servicio.</p>
+            <p>Al registrarte y usar FollowArg (followarg.com), aceptás estos Términos de Uso en su totalidad. Si no estás de acuerdo, no podés utilizar el servicio.</p>
           </section>
 
           <section>
             <h2 className="text-white font-bold text-xl mb-3">2. Descripción del servicio</h2>
-            <p>BoostIns es una plataforma de marketing en redes sociales (SMM Panel) que permite a usuarios comprar seguidores, likes, vistas y otros servicios de crecimiento para redes sociales como Instagram, TikTok y YouTube.</p>
+            <p>FollowArg es una plataforma de marketing en redes sociales (SMM Panel) que permite a usuarios comprar seguidores, likes, vistas y otros servicios de crecimiento para redes sociales como Instagram, TikTok y YouTube.</p>
           </section>
 
           <section>
             <h2 className="text-white font-bold text-xl mb-3">3. Elegibilidad</h2>
-            <p>Para usar BoostIns debés:</p>
+            <p>Para usar FollowArg debés:</p>
             <ul className="list-disc list-inside mt-3 space-y-1.5 text-slate-400">
               <li>Tener al menos 18 años de edad.</li>
               <li>Proporcionar información verídica al registrarte.</li>
@@ -77,7 +77,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-white font-bold text-xl mb-3">8. Limitación de responsabilidad</h2>
-            <p>BoostIns no se responsabiliza por:</p>
+            <p>FollowArg no se responsabiliza por:</p>
             <ul className="list-disc list-inside mt-3 space-y-1.5 text-slate-400">
               <li>Cambios en los algoritmos de redes sociales que afecten los resultados.</li>
               <li>Suspensión o penalización de cuentas por parte de las plataformas.</li>

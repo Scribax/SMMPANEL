@@ -218,7 +218,7 @@ export default function AdminPage() {
               <Settings className="w-4 h-4 text-white" />
             </div>
             <div>
-              <div className="text-white font-bold text-sm">BoostIns</div>
+              <div className="text-white font-bold text-sm">FollowArg</div>
               <div className="text-primary-400 text-xs">Admin Panel</div>
             </div>
           </div>

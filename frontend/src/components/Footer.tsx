@@ -11,7 +11,7 @@ export default function Footer() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
                 <Zap className="w-4 h-4 text-white" />
               </div>
-              <span className="text-xl font-bold gradient-text">BoostIns</span>
+              <span className="text-xl font-bold gradient-text">FollowArg</span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
               La plataforma más rápida y confiable para crecer en redes sociales. Resultados reales, entrega garantizada.
@@ -63,7 +63,7 @@ export default function Footer() {
 
         <div className="border-t border-white/[0.06] mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-slate-500 text-sm">
-            © {new Date().getFullYear()} BoostIns. Todos los derechos reservados.
+            © {new Date().getFullYear()} FollowArg. Todos los derechos reservados.
           </p>
           <div className="flex items-center gap-6">
             <Link href="/privacy" className="text-slate-500 hover:text-slate-400 text-sm transition-colors">Política de privacidad</Link>

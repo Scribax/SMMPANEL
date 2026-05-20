@@ -46,7 +46,7 @@ export const createDeposit = async (req: AuthRequest, res: Response): Promise<vo
 
     const pref = await createPaymentPreference({
       orderId: `deposit_${depositId}`,
-      title: 'Recarga de saldo — BoostIns',
+      title: 'Recarga de saldo — FollowArg',
       quantity: 1,
       unitPrice: parsedAmount,
       payerEmail: req.user!.email,

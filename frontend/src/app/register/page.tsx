@@ -26,7 +26,7 @@ function RegisterContent() {
     try {
       const res = await authApi.register({ ...form, referralCode: form.referralCode || ref });
       setAuth(res.data.token, res.data.user);
-      toast.success('¡Cuenta creada! Bienvenido a BoostIns 🚀');
+      toast.success('¡Cuenta creada! Bienvenido a FollowArg 🚀');
       router.push('/dashboard');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al registrarse';
@@ -54,7 +54,7 @@ function RegisterContent() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg shadow-primary-500/30">
               <Zap className="w-5 h-5 text-white" />
             </div>
-            <span className="text-2xl font-bold gradient-text">BoostIns</span>
+            <span className="text-2xl font-bold gradient-text">FollowArg</span>
           </Link>
           <h1 className="text-3xl font-black text-white">Creá tu cuenta</h1>
           <p className="text-slate-400 mt-2">Empezá a crecer en redes sociales hoy mismo</p>

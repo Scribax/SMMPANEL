@@ -10,7 +10,7 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('boostins_token');
+    const token = localStorage.getItem('FollowArg_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,8 +22,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('boostins_token');
-      localStorage.removeItem('boostins_user');
+      localStorage.removeItem('FollowArg_token');
+      localStorage.removeItem('FollowArg_user');
       if (!window.location.pathname.startsWith('/login')) {
         window.location.href = '/login';
       }
