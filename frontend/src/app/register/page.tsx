@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { authApi } from '@/lib/api';
 import { setAuth } from '@/lib/auth';
 
-export default function RegisterPage() {
+function RegisterContent() {
   const [form, setForm] = useState({ name: '', email: '', password: '', referralCode: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -122,5 +122,17 @@ export default function RegisterPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-dark-300 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -8,7 +8,7 @@ import { CheckCircle, Package, ArrowRight, Loader2 } from 'lucide-react';
 import { paymentsApi } from '@/lib/api';
 import { formatCurrency, STATUS_LABELS } from '@/lib/utils';
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const params = useSearchParams();
   const orderId = params.get('order_id') ?? params.get('external_reference') ?? '';
   const [order, setOrder] = useState<Record<string, unknown> | null>(null);
@@ -87,5 +87,17 @@ export default function PaymentSuccessPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-dark-300 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
