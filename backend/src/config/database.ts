@@ -7,7 +7,7 @@ const config: PoolConfig = {
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
-  ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: false,
 };
 
 export const pool = new Pool(config);
