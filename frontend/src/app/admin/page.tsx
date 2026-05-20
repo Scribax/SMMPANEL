@@ -323,7 +323,7 @@ export default function AdminPage() {
                     <select
                       defaultValue={order.status}
                       onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                      className="text-xs bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1.5 text-white"
+                      className="text-xs bg-dark-200 border border-white/[0.1] rounded-lg px-2 py-1.5 text-white [&>option]:bg-dark-200 [&>option]:text-white"
                     >
                       {Object.entries(STATUS_LABELS).map(([v, l]) => (
                         <option key={v} value={v}>{l}</option>
