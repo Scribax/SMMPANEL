@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Menu, X, User, LogOut, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { Zap, Menu, X, User, LogOut, LayoutDashboard, ShieldCheck, Wallet } from 'lucide-react';
 import { getStoredUser, clearAuth, isAuthenticated } from '@/lib/auth';
 import { User as UserType } from '@/types';
 import { cn } from '@/lib/utils';
@@ -79,6 +79,13 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <div className="relative">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-1.5 glass-card px-3 py-1.5 text-xs font-semibold text-green-400 border-green-500/20 hover:border-green-500/40 transition-all"
+                >
+                  <Wallet className="w-3.5 h-3.5" />
+                  ${parseFloat(String(user.balance ?? 0)).toFixed(2)}
+                </Link>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 glass-card px-3 py-2 hover:border-primary-500/30 transition-all"

@@ -3,11 +3,12 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Tag, AlertCircle, Loader2, CheckCircle2, ChevronRight, AtSign, Link2 } from 'lucide-react';
+import { ShoppingCart, Tag, AlertCircle, Loader2, CheckCircle2, ChevronRight, AtSign, Link2, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { servicesApi, paymentsApi, couponsApi } from '@/lib/api';
+import { getStoredUser, isAuthenticated } from '@/lib/auth';
 import { Service } from '@/types';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 
@@ -54,6 +55,8 @@ function OrderContent() {
   const [couponApplied, setCouponApplied] = useState(false);
   const [loading,   setLoading]           = useState(false);
   const [validating, setValidating]       = useState(false);
+  const [userBalance, setUserBalance]     = useState(0);
+  const [loggedIn, setLoggedIn]           = useState(false);
 
   const selected   = services.find((s) => s.id === selectedId);
   const basePrice  = selected && quantity ? parseFloat((selected.price_per_unit * quantity).toFixed(2)) : 0;
@@ -74,6 +77,14 @@ function OrderContent() {
 
   // step logic
   const step = !platform ? 1 : !category ? 2 : !selectedId ? 3 : !quantity ? 4 : 5;
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      const u = getStoredUser();
+      setLoggedIn(true);
+      setUserBalance(parseFloat(String(u?.balance ?? 0)));
+    }
+  }, []);
 
   useEffect(() => {
     servicesApi.getAll().then((res) => {
@@ -120,6 +131,8 @@ function OrderContent() {
     }
   };
 
+  const hasEnoughBalance = loggedIn && userBalance >= finalPrice && finalPrice > 0;
+
   const handleCheckout = async () => {
     if (!link.trim())  { toast.error('Ingresá tu usuario o link'); return; }
     if (!email.trim()) { toast.error('Ingresá tu email'); return; }
@@ -134,8 +147,13 @@ function OrderContent() {
         email: email.trim(),
         couponCode: couponApplied ? couponCode : undefined,
       });
-      const { initPoint, sandboxInitPoint } = res.data;
-      window.location.href = process.env.NODE_ENV === 'production' ? initPoint : (sandboxInitPoint || initPoint);
+      if (res.data.paidWithBalance) {
+        toast.success('¡Pedido creado! Saldo descontado correctamente.');
+        window.location.href = '/dashboard';
+        return;
+      }
+      const url = res.data.initPoint;
+      window.location.href = url;
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al procesar. Intentá de nuevo.';
       toast.error(msg);
@@ -423,16 +441,28 @@ function OrderContent() {
                           <div className="text-primary-400 font-black text-3xl">{formatCurrency(finalPrice)}</div>
                         </div>
                       </div>
+                      {loggedIn && (
+                        <div className={`flex justify-between text-xs pt-1 ${
+                          hasEnoughBalance ? 'text-green-400' : 'text-slate-500'
+                        }`}>
+                          <span>Tu saldo</span>
+                          <span className="font-semibold">{formatCurrency(userBalance)}{hasEnoughBalance ? ' ✓' : ' (insuficiente)'}</span>
+                        </div>
+                      )}
                     </div>
 
                     <button
                       onClick={handleCheckout}
                       disabled={loading || !link.trim() || !email.trim()}
-                      className="btn-primary w-full flex items-center justify-center gap-2 py-4 text-base"
+                      className={`w-full flex items-center justify-center gap-2 py-4 text-base ${
+                        hasEnoughBalance ? 'btn-secondary border-green-500/40 text-green-400 hover:border-green-500' : 'btn-primary'
+                      }`}
                     >
                       {loading
                         ? <Loader2 className="w-5 h-5 animate-spin" />
-                        : <><ShoppingCart className="w-5 h-5" /> Pagar con MercadoPago</>
+                        : hasEnoughBalance
+                          ? <><Wallet className="w-5 h-5" /> Usar Saldo — {formatCurrency(userBalance)}</>
+                          : <><ShoppingCart className="w-5 h-5" /> Pagar con MercadoPago</>
                       }
                     </button>
 
