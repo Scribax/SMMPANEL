@@ -23,7 +23,7 @@ const generateReferralCode = (): string =>
 
 const signToken = (user: { id: string; email: string; role: string }): string =>
   jwt.sign({ id: user.id, email: user.email, role: user.role }, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN as string,
+    expiresIn: env.JWT_EXPIRES_IN as any,
   });
 
 export const register = async (req: Request, res: Response): Promise<void> => {
