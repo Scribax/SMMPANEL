@@ -461,7 +461,7 @@ function OrderContent() {
                       {loading
                         ? <Loader2 className="w-5 h-5 animate-spin" />
                         : hasEnoughBalance
-                          ? <><Wallet className="w-5 h-5" /> Usar Saldo — {formatCurrency(userBalance)}</>
+                          ? <><Wallet className="w-5 h-5" /> Pagar con Saldo — {formatCurrency(finalPrice)}</>
                           : <><ShoppingCart className="w-5 h-5" /> Pagar con MercadoPago</>
                       }
                     </button>
