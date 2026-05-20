@@ -14,6 +14,8 @@ interface ServiceRow {
   max_quantity: number;
   provider_id: string;
   provider_service_id: number;
+  platform: string;
+  category: string;
 }
 
 interface CouponRow {
@@ -96,7 +98,7 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
   }
 
   const serviceResult = await query<ServiceRow>(
-    'SELECT id, name, price_per_unit, min_quantity, max_quantity, provider_id, provider_service_id FROM services WHERE id = $1 AND is_active = true',
+    'SELECT id, name, price_per_unit, min_quantity, max_quantity, provider_id, provider_service_id, platform, category FROM services WHERE id = $1 AND is_active = true',
     [serviceId]
   );
 
@@ -107,6 +109,18 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
 
   const service = serviceResult.rows[0];
   const qty = parseInt(String(quantity), 10);
+
+  const normalizeLink = (rawLink: string, platform: string, category: string): string => {
+    const trimmed = rawLink.trim();
+    if (category === 'followers') {
+      const username = trimmed.replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
+      if (platform === 'instagram') return `https://www.instagram.com/${username}/`;
+      if (platform === 'tiktok') return `https://www.tiktok.com/@${username}`;
+      if (platform === 'youtube') return trimmed.startsWith('http') ? trimmed : `https://www.youtube.com/@${username}`;
+    }
+    return trimmed;
+  };
+  const normalizedLink = normalizeLink(link.trim(), service.platform, service.category);
 
   if (qty < service.min_quantity || qty > service.max_quantity) {
     res.status(400).json({
@@ -161,7 +175,7 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
         `INSERT INTO orders (user_id, service_id, link, quantity, price, original_price, coupon_id, status, email)
          VALUES ($1, $2, $3, $4, $5, $6, $7, 'processing', $8)
          RETURNING id`,
-        [userId, serviceId, link, qty, finalPrice, originalPrice, couponId, email]
+        [userId, serviceId, normalizedLink, qty, finalPrice, originalPrice, couponId, email]
       );
       const orderId = orderResult.rows[0].id;
 
@@ -175,7 +189,7 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
         const providerResult = await sendOrderToProvider({
           providerId: service.provider_id,
           serviceId: service.provider_service_id,
-          link,
+          link: normalizedLink,
           quantity: qty,
         });
         await query(
@@ -206,7 +220,7 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
     `INSERT INTO orders (user_id, service_id, link, quantity, price, original_price, coupon_id, status, email)
      VALUES ($1, $2, $3, $4, $5, $6, $7, 'awaiting_payment', $8)
      RETURNING id`,
-    [userId, serviceId, link, qty, finalPrice, originalPrice, couponId, email]
+    [userId, serviceId, normalizedLink, qty, finalPrice, originalPrice, couponId, email]
   );
 
   const orderId = orderResult.rows[0].id;
