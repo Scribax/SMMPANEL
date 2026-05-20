@@ -1,0 +1,496 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Zap, Package, Clock, CheckCircle, RefreshCw,
+  Copy, LogOut, User, DollarSign, ExternalLink,
+  PlusCircle, X, ArrowUpRight, Wallet,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import Navbar from '@/components/Navbar';
+import { ordersApi, paymentsApi, authApi } from '@/lib/api';
+import { Order, User as UserType } from '@/types';
+import { getStoredUser, clearAuth, isAuthenticated, setAuth } from '@/lib/auth';
+import { formatCurrency, formatDate, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
+
+interface Deposit {
+  id: string;
+  amount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+}
+
+const DEPOSIT_PRESETS = [500, 1000, 2000, 5000];
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<UserType | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'orders' | 'wallet' | 'account'>('orders');
+
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositLoading, setDepositLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated()) { router.push('/login'); return; }
+    const u = getStoredUser();
+    setUser(u);
+    fetchOrders(1);
+    fetchDeposits();
+  }, []);
+
+  const fetchDeposits = async () => {
+    try {
+      const res = await paymentsApi.getDeposits();
+      setDeposits(res.data.deposits ?? []);
+    } catch { /* silent */ }
+  };
+
+  const refreshBalance = async () => {
+    try {
+      const res = await authApi.getMe();
+      const updated = res.data.user;
+      setUser((prev) => prev ? { ...prev, balance: updated.balance } : prev);
+      setAuth(localStorage.getItem('boostins_token') ?? '', updated);
+    } catch { /* silent */ }
+  };
+
+  const handleDeposit = async () => {
+    const amount = parseFloat(depositAmount);
+    if (!amount || amount < 100) { toast.error('El monto mínimo es $100 ARS'); return; }
+    setDepositLoading(true);
+    try {
+      const res = await paymentsApi.createDeposit(amount);
+      const url = process.env.NODE_ENV === 'production'
+        ? res.data.initPoint
+        : res.data.sandboxInitPoint ?? res.data.initPoint;
+      window.location.href = url;
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al crear la recarga';
+      toast.error(msg);
+    } finally {
+      setDepositLoading(false);
+    }
+  };
+
+  const fetchOrders = async (p: number) => {
+    setLoading(true);
+    try {
+      const res = await ordersApi.getMyOrders(p, 10);
+      setOrders(res.data.orders ?? []);
+      setTotal(res.data.total ?? 0);
+      setPage(p);
+    } catch {
+      toast.error('Error al cargar los pedidos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefill = async (orderId: string) => {
+    try {
+      await ordersApi.requestRefill(orderId);
+      toast.success('¡Recarga solicitada!');
+      fetchOrders(page);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al solicitar recarga';
+      toast.error(msg);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('¡Copiado!');
+  };
+
+  const handleLogout = () => {
+    clearAuth();
+    router.push('/');
+  };
+
+  const totalPages = Math.ceil(total / 10);
+
+  const statusStats = orders.reduce((acc: Record<string, number>, o) => {
+    acc[o.status] = (acc[o.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const depositStatusLabel: Record<string, string> = {
+    pending: 'Pendiente',
+    approved: 'Acreditado',
+    rejected: 'Rechazado',
+  };
+  const depositStatusColor: Record<string, string> = {
+    pending: 'text-yellow-400 bg-yellow-400/10',
+    approved: 'text-green-400 bg-green-400/10',
+    rejected: 'text-red-400 bg-red-400/10',
+  };
+
+  return (
+    <div className="min-h-screen bg-dark-300">
+      <Navbar />
+
+      {/* Deposit Modal */}
+      <AnimatePresence>
+        {showDepositModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowDepositModal(false); }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="glass-card p-8 w-full max-w-md relative"
+            >
+              <button onClick={() => setShowDepositModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-primary-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg">Agregar saldo</h3>
+                  <p className="text-slate-400 text-sm">Saldo actual: <span className="text-primary-400 font-semibold">{formatCurrency(user?.balance ?? 0)}</span></p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {DEPOSIT_PRESETS.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setDepositAmount(String(p))}
+                    className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                      depositAmount === String(p)
+                        ? 'bg-primary-500/20 border-primary-500/50 text-primary-300'
+                        : 'border-white/[0.08] text-slate-400 hover:border-white/20 hover:text-white'
+                    }`}
+                  >
+                    {formatCurrency(p)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-300 mb-2">Monto personalizado (ARS)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
+                  <input
+                    type="number"
+                    min="100"
+                    step="100"
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                    placeholder="1000"
+                    className="input-field pl-7"
+                  />
+                </div>
+                <p className="text-slate-500 text-xs mt-1.5">Mínimo: $100 ARS</p>
+              </div>
+
+              <button
+                onClick={handleDeposit}
+                disabled={depositLoading || !depositAmount}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {depositLoading
+                  ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : <><ArrowUpRight className="w-4 h-4" /> Ir a pagar con MercadoPago</>}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="pt-24 pb-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-black text-white">Dashboard</h1>
+              <p className="text-slate-400 mt-1">Bienvenido, {user?.name?.split(' ')[0]} 👋</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowDepositModal(true)} className="btn-secondary flex items-center gap-2">
+                <PlusCircle className="w-4 h-4" /> Agregar saldo
+              </button>
+              <Link href="/order" className="btn-primary flex items-center gap-2">
+                <Zap className="w-4 h-4" /> Nuevo pedido
+              </Link>
+            </div>
+          </div>
+
+          {/* Balance Hero Card */}
+          <div className="glass-card p-6 mb-6 border-primary-500/20 bg-gradient-to-r from-primary-500/10 to-purple-500/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-400 text-sm mb-1">Saldo disponible</p>
+                <p className="text-4xl font-black text-white">{formatCurrency(user?.balance ?? 0)}</p>
+                <p className="text-slate-500 text-xs mt-1">Usarás este saldo para pagar tus pedidos instantáneamente</p>
+              </div>
+              <div className="w-16 h-16 rounded-2xl bg-primary-500/20 border border-primary-500/30 flex items-center justify-center">
+                <Wallet className="w-8 h-8 text-primary-400" />
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-3">
+              <button
+                onClick={() => { setShowDepositModal(true); }}
+                className="btn-primary text-sm py-2 px-4 flex items-center gap-2"
+              >
+                <PlusCircle className="w-4 h-4" /> Agregar saldo
+              </button>
+              <button onClick={refreshBalance} className="btn-secondary text-sm py-2 px-4 flex items-center gap-2">
+                <RefreshCw className="w-3.5 h-3.5" /> Actualizar
+              </button>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            {[
+              { label: 'Total pedidos', value: total, icon: Package, color: 'text-primary-400' },
+              { label: 'Completados', value: statusStats.completed ?? 0, icon: CheckCircle, color: 'text-green-400' },
+              { label: 'En proceso', value: (statusStats.processing ?? 0) + (statusStats.in_progress ?? 0), icon: Clock, color: 'text-blue-400' },
+            ].map((stat) => (
+              <div key={stat.label} className="glass-card p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-slate-400 text-sm">{stat.label}</span>
+                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                </div>
+                <div className="text-2xl font-black text-white">{stat.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-2 mb-6">
+            {([['orders', 'Mis pedidos'], ['wallet', 'Mis recargas'], ['account', 'Mi cuenta']] as const).map(([tab, label]) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  activeTab === tab
+                    ? 'bg-primary-500/20 border border-primary-500/40 text-primary-300'
+                    : 'glass-card text-slate-400 hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Orders Tab */}
+          {activeTab === 'orders' && (
+            <div>
+              {loading ? (
+                <div className="glass-card p-8 text-center">
+                  <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-slate-400">Cargando pedidos...</p>
+                </div>
+              ) : orders.length === 0 ? (
+                <div className="glass-card p-12 text-center">
+                  <Package className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-white font-semibold text-lg mb-2">Todavía no tenés pedidos</h3>
+                  <p className="text-slate-400 mb-6">¡Hacé tu primer pedido y empezá a crecer!</p>
+                  <Link href="/order" className="btn-primary inline-flex items-center gap-2">
+                    <Zap className="w-4 h-4" /> Hacer pedido
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {orders.map((order, i) => (
+                    <motion.div
+                      key={order.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="glass-card p-5"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <span className="text-white font-semibold truncate">{order.service_name}</span>
+                            <span className={`status-badge ${STATUS_COLORS[order.status]}`}>
+                              {STATUS_LABELS[order.status]}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+                            <span className="flex items-center gap-1 truncate max-w-[200px]">
+                              🔗 <span className="truncate">{order.link}</span>
+                            </span>
+                            <span>📦 {order.quantity.toLocaleString()}</span>
+                            <span className="text-primary-400 font-semibold">{formatCurrency(order.price)}</span>
+                          </div>
+                          <div className="text-xs text-slate-600 mt-1.5">{formatDate(order.created_at)}</div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => copyToClipboard(order.id)}
+                            className="p-2 glass-card hover:border-primary-500/30 transition-all"
+                            title="Copy order ID"
+                          >
+                            <Copy className="w-3.5 h-3.5 text-slate-400" />
+                          </button>
+                          {['completed', 'partial'].includes(order.status) && (
+                            <button
+                              onClick={() => handleRefill(order.id)}
+                              className="flex items-center gap-1.5 px-3 py-2 glass-card hover:border-primary-500/30 text-slate-300 text-xs font-medium transition-all"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" /> Recargar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {order.start_count !== null && order.remains !== null && (
+                        <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                          <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+                            <span>Inicio: {order.start_count?.toLocaleString()}</span>
+                            <span>Restante: {order.remains?.toLocaleString()}</span>
+                          </div>
+                          <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-primary-500 to-purple-500 rounded-full transition-all"
+                              style={{ width: `${Math.min(100, ((order.quantity - (order.remains ?? 0)) / order.quantity) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 pt-4">
+                      <button
+                        disabled={page === 1}
+                        onClick={() => fetchOrders(page - 1)}
+                        className="btn-secondary px-4 py-2 text-sm disabled:opacity-40"
+                      >
+                        Anterior
+                      </button>
+                      <span className="text-slate-400 text-sm">{page} / {totalPages}</span>
+                      <button
+                        disabled={page === totalPages}
+                        onClick={() => fetchOrders(page + 1)}
+                        className="btn-secondary px-4 py-2 text-sm disabled:opacity-40"
+                      >
+                        Siguiente
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Wallet Tab */}
+          {activeTab === 'wallet' && (
+            <div>
+              {deposits.length === 0 ? (
+                <div className="glass-card p-12 text-center">
+                  <Wallet className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-white font-semibold text-lg mb-2">Sin recargas todavía</h3>
+                  <p className="text-slate-400 mb-6">Agregá saldo para pagar pedidos al instante.</p>
+                  <button onClick={() => setShowDepositModal(true)} className="btn-primary inline-flex items-center gap-2">
+                    <PlusCircle className="w-4 h-4" /> Agregar saldo
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {deposits.map((dep, i) => (
+                    <motion.div
+                      key={dep.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="glass-card p-5 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center flex-shrink-0">
+                          <ArrowUpRight className="w-5 h-5 text-primary-400" />
+                        </div>
+                        <div>
+                          <p className="text-white font-semibold">{formatCurrency(dep.amount)}</p>
+                          <p className="text-slate-500 text-xs">{formatDate(dep.created_at)}</p>
+                        </div>
+                      </div>
+                      <span className={`status-badge ${depositStatusColor[dep.status] ?? 'text-slate-400 bg-slate-400/10'}`}>
+                        {depositStatusLabel[dep.status] ?? dep.status}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Account Tab */}
+          {activeTab === 'account' && user && (
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="glass-card p-6">
+                <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+                  <User className="w-5 h-5 text-primary-400" /> Perfil
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    { label: 'Nombre', value: user.name },
+                    { label: 'Email', value: user.email },
+                    { label: 'Miembro desde', value: formatDate(user.created_at) },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center justify-between py-3 border-b border-white/[0.06]">
+                      <span className="text-slate-400 text-sm">{item.label}</span>
+                      <span className="text-white text-sm">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="glass-card p-6">
+                <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-primary-400" /> Programa de referidos
+                </h3>
+                <p className="text-slate-400 text-sm mb-4">
+                  Compartí tu código y ganá recompensas por cada amigo que haga su primer pedido.
+                </p>
+                <div className="glass-card p-3 flex items-center justify-between mb-4 border-primary-500/20">
+                  <code className="text-primary-400 font-mono font-bold tracking-widest">{user.referral_code}</code>
+                  <button onClick={() => copyToClipboard(user.referral_code)} className="p-1.5 hover:text-white text-slate-400 transition-colors">
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+                <button
+                  onClick={() => copyToClipboard(`${window.location.origin}/register?ref=${user.referral_code}`)}
+                  className="btn-secondary w-full text-sm flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" /> Copiar link de referido
+                </button>
+              </div>
+
+              <div className="glass-card p-6 md:col-span-2">
+                <h3 className="text-white font-semibold mb-4">Acciones de cuenta</h3>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
+                >
+                  <LogOut className="w-4 h-4" /> Cerrar sesión
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

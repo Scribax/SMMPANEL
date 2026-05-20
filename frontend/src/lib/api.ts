@@ -1,0 +1,99 @@
+import axios from 'axios';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+export const apiClient = axios.create({
+  baseURL: `${API_URL}/api`,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 15000,
+});
+
+apiClient.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('boostins_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('boostins_token');
+      localStorage.removeItem('boostins_user');
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const authApi = {
+  register: (data: { email: string; password: string; name: string; referralCode?: string }) =>
+    apiClient.post('/auth/register', data),
+  login: (data: { email: string; password: string }) =>
+    apiClient.post('/auth/login', data),
+  getMe: () => apiClient.get('/auth/me'),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    apiClient.put('/auth/change-password', data),
+};
+
+export const servicesApi = {
+  getAll: () => apiClient.get('/services'),
+  getById: (id: string) => apiClient.get(`/services/${id}`),
+  getByPlatform: (platform: string) => apiClient.get(`/services/platform/${platform}`),
+  calculatePrice: (serviceId: string, quantity: number) =>
+    apiClient.post('/services/calculate-price', { serviceId, quantity }),
+};
+
+export const ordersApi = {
+  getMyOrders: (page = 1, limit = 10) =>
+    apiClient.get('/orders', { params: { page, limit } }),
+  getById: (id: string) => apiClient.get(`/orders/${id}`),
+  requestRefill: (id: string) => apiClient.post(`/orders/${id}/refill`),
+  cancel: (id: string) => apiClient.post(`/orders/${id}/cancel`),
+};
+
+export const paymentsApi = {
+  createCheckout: (data: {
+    serviceId: string;
+    quantity: number;
+    link: string;
+    email: string;
+    couponCode?: string;
+  }) => apiClient.post('/payments/checkout', data),
+  getStatus: (orderId: string) => apiClient.get(`/payments/status/${orderId}`),
+  createDeposit: (amount: number) => apiClient.post('/payments/deposit', { amount }),
+  getDeposits: () => apiClient.get('/payments/deposits'),
+};
+
+export const couponsApi = {
+  validate: (code: string, orderAmount?: number) =>
+    apiClient.post('/coupons/validate', { code, orderAmount }),
+};
+
+export const adminApi = {
+  getStats: () => apiClient.get('/admin/stats'),
+  getServices: () => apiClient.get('/admin/services'),
+  createService: (data: object) => apiClient.post('/admin/services', data),
+  updateService: (id: string, data: object) => apiClient.put(`/admin/services/${id}`, data),
+  deleteService: (id: string) => apiClient.delete(`/admin/services/${id}`),
+  getProviders: () => apiClient.get('/admin/providers'),
+  createProvider: (data: object) => apiClient.post('/admin/providers', data),
+  updateProvider: (id: string, data: object) => apiClient.put(`/admin/providers/${id}`, data),
+  getOrders: (page = 1, limit = 20, status?: string) =>
+    apiClient.get('/admin/orders', { params: { page, limit, status } }),
+  updateOrderStatus: (id: string, status: string) =>
+    apiClient.put(`/admin/orders/${id}/status`, { status }),
+  refundOrder: (id: string) => apiClient.post(`/admin/orders/${id}/refund`),
+  getUsers: (page = 1, limit = 20) =>
+    apiClient.get('/admin/users', { params: { page, limit } }),
+  toggleUser: (id: string) => apiClient.post(`/admin/users/${id}/toggle`),
+  getCoupons: () => apiClient.get('/admin/coupons'),
+  createCoupon: (data: object) => apiClient.post('/admin/coupons', data),
+  updateCoupon: (id: string, data: object) => apiClient.put(`/admin/coupons/${id}`, data),
+};

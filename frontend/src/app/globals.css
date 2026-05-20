@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --bg-dark: #0d0d1a;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --border: rgba(99, 102, 241, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0d0d1a;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0d1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #6366f1;
+  border-radius: 3px;
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/[0.03] border border-white/[0.08] backdrop-blur-sm rounded-2xl;
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300 hover:border-primary-500/30 hover:bg-white/[0.06];
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-600 hover:to-purple-700
+           text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200
+           shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:scale-[1.02]
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100;
+  }
+
+  .btn-secondary {
+    @apply bg-white/[0.06] border border-white/[0.12] hover:bg-white/[0.1]
+           text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200
+           hover:border-primary-500/40;
+  }
+
+  .input-field {
+    @apply w-full bg-white/[0.04] border border-white/[0.1] rounded-xl px-4 py-3
+           text-white placeholder-slate-500 focus:outline-none focus:border-primary-500/60
+           focus:bg-white/[0.06] transition-all duration-200;
+  }
+
+  select.input-field {
+    background-color: #1a1a2e;
+    color-scheme: dark;
+  }
+
+  select.input-field option {
+    background-color: #1a1a2e;
+    color: #e2e8f0;
+    padding: 8px 12px;
+  }
+
+  select.input-field option:hover,
+  select.input-field option:checked {
+    background-color: #6366f1;
+    color: #ffffff;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-white;
+  }
+
+  .section-subtitle {
+    @apply text-slate-400 text-lg mt-4 max-w-2xl;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .border-gradient {
+    border-image: linear-gradient(135deg, #6366f1, #a855f7) 1;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .bg-radial-glow {
+    background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  }
+}
