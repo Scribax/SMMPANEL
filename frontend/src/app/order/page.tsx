@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Tag, AlertCircle, Loader2, CheckCircle2, ChevronRight, AtSign, Link2 } from 'lucide-react';
@@ -39,7 +39,7 @@ const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
   comments:  { label: 'Comentarios',emoji: '💬' },
 };
 
-export default function OrderPage() {
+function OrderContent() {
   const searchParams = useSearchParams();
 
   const [services, setServices]           = useState<Service[]>([]);
@@ -449,5 +449,17 @@ export default function OrderPage() {
       </div>
       <Footer />
     </div>
+  );
+}
+
+export default function OrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-dark-300 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <OrderContent />
+    </Suspense>
   );
 }
