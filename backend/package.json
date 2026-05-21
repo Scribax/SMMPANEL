@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
-    "sync:services": "ts-node --transpile-only scripts/syncProviderServices.ts"
+    "sync:services": "ts-node --transpile-only scripts/syncProviderServices.ts",
+    "seed:services": "ts-node --transpile-only scripts/seedServices.ts"
   },
   "dependencies": {
     "axios": "^1.6.7",
