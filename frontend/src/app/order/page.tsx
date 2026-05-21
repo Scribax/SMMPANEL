@@ -86,6 +86,7 @@ function OrderContent() {
       const u = getStoredUser();
       setLoggedIn(true);
       setUserBalance(parseFloat(String(u?.balance ?? 0)));
+      if (u?.email) setEmail(u.email);
     }
   }, []);
 
@@ -286,25 +287,34 @@ function OrderContent() {
                   </button>
                   <h2 className="text-white font-bold text-xl mb-6 text-center">Elegí el tipo</h2>
                   <div className="space-y-3">
-                    {filteredServices.map((svc) => (
-                      <button
-                        key={svc.id}
-                        onClick={() => setSelectedId(svc.id)}
-                        className="w-full text-left rounded-2xl p-5 border border-white/10 hover:border-primary-500/40 bg-white/5 hover:bg-primary-500/10 transition-all flex items-center justify-between group"
-                      >
-                        <div>
-                          <div className="text-white font-semibold">{svc.name}</div>
-                          {svc.description && (
-                            <div className="text-slate-400 text-xs mt-1 mb-1">{svc.description}</div>
-                          )}
-                          <div className="text-slate-500 text-xs mt-1 flex items-center gap-3">
-                            <span>⚡ {svc.delivery_speed}</span>
-                            <span>📦 {formatNumber(svc.min_quantity)}–{formatNumber(svc.max_quantity)}</span>
+                    {filteredServices.map((svc) => {
+                      const minPrice = parseFloat((svc.price_per_unit * svc.min_quantity).toFixed(2));
+                      return (
+                        <button
+                          key={svc.id}
+                          onClick={() => setSelectedId(svc.id)}
+                          className="w-full text-left rounded-2xl p-5 border border-white/10 hover:border-primary-500/40 bg-white/5 hover:bg-primary-500/10 transition-all flex items-center justify-between group"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white font-semibold">{svc.name}</div>
+                            {svc.description && (
+                              <div className="text-slate-400 text-xs mt-1 mb-1.5">{svc.description}</div>
+                            )}
+                            <div className="text-slate-500 text-xs flex items-center gap-3">
+                              <span>⚡ {svc.delivery_speed}</span>
+                              <span>📦 {formatNumber(svc.min_quantity)}–{formatNumber(svc.max_quantity)}</span>
+                            </div>
                           </div>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-primary-400 transition-colors" />
-                      </button>
-                    ))}
+                          <div className="flex items-center gap-3 ml-4 shrink-0">
+                            <div className="text-right">
+                              <div className="text-xs text-slate-500">desde</div>
+                              <div className="text-primary-400 font-bold text-sm">{formatCurrency(minPrice)}</div>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-primary-400 transition-colors" />
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </motion.div>
@@ -504,6 +514,34 @@ function OrderContent() {
         </div>
       </div>
       <Footer />
+
+      {/* ── Sticky price bar ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {quantity > 0 && step >= 4 && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 z-40 bg-dark-300/95 backdrop-blur-xl border-t border-white/[0.08] px-4 py-3 md:hidden"
+          >
+            <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+              <div>
+                <div className="text-xs text-slate-400">{selected?.name}</div>
+                <div className="text-white font-bold">{formatNumber(quantity)} · <span className="text-primary-400">{formatCurrency(finalPrice)}</span></div>
+              </div>
+              {step === 5 && (
+                <button
+                  onClick={handleCheckout}
+                  disabled={loading || !link.trim() || !email.trim()}
+                  className="btn-primary py-2.5 px-5 text-sm flex items-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Wallet className="w-4 h-4" /> Pagar</>}
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Insufficient funds modal ─────────────────────────────────── */}
       <AnimatePresence>
