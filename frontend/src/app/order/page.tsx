@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Tag, AlertCircle, Loader2, CheckCircle2, ChevronRight, AtSign, Link2, Wallet } from 'lucide-react';
+import { Tag, AlertCircle, Loader2, CheckCircle2, ChevronRight, AtSign, Link2, Wallet, PlusCircle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -59,6 +59,7 @@ function OrderContent() {
   const [validating, setValidating]       = useState(false);
   const [userBalance, setUserBalance]     = useState(0);
   const [loggedIn, setLoggedIn]           = useState(false);
+  const [showFundsModal, setShowFundsModal] = useState(false);
 
   const selected   = services.find((s) => s.id === selectedId);
   const basePrice  = selected && quantity ? parseFloat((selected.price_per_unit * quantity).toFixed(2)) : 0;
@@ -145,6 +146,11 @@ function OrderContent() {
     if (!email.trim()) { toast.error('Ingresá tu email'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Email inválido'); return; }
 
+    if (!hasEnoughBalance) {
+      setShowFundsModal(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await paymentsApi.createCheckout({
@@ -154,16 +160,15 @@ function OrderContent() {
         email: email.trim(),
         couponCode: couponApplied ? couponCode : undefined,
       });
-      if (res.data.paidWithBalance) {
-        toast.success('¡Pedido creado! Saldo descontado correctamente.');
-        window.location.href = '/dashboard';
-        return;
-      }
-      const url = res.data.initPoint;
-      window.location.href = url;
+      toast.success('¡Pedido creado! Saldo descontado correctamente.');
+      window.location.href = '/dashboard';
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al procesar. Intentá de nuevo.';
-      toast.error(msg);
+      const errData = (err as { response?: { data?: { insufficientBalance?: boolean; message?: string } } })?.response?.data;
+      if (errData?.insufficientBalance) {
+        setShowFundsModal(true);
+      } else {
+        toast.error(errData?.message ?? 'Error al procesar. Intentá de nuevo.');
+      }
     } finally {
       setLoading(false);
     }
@@ -458,23 +463,34 @@ function OrderContent() {
                       )}
                     </div>
 
+                    {!hasEnoughBalance && finalPrice > 0 && (
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-3">
+                        <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                        <p className="text-xs text-amber-300">
+                          Saldo insuficiente. Necesitás {formatCurrency(finalPrice)} y tenés {formatCurrency(userBalance)}.
+                        </p>
+                        <button
+                          onClick={() => router.push('/add-funds')}
+                          className="ml-auto text-xs font-semibold text-amber-400 hover:text-amber-300 whitespace-nowrap flex items-center gap-1"
+                        >
+                          <PlusCircle className="w-3.5 h-3.5" /> Cargar saldo
+                        </button>
+                      </div>
+                    )}
+
                     <button
                       onClick={handleCheckout}
                       disabled={loading || !link.trim() || !email.trim()}
-                      className={`w-full flex items-center justify-center gap-2 py-4 text-base ${
-                        hasEnoughBalance ? 'btn-secondary border-green-500/40 text-green-400 hover:border-green-500' : 'btn-primary'
-                      }`}
+                      className="w-full flex items-center justify-center gap-2 py-4 text-base btn-primary disabled:opacity-50"
                     >
                       {loading
                         ? <Loader2 className="w-5 h-5 animate-spin" />
-                        : hasEnoughBalance
-                          ? <><Wallet className="w-5 h-5" /> Pagar con Saldo — {formatCurrency(finalPrice)}</>
-                          : <><ShoppingCart className="w-5 h-5" /> Pagar con MercadoPago</>
+                        : <><Wallet className="w-5 h-5" /> {hasEnoughBalance ? `Pagar con Saldo — ${formatCurrency(finalPrice)}` : 'Saldo insuficiente — Cargar saldo'}</>
                       }
                     </button>
 
                     <p className="text-center text-slate-500 text-xs mt-3 flex items-center justify-center gap-1.5">
-                      🔒 Pago 100% seguro · Los seguidores se entregan automáticamente al confirmar el pago
+                      🔒 Pago 100% seguro · Los seguidores se entregan automáticamente
                     </p>
                   </div>
                 </div>
@@ -485,6 +501,39 @@ function OrderContent() {
         </div>
       </div>
       <Footer />
+
+      {/* ── Insufficient funds modal ─────────────────────────────────── */}
+      <AnimatePresence>
+        {showFundsModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowFundsModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card p-8 max-w-sm w-full text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button onClick={() => setShowFundsModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5" /></button>
+              <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-5">
+                <Wallet className="w-8 h-8 text-amber-400" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Saldo insuficiente</h2>
+              <p className="text-slate-400 text-sm mb-1">Necesitás <span className="text-white font-semibold">{formatCurrency(finalPrice)}</span> para este pedido.</p>
+              <p className="text-slate-400 text-sm mb-6">Tu saldo actual: <span className="text-amber-400 font-semibold">{formatCurrency(userBalance)}</span></p>
+              <p className="text-slate-500 text-xs mb-6">Cargá saldo a tu cuenta vía MercadoPago y volvé a hacer el pedido.</p>
+              <button
+                onClick={() => router.push(`/add-funds?amount=${Math.ceil(finalPrice - userBalance)}`)}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                <PlusCircle className="w-5 h-5" /> Cargar saldo ahora
+              </button>
+              <button onClick={() => setShowFundsModal(false)} className="mt-3 text-slate-500 hover:text-slate-300 text-sm w-full">Cancelar</button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

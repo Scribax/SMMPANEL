@@ -162,100 +162,67 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
 
   const userId = req.user?.id ?? null;
 
-  // ── Pay with balance if user is authenticated and has enough funds ──
-  if (userId && req.user) {
-    const balResult = await query<{ balance: number }>(
-      'SELECT balance FROM users WHERE id = $1',
-      [userId]
-    );
-    const userBalance = parseFloat(String(balResult.rows[0]?.balance ?? 0));
-
-    if (userBalance >= finalPrice) {
-      const orderResult = await query<{ id: string }>(
-        `INSERT INTO orders (user_id, service_id, link, quantity, price, original_price, coupon_id, status, email)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'processing', $8)
-         RETURNING id`,
-        [userId, serviceId, normalizedLink, qty, finalPrice, originalPrice, couponId, email]
-      );
-      const orderId = orderResult.rows[0].id;
-
-      await query('UPDATE users SET balance = balance - $1 WHERE id = $2', [finalPrice, userId]);
-
-      if (couponId) {
-        await query('UPDATE coupons SET used_count = used_count + 1 WHERE id = $1', [couponId]).catch(() => {});
-      }
-
-      try {
-        const providerResult = await sendOrderToProvider({
-          providerId: service.provider_id,
-          serviceId: service.provider_service_id,
-          link: normalizedLink,
-          quantity: qty,
-        });
-        await query(
-          `UPDATE orders SET provider_order_id = $1, updated_at = NOW() WHERE id = $2`,
-          [String(providerResult.orderId), orderId]
-        );
-      } catch (provErr) {
-        logger.error('Provider error on balance checkout', { orderId, error: provErr });
-        await query(`UPDATE orders SET status = 'pending', notes = $1 WHERE id = $2`, [String(provErr), orderId]);
-        sendAdminProviderFailAlert(orderId, service.name, qty, normalizedLink, String(provErr)).catch(() => {});
-      }
-
-      sendOrderConfirmation(email, req.user.name, orderId, service.name, qty, finalPrice).catch(() => {});
-
-      logger.info('Order paid with balance', { orderId, userId, amount: finalPrice });
-      res.status(201).json({
-        success: true,
-        orderId,
-        paidWithBalance: true,
-        price: finalPrice,
-        originalPrice,
-      });
-      return;
-    }
+  // ── Balance-only checkout ──
+  if (!userId || !req.user) {
+    res.status(401).json({ success: false, message: 'Debés iniciar sesión para hacer un pedido' });
+    return;
   }
 
-  // ── Normal MercadoPago flow ──
+  const balResult = await query<{ balance: number }>(
+    'SELECT balance FROM users WHERE id = $1',
+    [userId]
+  );
+  const userBalance = parseFloat(String(balResult.rows[0]?.balance ?? 0));
+
+  if (userBalance < finalPrice) {
+    res.status(402).json({
+      success: false,
+      insufficientBalance: true,
+      message: 'Saldo insuficiente',
+      required: finalPrice,
+      current: userBalance,
+    });
+    return;
+  }
+
   const orderResult = await query<{ id: string }>(
     `INSERT INTO orders (user_id, service_id, link, quantity, price, original_price, coupon_id, status, email)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, 'awaiting_payment', $8)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, 'processing', $8)
      RETURNING id`,
     [userId, serviceId, normalizedLink, qty, finalPrice, originalPrice, couponId, email]
   );
-
   const orderId = orderResult.rows[0].id;
-  const userName = req.user?.name ?? email.split('@')[0];
 
-  const preference = await createPaymentPreference({
-    orderId,
-    title: `${service.name} x${qty.toLocaleString()}`,
-    quantity: 1,
-    unitPrice: finalPrice,
-    payerEmail: email,
-    payerName: userName,
-  });
-
-  await query(
-    `INSERT INTO payments (order_id, user_id, amount, preference_id, status)
-     VALUES ($1, $2, $3, $4, 'pending')`,
-    [orderId, userId, finalPrice, preference.id]
-  );
+  await query('UPDATE users SET balance = balance - $1 WHERE id = $2', [finalPrice, userId]);
 
   if (couponId) {
-    await query(
-      'UPDATE coupons SET used_count = used_count + 1 WHERE id = $1',
-      [couponId]
-    ).catch(() => {});
+    await query('UPDATE coupons SET used_count = used_count + 1 WHERE id = $1', [couponId]).catch(() => {});
   }
 
-  logger.info('Checkout created', { orderId, amount: finalPrice });
+  try {
+    const providerResult = await sendOrderToProvider({
+      providerId: service.provider_id,
+      serviceId: service.provider_service_id,
+      link: normalizedLink,
+      quantity: qty,
+    });
+    await query(
+      `UPDATE orders SET provider_order_id = $1, updated_at = NOW() WHERE id = $2`,
+      [String(providerResult.orderId), orderId]
+    );
+  } catch (provErr) {
+    logger.error('Provider error on balance checkout', { orderId, error: provErr });
+    await query(`UPDATE orders SET status = 'pending', notes = $1 WHERE id = $2`, [String(provErr), orderId]);
+    sendAdminProviderFailAlert(orderId, service.name, qty, normalizedLink, String(provErr)).catch(() => {});
+  }
+
+  sendOrderConfirmation(email, req.user.name, orderId, service.name, qty, finalPrice).catch(() => {});
+
+  logger.info('Order paid with balance', { orderId, userId, amount: finalPrice });
   res.status(201).json({
     success: true,
     orderId,
-    preferenceId: preference.id,
-    initPoint: preference.initPoint,
-    sandboxInitPoint: preference.sandboxInitPoint,
+    paidWithBalance: true,
     price: finalPrice,
     originalPrice,
   });
