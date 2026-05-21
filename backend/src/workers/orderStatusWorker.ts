@@ -11,9 +11,13 @@ interface PendingOrder {
   status: string;
   email: string | null;
   user_name: string | null;
+  user_id: string | null;
+  price: number;
   start_count: number | null;
   remains: number | null;
 }
+
+const REFUND_STATUSES = new Set(['failed', 'cancelled', 'refunded']);
 
 const TERMINAL_STATUSES = new Set(['completed', 'partial', 'failed', 'refunded', 'cancelled']);
 
@@ -22,6 +26,7 @@ const checkOrderStatuses = async (): Promise<void> => {
 
   const result = await query<PendingOrder>(
     `SELECT o.id, o.provider_order_id, o.status, o.email, o.start_count, o.remains,
+            o.user_id, o.price,
             s.provider_id,
             u.name AS user_name
      FROM orders o
@@ -76,6 +81,12 @@ const checkOrderStatuses = async (): Promise<void> => {
               order.id,
             ]
           );
+
+          // Devolver saldo si el proveedor cancela/falla el pedido
+          if (hasStatusChange && REFUND_STATUSES.has(normalizedStatus) && order.user_id && order.price > 0) {
+            await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [order.price, order.user_id]);
+            logger.info('Balance auto-refunded by provider status', { orderId: order.id, amount: order.price, status: normalizedStatus });
+          }
 
           if (hasStatusChange && TERMINAL_STATUSES.has(normalizedStatus) && order.email) {
             sendOrderStatusUpdate(

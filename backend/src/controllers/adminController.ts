@@ -278,10 +278,12 @@ export const adminUpdateOrderStatus = async (req: Request, res: Response): Promi
   }
 
   const prev = existing.rows[0];
-  // Devolver saldo si se marca como refunded y no estaba refunded antes
-  if (status === 'refunded' && prev.status !== 'refunded' && prev.user_id && prev.price > 0) {
+  // Devolver saldo si se marca como refunded/cancelled/failed y no estaba ya en ese estado
+  const refundStatuses = ['refunded', 'cancelled', 'failed'];
+  const wasAlreadyRefunded = refundStatuses.includes(prev.status);
+  if (refundStatuses.includes(status) && !wasAlreadyRefunded && prev.user_id && prev.price > 0) {
     await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [prev.price, prev.user_id]);
-    logger.info('Balance refunded via status update', { orderId: id, amount: prev.price });
+    logger.info('Balance refunded via status update', { orderId: id, amount: prev.price, newStatus: status });
   }
 
   const result = await query(
