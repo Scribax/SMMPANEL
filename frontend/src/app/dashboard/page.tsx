@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Package, Clock, CheckCircle, RefreshCw,
   Copy, LogOut, User, DollarSign, ExternalLink,
-  PlusCircle, X, ArrowUpRight, Wallet,
+  PlusCircle, X, ArrowUpRight, Wallet, Lock, Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
@@ -38,6 +38,10 @@ export default function DashboardPage() {
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositLoading, setDepositLoading] = useState(false);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [inProgressCount, setInProgressCount] = useState(0);
+  const [pwForm, setPwForm] = useState({ current: '', next: '', show: false });
+  const [pwLoading, setPwLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated()) { router.push('/login'); return; }
@@ -87,10 +91,48 @@ export default function DashboardPage() {
       setOrders(res.data.orders ?? []);
       setTotal(res.data.total ?? 0);
       setPage(p);
+      // Fetch global counts only on first load
+      if (p === 1) {
+        const [comp, prog] = await Promise.all([
+          ordersApi.getMyOrders(1, 1000),
+          Promise.resolve(null),
+        ]);
+        const all: Order[] = comp.data.orders ?? [];
+        setCompletedCount(all.filter((o) => o.status === 'completed').length);
+        setInProgressCount(all.filter((o) => ['processing', 'in_progress'].includes(o.status)).length);
+      }
     } catch {
       toast.error('Error al cargar los pedidos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancel = async (orderId: string) => {
+    try {
+      await ordersApi.cancel(orderId);
+      toast.success('Pedido cancelado. Saldo devuelto.');
+      fetchOrders(page);
+      refreshBalance();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'No se puede cancelar este pedido';
+      toast.error(msg);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!pwForm.current || !pwForm.next) { toast.error('Completá ambos campos'); return; }
+    if (pwForm.next.length < 8) { toast.error('La nueva contraseña debe tener al menos 8 caracteres'); return; }
+    setPwLoading(true);
+    try {
+      await authApi.changePassword({ currentPassword: pwForm.current, newPassword: pwForm.next });
+      toast.success('Contraseña actualizada');
+      setPwForm({ current: '', next: '', show: false });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al cambiar contraseña';
+      toast.error(msg);
+    } finally {
+      setPwLoading(false);
     }
   };
 
@@ -260,8 +302,8 @@ export default function DashboardPage() {
           <div className="grid grid-cols-3 gap-4 mb-8">
             {[
               { label: 'Total pedidos', value: total, icon: Package, color: 'text-primary-400' },
-              { label: 'Completados', value: statusStats.completed ?? 0, icon: CheckCircle, color: 'text-green-400' },
-              { label: 'En proceso', value: (statusStats.processing ?? 0) + (statusStats.in_progress ?? 0), icon: Clock, color: 'text-blue-400' },
+              { label: 'Completados', value: completedCount, icon: CheckCircle, color: 'text-green-400' },
+              { label: 'En proceso', value: inProgressCount, icon: Clock, color: 'text-blue-400' },
             ].map((stat) => (
               <div key={stat.label} className="glass-card p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -342,6 +384,14 @@ export default function DashboardPage() {
                           >
                             <Copy className="w-3.5 h-3.5 text-slate-400" />
                           </button>
+                          {['pending', 'awaiting_payment'].includes(order.status) && (
+                            <button
+                              onClick={() => handleCancel(order.id)}
+                              className="flex items-center gap-1.5 px-3 py-2 glass-card hover:border-red-500/30 text-red-400 text-xs font-medium transition-all"
+                            >
+                              <X className="w-3.5 h-3.5" /> Cancelar
+                            </button>
+                          )}
                           {['completed', 'partial'].includes(order.status) && (
                             <button
                               onClick={() => handleRefill(order.id)}
@@ -475,6 +525,36 @@ export default function DashboardPage() {
                 >
                   <ExternalLink className="w-4 h-4" /> Copiar link de referido
                 </button>
+              </div>
+
+              <div className="glass-card p-6 md:col-span-2">
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-primary-400" /> Cambiar contraseña
+                </h3>
+                <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                  <input
+                    type={pwForm.show ? 'text' : 'password'}
+                    placeholder="Contraseña actual"
+                    value={pwForm.current}
+                    onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))}
+                    className="input-field"
+                  />
+                  <input
+                    type={pwForm.show ? 'text' : 'password'}
+                    placeholder="Nueva contraseña (mín. 8)"
+                    value={pwForm.next}
+                    onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))}
+                    className="input-field"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={handleChangePassword} disabled={pwLoading} className="btn-primary text-sm py-2 px-5 flex items-center gap-2 disabled:opacity-50">
+                    {pwLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Guardar'}
+                  </button>
+                  <button onClick={() => setPwForm((f) => ({ ...f, show: !f.show }))} className="text-slate-500 hover:text-slate-300 text-xs">
+                    {pwForm.show ? 'Ocultar' : 'Mostrar'} contraseñas
+                  </button>
+                </div>
               </div>
 
               <div className="glass-card p-6 md:col-span-2">

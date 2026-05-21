@@ -224,8 +224,10 @@ export const adminGetOrders = async (req: Request, res: Response): Promise<void>
   const offset = (page - 1) * limit;
   const status = req.query.status as string | undefined;
 
-  const whereClause = status ? 'WHERE o.status = $3' : '';
-  const params = status ? [limit, offset, status] : [limit, offset];
+  const validStatuses = ['pending', 'processing', 'in_progress', 'completed', 'partial', 'failed', 'refunded', 'cancelled', 'awaiting_payment'];
+  const safeStatus = status && validStatuses.includes(status) ? status : undefined;
+  const whereClause = safeStatus ? 'WHERE o.status = $3' : '';
+  const params = safeStatus ? [limit, offset, safeStatus] : [limit, offset];
 
   const [orders, count] = await Promise.all([
     query(
@@ -266,15 +268,26 @@ export const adminUpdateOrderStatus = async (req: Request, res: Response): Promi
     return;
   }
 
+  const existing = await query<{ id: string; user_id: string; price: number; status: string }>(
+    'SELECT id, user_id, price, status FROM orders WHERE id = $1',
+    [id]
+  );
+  if (!existing.rows.length) {
+    res.status(404).json({ success: false, message: 'Order not found' });
+    return;
+  }
+
+  const prev = existing.rows[0];
+  // Devolver saldo si se marca como refunded y no estaba refunded antes
+  if (status === 'refunded' && prev.status !== 'refunded' && prev.user_id && prev.price > 0) {
+    await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [prev.price, prev.user_id]);
+    logger.info('Balance refunded via status update', { orderId: id, amount: prev.price });
+  }
+
   const result = await query(
     'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, status',
     [status, id]
   );
-
-  if (!result.rows.length) {
-    res.status(404).json({ success: false, message: 'Order not found' });
-    return;
-  }
   res.json({ success: true, order: result.rows[0] });
 };
 
