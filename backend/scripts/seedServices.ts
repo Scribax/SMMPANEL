@@ -48,151 +48,173 @@ interface ServiceDef {
 }
 
 const SERVICES_TO_SEED: ServiceDef[] = [
-  // ── INSTAGRAM FOLLOWERS ───────────────────────────────────────────────
-  // 23955: Real Accounts With Posts | No Refill | Instant | $0.33/1000
+
+  // ════════════════════════════════════════════════════════════════
+  // INSTAGRAM
+  // ════════════════════════════════════════════════════════════════
+
+  // ── Followers ─────────────────────────────────────────────────
+  // Cuentas reales con posts, bajo drop, sin reposición. El más barato.
   {
     name: 'Instagram Followers – Real',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores reales con publicaciones activas. Entrega instantánea.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23955,
+    description: 'Seguidores reales con publicaciones activas. Bajo drop. Entrega instantánea.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 23955,  // $0.33/1000 | No Refill | Max 100K
   },
-  // 23958: Real Accounts With Posts | 30 Days Refill ♻️ | Instant | $0.42/1000
+  // Cuentas reales con posts, bajo drop, reposición 30 días.
   {
     name: 'Instagram Followers – Premium',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores reales con reposición automática 30 días. Si caen, se reponen.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23958,
+    description: 'Seguidores reales con reposición automática 30 días. Si caen, se reponen gratis.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 23958,  // $0.42/1000 | 30 Days Refill ♻️ | Max 100K
   },
-  // 23962: Real Accounts With Posts | Lifetime Refill ♻️ | Instant | $0.53/1000
+  // Cuentas reales con posts, bajo drop, reposición de por vida.
   {
     name: 'Instagram Followers – Lifetime',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores con garantía de reposición de por vida. La mejor calidad.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23962,
+    description: 'Seguidores reales con garantía de reposición de por vida. La mejor calidad disponible.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 23962,  // $0.53/1000 | Lifetime Refill ♻️ | Max 100K
   },
 
-  // ── INSTAGRAM LIKES ───────────────────────────────────────────────────
-  // 23936: HQ Accounts | Lifetime Refill ♻️ | Instant | $0.07/1000
+  // ── Likes ──────────────────────────────────────────────────────
+  // HQ, bajo drop, reposición lifetime. Mejor calidad/precio del proveedor.
   {
     name: 'Instagram Likes – Fast',
     platform: 'instagram', category: 'likes',
-    description: 'Likes de cuentas reales. Entrega instantánea con reposición de por vida.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23936,
+    description: 'Likes de cuentas reales HQ. Entrega instantánea con reposición de por vida.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 23936,  // $0.07/1000 | Lifetime Refill ♻️ | Max 100K
   },
 
-  // ── INSTAGRAM VIEWS ───────────────────────────────────────────────────
-  // 23935: Video Views | All Link | Cancel Enable | Day 1M | $0.0007/1000
+  // ── Views ──────────────────────────────────────────────────────
+  // Video views para reels y posts. Hasta 1M/día. El más barato del mercado.
   {
     name: 'Instagram Views – Reels & Posts',
     platform: 'instagram', category: 'views',
     description: 'Vistas para reels y posts. Ultra rápido, hasta 1 millón por día.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23935,
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 23935,  // $0.0007/1000 | No Refill | Max Unlimited
+  },
+  // Story views. Hasta 1M/día.
+  {
+    name: 'Instagram Story Views',
+    platform: 'instagram', category: 'views',
+    description: 'Vistas para tus historias de Instagram. Hasta 1M/día.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 12917,  // $0.005/1000 | No Refill | Max 1M
   },
 
-  // ── TIKTOK FOLLOWERS ──────────────────────────────────────────────────
-  // 23949: LQ Accounts | 7 Days Refill ♻️ | Instant | Day 200K | $1.68/1000
+  // ════════════════════════════════════════════════════════════════
+  // TIKTOK
+  // ════════════════════════════════════════════════════════════════
+
+  // ── Followers ─────────────────────────────────────────────────
+  // LQ pero funcional, reposición 7 días. El más barato disponible.
   {
     name: 'TikTok Followers – Fast',
     platform: 'tiktok', category: 'followers',
-    description: 'Seguidores TikTok de entrega instantánea. Velocidad hasta 200K/día.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23949,
+    description: 'Seguidores TikTok de entrega instantánea con reposición 7 días. Hasta 5M.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 23949,  // $1.68/1000 | 7 Days Refill ♻️ | Max 5M
   },
-  // 23951: LQ Accounts | 30 Days Refill ♻️ | Instant | Day 200K | $1.84/1000
+  // LQ, reposición 30 días. Mejor garantía.
   {
     name: 'TikTok Followers – Premium',
     platform: 'tiktok', category: 'followers',
-    description: 'Seguidores TikTok con reposición automática 30 días.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23951,
+    description: 'Seguidores TikTok con reposición automática 30 días. Hasta 5M.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 23951,  // $1.84/1000 | 30 Days Refill ♻️ | Max 5M
   },
 
-  // ── TIKTOK LIKES ──────────────────────────────────────────────────────
-  // 23937: LQ Accounts | 30 Days Refill ♻️ | Instant | Day 250K | $0.05/1000
+  // ── Likes ──────────────────────────────────────────────────────
+  // Bot accounts, reposición 30 días. Mejor precio con refill.
   {
     name: 'TikTok Likes – Fast',
     platform: 'tiktok', category: 'likes',
-    description: 'Likes instantáneos para videos de TikTok. Hasta 250K/día.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23937,
+    description: 'Likes instantáneos para videos de TikTok con reposición 30 días.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 22429,  // $0.03/1000 | 30 Days Refill ♻️ | Max 1M
   },
-  // 23938: LQ Accounts | 365 Days Refill ♻️ | Instant | Day 250K | $0.06/1000
+  // Bot accounts, reposición 365 días. Mejor garantía.
   {
     name: 'TikTok Likes – Premium',
     platform: 'tiktok', category: 'likes',
     description: 'Likes TikTok con reposición automática 365 días.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23938,
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 22430,  // $0.03/1000 | 365 Days Refill ♻️ | Max 1M
   },
 
-  // ── TIKTOK VIEWS ──────────────────────────────────────────────────────
-  // 23946: HQ | No Refill | Instant | Day 100M | $0.006/1000
+  // ── Views ──────────────────────────────────────────────────────
+  // HQ, sin refill, más barato. Hasta 100M/día.
   {
     name: 'TikTok Views – Fast',
     platform: 'tiktok', category: 'views',
-    description: 'Vistas para videos TikTok. Ultra rápido, hasta 100M/día.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23946,
+    description: 'Vistas para videos TikTok. HQ, ultra rápido, hasta 100M/día.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 23157,  // $0.0052/1000 | No Refill | Max Unlimited
   },
-  // 23947: HQ | 30 Days Refill ♻️ | Instant | Day 100M | $0.007/1000
+  // HQ, reposición 30 días. Más garantía.
   {
     name: 'TikTok Views – Premium',
     platform: 'tiktok', category: 'views',
-    description: 'Vistas TikTok con reposición automática 30 días.',
-    deliverySpeed: 'Instant',
-    providerServiceId: 23947,
+    description: 'Vistas TikTok HQ con reposición automática 30 días.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 23947,  // $0.007/1000 | 30 Days Refill ♻️ | Max Unlimited
   },
 
-  // ── YOUTUBE VIEWS ─────────────────────────────────────────────────────
-  // 23911: Original Looking Views | 30 Days Refill | Instant | 100K/Day | $2.00/1000
+  // ════════════════════════════════════════════════════════════════
+  // YOUTUBE
+  // ════════════════════════════════════════════════════════════════
+
+  // ── Views ──────────────────────────────────────────────────────
+  // Real engagement, retención real, reposición 30 días. Mejor calidad.
   {
     name: 'YouTube Views – Real',
     platform: 'youtube', category: 'views',
-    description: 'Vistas reales de aspecto orgánico. Retención alta, hasta 100K/día.',
-    deliverySpeed: '0-3 hours',
-    providerServiceId: 23911,
+    description: 'Vistas con engagement real y alta retención. Reposición 30 días. Hasta 1M.',
+    deliverySpeed: '0-1 hora',
+    providerServiceId: 22676,  // $0.32/1000 | 30 Days Refill ♻️ | Max Unlimited
   },
-  // 23913: External Ads Views | Instant | 175K/Day | $2.15/1000
+  // Real engagement, retención real, reposición 365 días. Mejor garantía.
   {
-    name: 'YouTube Views – Fast',
+    name: 'YouTube Views – Premium',
     platform: 'youtube', category: 'views',
-    description: 'Vistas YouTube de alta velocidad vía ads externos. Hasta 175K/día.',
-    deliverySpeed: '0-3 hours',
-    providerServiceId: 23913,
+    description: 'Vistas reales con reposición automática 365 días. La mejor garantía.',
+    deliverySpeed: '0-1 hora',
+    providerServiceId: 22677,  // $0.52/1000 | 365 Days Refill ♻️ | Max Unlimited
   },
 
-  // ── YOUTUBE LIKES ─────────────────────────────────────────────────────
-  // 23944: 365 Day Refill | Max 20K | Instant | $1.25/1000
+  // ── Likes ──────────────────────────────────────────────────────
+  // Reposición 365 días. Único disponible de buena calidad.
   {
-    name: 'YouTube Likes – Fast',
+    name: 'YouTube Likes',
     platform: 'youtube', category: 'likes',
-    description: 'Likes para videos de YouTube con reposición 365 días.',
+    description: 'Likes para videos de YouTube con reposición 365 días. Hasta 50K.',
     deliverySpeed: '0-15 min',
-    providerServiceId: 23944,
-  },
-  // 23972: HQ Quality | Instant Superfast | 30 Days Refill | $3.20/1000
-  {
-    name: 'YouTube Likes – Premium',
-    platform: 'youtube', category: 'likes',
-    description: 'Likes YouTube de alta calidad con reposición 30 días.',
-    deliverySpeed: '0-15 min',
-    providerServiceId: 23972,
+    providerServiceId: 23944,  // $1.25/1000 | 365 Days Refill | Max 50K
   },
 
-  // ── YOUTUBE SUBSCRIBERS ───────────────────────────────────────────────
-  // 23945: YouTube Subscribers + Watch Time | 30 Days Refill | $20.80/1000
+  // ── Subscribers ────────────────────────────────────────────────
+  // HQ, Lifetime refill. Mejor relación calidad/precio para subs.
   {
-    name: 'YouTube Subscribers',
+    name: 'YouTube Subscribers – Real',
     platform: 'youtube', category: 'followers',
-    description: 'Suscriptores reales para tu canal de YouTube con reposición 30 días.',
-    deliverySpeed: '0-6 hours',
-    providerServiceId: 23945,
+    description: 'Suscriptores HQ para tu canal de YouTube. Reposición de por vida.',
+    deliverySpeed: '0-6 horas',
+    providerServiceId: 8560,   // $5.69/1000 | Lifetime Refill | Max 50K
   },
+  // Alta calidad, reposición 7 días, máximo 100K.
+  {
+    name: 'YouTube Subscribers – Premium',
+    platform: 'youtube', category: 'followers',
+    description: 'Suscriptores de alta calidad con reposición 7 días. Hasta 100K.',
+    deliverySpeed: '0-6 horas',
+    providerServiceId: 20738,  // $6.40/1000 | 7 Days Refill ♻️ | Max 100K
+  },
+
 ];
 
 // ── Helper ─────────────────────────────────────────────────────────────────
