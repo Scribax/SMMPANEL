@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Zap, Instagram, Twitter, Youtube } from 'lucide-react';
+import Image from 'next/image';
+import { Instagram, Twitter, Youtube } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -8,13 +9,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
+              <Image src="/logo.jpeg" alt="FollowArg" width={32} height={32} className="rounded-lg" />
               <span className="text-xl font-bold gradient-text">FollowArg</span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-              La plataforma más rápida y confiable para crecer en redes sociales. Resultados reales, entrega garantizada.
+              Seguidores, likes y vistas reales para Instagram, TikTok y YouTube. Pagás con MercadoPago, sin contraseña.
             </p>
             <div className="flex items-center gap-3 mt-6">
               <a href="#" className="w-9 h-9 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-white transition-all">
