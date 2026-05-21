@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { query } from '../config/database';
+import { query, getClient } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 import { createPaymentPreference, getPaymentDetails } from '../services/paymentService';
 import { sendOrderToProvider } from '../services/providerService';
@@ -417,22 +417,36 @@ export const verifyDeposit = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const updated = await query<{ amount: number; user_id: string }>(
-      `UPDATE deposits SET status = 'approved', external_id = $1, updated_at = NOW()
-       WHERE id = $2 AND status = 'pending'
-       RETURNING amount, user_id`,
-      [String(paymentId), depositId]
-    );
-
-    if (!updated.rows.length) {
-      res.json({ success: true, alreadyProcessed: true, amount: dep.amount });
-      return;
+    // Use SELECT FOR UPDATE inside a transaction to prevent double-credit race condition
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
+      const locked = await client.query<{ amount: number; user_id: string; status: string }>(
+        `SELECT amount, user_id, status FROM deposits WHERE id = $1 FOR UPDATE`,
+        [depositId]
+      );
+      if (!locked.rows.length || locked.rows[0].status !== 'pending') {
+        await client.query('ROLLBACK');
+        res.json({ success: true, alreadyProcessed: true, amount: dep.amount });
+        return;
+      }
+      await client.query(
+        `UPDATE deposits SET status = 'approved', external_id = $1, updated_at = NOW() WHERE id = $2`,
+        [String(paymentId), depositId]
+      );
+      await client.query(
+        'UPDATE users SET balance = balance + $1 WHERE id = $2',
+        [locked.rows[0].amount, locked.rows[0].user_id]
+      );
+      await client.query('COMMIT');
+      logger.info('Deposit verified and credited via fallback', { depositId, amount: locked.rows[0].amount, userId });
+      res.json({ success: true, amount: locked.rows[0].amount });
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
     }
-
-    await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [updated.rows[0].amount, updated.rows[0].user_id]);
-
-    logger.info('Deposit verified and credited via fallback', { depositId, amount: updated.rows[0].amount, userId });
-    res.json({ success: true, amount: updated.rows[0].amount });
   } catch (err) {
     logger.error('Error verifying deposit', { error: err });
     res.status(500).json({ success: false, message: 'Error verifying payment' });

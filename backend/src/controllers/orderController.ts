@@ -115,7 +115,7 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
   const userId = req.user!.id;
 
   const result = await query<OrderRow>(
-    'SELECT id, status FROM orders WHERE id = $1 AND user_id = $2',
+    'SELECT id, status, price, user_id FROM orders WHERE id = $1 AND user_id = $2',
     [id, userId]
   );
 
@@ -134,6 +134,12 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
     `UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
     [id]
   );
+
+  // Devolver saldo si ya fue descontado (status 'pending' = ya pagado con balance)
+  if (order.status === 'pending' && order.price > 0 && order.user_id) {
+    await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [order.price, order.user_id]);
+    logger.info('Balance refunded on cancel', { orderId: id, amount: order.price, userId });
+  }
 
   res.json({ success: true, message: 'Order cancelled successfully' });
 };

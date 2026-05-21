@@ -27,7 +27,7 @@ const baseTemplate = (content: string): string => `
         <!-- Header -->
         <tr>
           <td align="center" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:16px 16px 0 0;padding:32px 40px;">
-            <div style="font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">⚡ FollowArg</div>
+            <div style="font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">FollowArg</div>
             <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:4px;">Social Media Growth Platform</div>
           </td>
         </tr>

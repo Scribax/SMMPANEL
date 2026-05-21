@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, Package, ArrowRight, Loader2 } from 'lucide-react';
-import { paymentsApi } from '@/lib/api';
+import { paymentsApi, authApi } from '@/lib/api';
 import { formatCurrency, STATUS_LABELS } from '@/lib/utils';
+import { isAuthenticated, setAuth } from '@/lib/auth';
 
 function PaymentSuccessContent() {
   const params = useSearchParams();
@@ -21,7 +22,15 @@ function PaymentSuccessContent() {
   useEffect(() => {
     if (isDeposit && paymentId) {
       paymentsApi.verifyDeposit(paymentId)
-        .then(() => setDepositCredited(true))
+        .then(() => {
+          setDepositCredited(true);
+          if (isAuthenticated()) {
+            authApi.getMe().then((res) => {
+              const token = localStorage.getItem('FollowArg_token') ?? '';
+              setAuth(token, res.data.user);
+            }).catch(() => {});
+          }
+        })
         .catch(() => {})
         .finally(() => setLoading(false));
       return;
