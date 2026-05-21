@@ -18,7 +18,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const PROVIDER_URL   = 'https://smmkings.com/api/v2';
 const PROVIDER_KEY   = '7e16ca9f7f61e1dbadcbcf1c751ee2ac';
-const PROVIDER_ID    = 'bc54c9aa-4f6f-49d1-a32d-d859cd3cc3ca';
+const PROVIDER_NAME  = 'SMMKings';
 const EXCHANGE_RATE  = parseFloat(process.env.EXCHANGE_RATE ?? '1500');
 const MARGIN         = parseFloat(process.env.PRICE_MARGIN  ?? '2.5');
 
@@ -225,6 +225,10 @@ async function main() {
   const priceMap = new Map<number, ProviderService>();
   provSvcs.forEach((s) => priceMap.set(s.service, s));
   console.log(`✅ ${provSvcs.length} servicios recibidos de SMMKings.\n`);
+
+  const provRow = await db.query(`SELECT id FROM providers WHERE name = $1 AND is_active = true`, [PROVIDER_NAME]);
+  if (!provRow.rows.length) { console.error('❌ Proveedor SMMKings no encontrado en DB.'); process.exit(1); }
+  const PROVIDER_ID = provRow.rows[0].id;
 
   let created = 0, updated = 0, skipped = 0;
 
