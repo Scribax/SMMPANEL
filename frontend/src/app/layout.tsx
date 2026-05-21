@@ -3,14 +3,19 @@ import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'FollowArg — Social Media Growth Platform',
+  title: 'FollowArg — Crecé en redes sociales',
   description:
-    'Grow your Instagram, TikTok, and YouTube presence with real followers, likes, and views. Fast delivery, secure payments.',
-  keywords: ['instagram followers', 'tiktok followers', 'youtube views', 'social media growth'],
+    'Seguidores, likes y vistas reales para Instagram, TikTok y YouTube. Entrega rápida, pagos seguros con MercadoPago.',
+  keywords: ['seguidores instagram', 'seguidores tiktok', 'vistas youtube', 'comprar seguidores argentina'],
+  icons: {
+    icon: '/logo.jpeg',
+    apple: '/logo.jpeg',
+  },
   openGraph: {
-    title: 'FollowArg — Social Media Growth Platform',
-    description: 'Boost your social media presence instantly.',
+    title: 'FollowArg — Crecé en redes sociales',
+    description: 'Seguidores, likes y vistas reales. Entrega instantánea, pagás con MercadoPago.',
     type: 'website',
+    images: [{ url: '/logo.jpeg' }],
   },
 };
 

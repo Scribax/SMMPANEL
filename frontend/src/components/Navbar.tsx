@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Menu, X, User, LogOut, LayoutDashboard, ShieldCheck, Wallet } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, ShieldCheck, Wallet } from 'lucide-react';
 import { getStoredUser, clearAuth, isAuthenticated } from '@/lib/auth';
 import { User as UserType } from '@/types';
 import { cn } from '@/lib/utils';
@@ -53,9 +54,13 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg shadow-primary-500/30 group-hover:shadow-primary-500/50 transition-shadow">
-              <Zap className="w-4 h-4 text-white" />
-            </div>
+            <Image
+              src="/logo.jpeg"
+              alt="FollowArg"
+              width={36}
+              height={36}
+              className="rounded-lg shadow-lg shadow-primary-500/30 group-hover:shadow-primary-500/50 transition-shadow"
+            />
             <span className="text-xl font-bold gradient-text">FollowArg</span>
           </Link>
 
