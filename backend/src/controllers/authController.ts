@@ -78,7 +78,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   res.status(201).json({
     success: true,
     token,
-    user: { id: user.id, email: user.email, name: user.name, role: user.role },
+    user: { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance ?? 0 },
   });
 };
 

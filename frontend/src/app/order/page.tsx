@@ -146,6 +146,19 @@ function OrderContent() {
     if (!link.trim())  { toast.error('Ingresá tu usuario o link'); return; }
     if (!email.trim()) { toast.error('Ingresá tu email'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Email inválido'); return; }
+    const linkVal = link.trim();
+    if (isFollowers) {
+      const username = linkVal.replace(/^@/, '').replace(/^https?:\/\/.+\//, '').replace(/\/$/, '');
+      if (!username || username.length < 2 || /\s/.test(username)) {
+        toast.error('Usuario inválido. Ingresá solo el nombre de usuario, ej: @tuusuario');
+        return;
+      }
+    } else {
+      if (!linkVal.startsWith('http')) {
+        toast.error('Ingresá el link completo del post, ej: https://www.instagram.com/p/...');
+        return;
+      }
+    }
 
     if (!hasEnoughBalance) {
       setShowFundsModal(true);

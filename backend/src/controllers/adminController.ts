@@ -9,12 +9,14 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
   const [users, orders, revenue, todayRevenue, monthRevenue, recentOrders] = await Promise.all([
     query<{ count: string }>('SELECT COUNT(*) FROM users WHERE role = $1', ['user']),
     query<{ count: string }>('SELECT COUNT(*) FROM orders'),
-    query<{ total: string }>(`SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE status = 'approved'`),
     query<{ total: string }>(
-      `SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE status = 'approved' AND DATE(created_at) = CURRENT_DATE`
+      `SELECT COALESCE(SUM(price), 0) AS total FROM orders WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed')`
     ),
     query<{ total: string }>(
-      `SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE status = 'approved' AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())`
+      `SELECT COALESCE(SUM(price), 0) AS total FROM orders WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed') AND DATE(created_at) = CURRENT_DATE`
+    ),
+    query<{ total: string }>(
+      `SELECT COALESCE(SUM(price), 0) AS total FROM orders WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed') AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())`
     ),
     query(
       `SELECT o.id, o.link, o.quantity, o.price, o.status, o.created_at,
@@ -29,10 +31,10 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
 
   const dailySales = await query<{ date: string; revenue: string; orders: string }>(
     `SELECT DATE(created_at) AS date,
-            COALESCE(SUM(amount), 0) AS revenue,
+            COALESCE(SUM(price), 0) AS revenue,
             COUNT(*) AS orders
-     FROM payments
-     WHERE status = 'approved'
+     FROM orders
+     WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed')
        AND created_at >= NOW() - INTERVAL '30 days'
      GROUP BY DATE(created_at)
      ORDER BY date ASC`

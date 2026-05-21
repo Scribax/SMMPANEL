@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { authApi } from '@/lib/api';
 import { setAuth } from '@/lib/auth';
@@ -45,9 +46,7 @@ export default function LoginPage() {
       >
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg shadow-primary-500/30">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
+            <Image src="/logo.jpeg" alt="FollowArg" width={40} height={40} className="rounded-xl shadow-lg shadow-primary-500/30" />
             <span className="text-2xl font-bold gradient-text">FollowArg</span>
           </Link>
           <h1 className="text-3xl font-black text-white">Bienvenido de vuelta</h1>
