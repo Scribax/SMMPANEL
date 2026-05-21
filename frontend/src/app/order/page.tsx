@@ -294,7 +294,10 @@ function OrderContent() {
                       >
                         <div>
                           <div className="text-white font-semibold">{svc.name}</div>
-                          <div className="text-slate-400 text-sm mt-1 flex items-center gap-3">
+                          {svc.description && (
+                            <div className="text-slate-400 text-xs mt-1 mb-1">{svc.description}</div>
+                          )}
+                          <div className="text-slate-500 text-xs mt-1 flex items-center gap-3">
                             <span>⚡ {svc.delivery_speed}</span>
                             <span>📦 {formatNumber(svc.min_quantity)}–{formatNumber(svc.max_quantity)}</span>
                           </div>
