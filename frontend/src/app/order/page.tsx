@@ -17,7 +17,7 @@ import { formatCurrency, formatNumber } from '@/lib/utils';
 const QUANTITY_PRESETS: Record<string, number[]> = {
   followers: [100, 250, 500, 1000, 2500, 5000, 10000],
   likes:     [50,  100, 250, 500,  1000, 2500, 5000],
-  views:     [500, 1000, 2500, 5000, 10000, 50000, 100000],
+  views:     [100, 250, 500, 1000, 2500, 5000, 10000, 50000, 100000],
   comments:  [10,  25,  50,  100,  250,  500],
 };
 const DEFAULT_PRESETS = [100, 250, 500, 1000, 2500, 5000];
