@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
 import {
   Zap, TrendingUp, Shield, Clock, Users, Heart, Eye,
-  Star, ChevronRight, CheckCircle, ArrowRight, Play,
+  ChevronRight, CheckCircle, ArrowRight, Play,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -14,44 +14,36 @@ import { Service } from '@/types';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 
 const STATS = [
-  { label: 'Pedidos entregados', value: '1.2M+', icon: Zap },
-  { label: 'Clientes satisfechos', value: '85K+', icon: Users },
-  { label: 'Entrega prom.', value: '< 1hr', icon: Clock },
-  { label: 'Disponibilidad', value: '99.9%', icon: Shield },
+  { label: 'Entrega promedio', value: '< 1hr', icon: Zap },
+  { label: 'Plataformas', value: '3', icon: Users },
+  { label: 'Uptime del sistema', value: '99.9%', icon: Shield },
+  { label: 'Soporte disponible', value: '7 días', icon: Clock },
 ];
 
-const TESTIMONIALS = [
+const FAQS = [
   {
-    name: 'Ana Costa',
-    role: 'Creadora de contenido',
-    avatar: 'A',
-    text: '¡FollowArg es increíble! Mi Instagram creció de 2K a 50K seguidores en solo 3 semanas. La entrega es super rápida y la calidad es excelente.',
-    stars: 5,
-    platform: 'instagram',
+    q: '¿Necesito darles mi contraseña?',
+    a: 'No. Nunca pedimos tu contraseña. Solo necesitamos el link de tu perfil o publicación. Tu cuenta está 100% segura.',
   },
   {
-    name: 'Carlos Lima',
-    role: 'Gerente de marca',
-    avatar: 'C',
-    text: 'Usamos FollowArg para todas nuestras cuentas de marca. Los resultados son consistentes y el soporte siempre ayuda. La mejor inversión que hicimos.',
-    stars: 5,
-    platform: 'tiktok',
+    q: '¿Cuánto tarda en llegar el pedido?',
+    a: 'La mayoría de los pedidos comienzan en menos de 1 hora. Los seguidores y suscriptores pueden tardar hasta 24hs según la cantidad.',
   },
   {
-    name: 'Mariana Silva',
-    role: 'YouTuber',
-    avatar: 'M',
-    text: 'Mi canal de YouTube llegó a 100K vistas en mi nuevo video usando FollowArg. Realmente ayuda con el algoritmo. ¡Totalmente recomendado!',
-    stars: 5,
-    platform: 'youtube',
+    q: '¿Los seguidores son reales?',
+    a: 'Trabajamos con proveedores que ofrecen cuentas reales con publicaciones activas y bajo drop. Tenemos opciones con reposición automática si alguno cae.',
   },
   {
-    name: 'Pedro Alves',
-    role: 'Dueño de e-commerce',
-    avatar: 'P',
-    text: 'El servicio de likes de Instagram es top. Mis posts de productos se ven mucho más creibles. ¡Las ventas también subieron!',
-    stars: 5,
-    platform: 'instagram',
+    q: '¿Cómo pago?',
+    a: 'Cargás saldo en tu cuenta vía MercadoPago (tarjeta, débito o transferencia) y lo usás para hacer pedidos. Sin suscripciones ni cargos ocultos.',
+  },
+  {
+    q: '¿Qué pasa si mi pedido no llega?',
+    a: 'Podés hacer seguimiento desde tu panel. Si hay algún problema, escribinos y lo resolvemos. Ofrecemos reposición o reembolso según el caso.',
+  },
+  {
+    q: '¿Funciona para cuentas privadas?',
+    a: 'Para seguidores tu cuenta tiene que estar en público durante la entrega. Para likes y vistas podés tener la cuenta privada.',
   },
 ];
 
@@ -327,9 +319,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── TESTIMONIALS ──────────────────────────────────────────────────── */}
+      {/* ─── FAQ ───────────────────────────────────────────────────────────── */}
       <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             variants={fadeUp}
             initial="hidden"
@@ -338,37 +330,31 @@ export default function HomePage() {
             className="text-center mb-16"
           >
             <h2 className="section-title">
-              Lo que dicen nuestros <span className="gradient-text">clientes</span>
+              Preguntas <span className="gradient-text">frecuentes</span>
             </h2>
             <p className="section-subtitle mx-auto">
-              Sumáte a miles de personas que ya hacen crecer sus redes con FollowArg.
+              Todo lo que necesitás saber antes de hacer tu primer pedido.
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {TESTIMONIALS.map((t, i) => (
+          <div className="space-y-4">
+            {FAQS.map((faq, i) => (
               <motion.div
-                key={t.name}
+                key={i}
                 variants={fadeUp}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: i * 0.07 }}
                 className="glass-card p-6 hover:border-primary-500/20 transition-all"
               >
-                <div className="flex items-center gap-1 mb-4">
-                  {Array.from({ length: t.stars }).map((_, j) => (
-                    <Star key={j} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-slate-400 text-sm leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                    {t.avatar}
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary-500/20 border border-primary-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary-400 text-xs font-bold">?</span>
                   </div>
                   <div>
-                    <div className="text-white text-sm font-medium">{t.name}</div>
-                    <div className="text-slate-500 text-xs">{t.role}</div>
+                    <div className="text-white font-semibold mb-2">{faq.q}</div>
+                    <div className="text-slate-400 text-sm leading-relaxed">{faq.a}</div>
                   </div>
                 </div>
               </motion.div>
@@ -393,7 +379,7 @@ export default function HomePage() {
                 ¿Listo para <span className="gradient-text">crecer</span>?
               </h2>
               <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
-                Sumáte a +85.000 creadores y marcas que confían en FollowArg para crecer en redes.
+                Seguidores, likes y vistas reales para Instagram, TikTok y YouTube. Pagás con MercadoPago, entrega instantánea.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/order" className="btn-primary text-lg px-10 py-4 flex items-center gap-2 justify-center">
@@ -404,7 +390,7 @@ export default function HomePage() {
                 </Link>
               </div>
               <div className="flex items-center justify-center gap-6 mt-8">
-                {['Sin suscripción', 'Entrega instantánea', 'Garantía de resultados'].map((f) => (
+                {['Sin suscripción', 'Entrega instantánea', 'Sin contraseña requerida'].map((f) => (
                   <div key={f} className="flex items-center gap-1.5 text-slate-400 text-sm">
                     <CheckCircle className="w-4 h-4 text-primary-400" />
                     {f}
