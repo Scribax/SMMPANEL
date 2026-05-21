@@ -1,9 +1,12 @@
 /**
  * seedServices.ts
- * Consulta la API del proveedor y crea/actualiza servicios en la DB
- * para Instagram, TikTok y YouTube.
+ * Usa IDs EXACTOS del proveedor SMM Engineer para crear/actualizar
+ * servicios en la DB. Sin keyword matching — sin ambigüedades.
  *
- * Uso: DATABASE_URL="..." npm run seed:services
+ * Uso: DATABASE_URL="postgresql://...@127.0.0.1:5432/boostins?sslmode=disable" npm run seed:services
+ *
+ * Para cambiar tipo de cambio o margen:
+ *   EXCHANGE_RATE=1500 PRICE_MARGIN=2.5 DATABASE_URL="..." npm run seed:services
  */
 
 import axios from 'axios';
@@ -15,7 +18,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const PROVIDER_URL  = process.env.DEFAULT_PROVIDER_URL ?? 'https://smmengineer.com/api/v2';
 const PROVIDER_KEY  = process.env.DEFAULT_PROVIDER_KEY ?? '';
-const EXCHANGE_RATE = parseFloat(process.env.EXCHANGE_RATE ?? '1200');
+const EXCHANGE_RATE = parseFloat(process.env.EXCHANGE_RATE ?? '1500');
 const MARGIN        = parseFloat(process.env.PRICE_MARGIN ?? '2.5');
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -32,237 +35,167 @@ interface ProviderService {
   cancel: boolean;
 }
 
-// ── Definición de servicios a crear ────────────────────────────────────────
+// ── Definición con IDs EXACTOS del proveedor ──────────────────────────────
+// Cada servicio apunta a un provider_service_id único y específico.
+// Para ver todos los servicios disponibles: https://smmengineer.com/api/v2?key=KEY&action=services
 interface ServiceDef {
   name: string;
   platform: 'instagram' | 'tiktok' | 'youtube';
   category: 'followers' | 'likes' | 'views' | 'comments';
   description: string;
   deliverySpeed: string;
-  keywords: string[];
-  exclude?: string[];
-  preferRefill?: boolean;
+  providerServiceId: number;  // ID exacto del proveedor — sin ambigüedades
 }
 
 const SERVICES_TO_SEED: ServiceDef[] = [
-  // ── INSTAGRAM ─────────────────────────────────────────────────────────
+  // ── INSTAGRAM FOLLOWERS ───────────────────────────────────────────────
+  // 23955: Real Accounts With Posts | No Refill | Instant | $0.33/1000
   {
     name: 'Instagram Followers – Real',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores reales con perfil activo. Entrega instantánea.',
-    deliverySpeed: '0-1 hour',
-    keywords: ['instagram', 'followers', 'real'],
-    exclude: ['premium', 'arab', 'brazil', 'turkey', 'india', 'drip', 'targeted'],
-    preferRefill: false,
+    description: 'Seguidores reales con publicaciones activas. Entrega instantánea.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23955,
   },
+  // 23958: Real Accounts With Posts | 30 Days Refill ♻️ | Instant | $0.42/1000
   {
     name: 'Instagram Followers – Premium',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores premium con reposición automática 30 días.',
-    deliverySpeed: '0-2 hours',
-    keywords: ['instagram', 'followers', 'real'],
-    exclude: ['arab', 'brazil', 'turkey', 'india', 'drip', 'targeted'],
-    preferRefill: true,
+    description: 'Seguidores reales con reposición automática 30 días. Si caen, se reponen.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23958,
   },
+  // 23962: Real Accounts With Posts | Lifetime Refill ♻️ | Instant | $0.53/1000
   {
-    name: 'Instagram Followers – Argentina',
+    name: 'Instagram Followers – Lifetime',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores argentinos reales. Ideal para cuentas locales.',
-    deliverySpeed: '0-3 hours',
-    keywords: ['instagram', 'followers'],
-    exclude: ['drip', 'targeted', 'india', 'turkey'],
-    preferRefill: true,
+    description: 'Seguidores con garantía de reposición de por vida. La mejor calidad.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23962,
   },
+
+  // ── INSTAGRAM LIKES ───────────────────────────────────────────────────
+  // 23936: HQ Accounts | Lifetime Refill ♻️ | Instant | $0.07/1000
   {
     name: 'Instagram Likes – Fast',
     platform: 'instagram', category: 'likes',
-    description: 'Likes instantáneos de cuentas reales.',
-    deliverySpeed: '0-1 hour',
-    keywords: ['instagram', 'likes'],
-    exclude: ['comment', 'view', 'story', 'reel', 'arab', 'brazil', 'targeted', 'drip'],
-    preferRefill: false,
+    description: 'Likes de cuentas reales. Entrega instantánea con reposición de por vida.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23936,
   },
-  {
-    name: 'Instagram Likes – Premium',
-    platform: 'instagram', category: 'likes',
-    description: 'Likes premium con reposición automática.',
-    deliverySpeed: '0-2 hours',
-    keywords: ['instagram', 'likes'],
-    exclude: ['comment', 'view', 'story', 'targeted', 'drip'],
-    preferRefill: true,
-  },
+
+  // ── INSTAGRAM VIEWS ───────────────────────────────────────────────────
+  // 23935: Video Views | All Link | Cancel Enable | Day 1M | $0.0007/1000
   {
     name: 'Instagram Views – Reels & Posts',
     platform: 'instagram', category: 'views',
-    description: 'Vistas para reels y posts. Entrega ultra rápida.',
-    deliverySpeed: '0-30 min',
-    keywords: ['instagram', 'video', 'views'],
-    exclude: ['story', 'comment', 'like', 'follower', 'drip'],
-    preferRefill: false,
-  },
-  {
-    name: 'Instagram Story Views',
-    platform: 'instagram', category: 'views',
-    description: 'Vistas para tus historias de Instagram.',
-    deliverySpeed: '0-1 hour',
-    keywords: ['instagram', 'story', 'views'],
-    exclude: ['poll', 'comment', 'follower', 'drip'],
-    preferRefill: false,
-  },
-  {
-    name: 'Instagram Comments – Random',
-    platform: 'instagram', category: 'comments',
-    description: 'Comentarios aleatorios positivos en español.',
-    deliverySpeed: '0-2 hours',
-    keywords: ['instagram', 'comments', 'random'],
-    exclude: ['custom', 'drip', 'targeted'],
-    preferRefill: false,
+    description: 'Vistas para reels y posts. Ultra rápido, hasta 1 millón por día.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23935,
   },
 
-  // ── TIKTOK ────────────────────────────────────────────────────────────
-  {
-    name: 'TikTok Followers – Real',
-    platform: 'tiktok', category: 'followers',
-    description: 'Seguidores reales para TikTok. Entrega rápida.',
-    deliverySpeed: '0-2 hours',
-    keywords: ['tiktok', 'followers'],
-    exclude: ['arab', 'brazil', 'turkey', 'india', 'drip', 'targeted', 'lq'],
-    preferRefill: true,
-  },
+  // ── TIKTOK FOLLOWERS ──────────────────────────────────────────────────
+  // 23949: LQ Accounts | 7 Days Refill ♻️ | Instant | Day 200K | $1.68/1000
   {
     name: 'TikTok Followers – Fast',
     platform: 'tiktok', category: 'followers',
-    description: 'Seguidores TikTok de entrega instantánea.',
-    deliverySpeed: '0-1 hour',
-    keywords: ['tiktok', 'followers'],
-    exclude: ['arab', 'brazil', 'turkey', 'india', 'drip', 'targeted'],
-    preferRefill: false,
+    description: 'Seguidores TikTok de entrega instantánea. Velocidad hasta 200K/día.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23949,
   },
+  // 23951: LQ Accounts | 30 Days Refill ♻️ | Instant | Day 200K | $1.84/1000
+  {
+    name: 'TikTok Followers – Premium',
+    platform: 'tiktok', category: 'followers',
+    description: 'Seguidores TikTok con reposición automática 30 días.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23951,
+  },
+
+  // ── TIKTOK LIKES ──────────────────────────────────────────────────────
+  // 23937: LQ Accounts | 30 Days Refill ♻️ | Instant | Day 250K | $0.05/1000
   {
     name: 'TikTok Likes – Fast',
     platform: 'tiktok', category: 'likes',
-    description: 'Likes instantáneos para videos de TikTok.',
-    deliverySpeed: '0-30 min',
-    keywords: ['tiktok', 'likes'],
-    exclude: ['comment', 'view', 'follower', 'arab', 'brazil', 'targeted', 'drip'],
-    preferRefill: false,
+    description: 'Likes instantáneos para videos de TikTok. Hasta 250K/día.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23937,
   },
+  // 23938: LQ Accounts | 365 Days Refill ♻️ | Instant | Day 250K | $0.06/1000
   {
     name: 'TikTok Likes – Premium',
     platform: 'tiktok', category: 'likes',
-    description: 'Likes premium con reposición 30 días.',
-    deliverySpeed: '0-1 hour',
-    keywords: ['tiktok', 'likes'],
-    exclude: ['comment', 'view', 'follower', 'targeted', 'drip'],
-    preferRefill: true,
+    description: 'Likes TikTok con reposición automática 365 días.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23938,
   },
+
+  // ── TIKTOK VIEWS ──────────────────────────────────────────────────────
+  // 23946: HQ | No Refill | Instant | Day 100M | $0.006/1000
   {
     name: 'TikTok Views – Fast',
     platform: 'tiktok', category: 'views',
-    description: 'Vistas para videos de TikTok. Ultra rápido.',
-    deliverySpeed: '0-30 min',
-    keywords: ['tiktok', 'video', 'views'],
-    exclude: ['follower', 'like', 'comment', 'live', 'drip'],
-    preferRefill: false,
+    description: 'Vistas para videos TikTok. Ultra rápido, hasta 100M/día.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23946,
   },
+  // 23947: HQ | 30 Days Refill ♻️ | Instant | Day 100M | $0.007/1000
   {
     name: 'TikTok Views – Premium',
     platform: 'tiktok', category: 'views',
-    description: 'Vistas premium con reposición automática.',
-    deliverySpeed: '0-1 hour',
-    keywords: ['tiktok', 'video', 'views'],
-    exclude: ['follower', 'like', 'comment', 'live', 'drip'],
-    preferRefill: true,
-  },
-  {
-    name: 'TikTok Comments – Random',
-    platform: 'tiktok', category: 'comments',
-    description: 'Comentarios aleatorios en videos de TikTok.',
-    deliverySpeed: '0-2 hours',
-    keywords: ['tiktok', 'comments', 'random'],
-    exclude: ['custom', 'drip', 'targeted', 'live'],
-    preferRefill: false,
+    description: 'Vistas TikTok con reposición automática 30 días.',
+    deliverySpeed: 'Instant',
+    providerServiceId: 23947,
   },
 
-  // ── YOUTUBE ───────────────────────────────────────────────────────────
+  // ── YOUTUBE VIEWS ─────────────────────────────────────────────────────
+  // 23911: Original Looking Views | 30 Days Refill | Instant | 100K/Day | $2.00/1000
   {
     name: 'YouTube Views – Real',
     platform: 'youtube', category: 'views',
-    description: 'Vistas reales para videos de YouTube.',
+    description: 'Vistas reales de aspecto orgánico. Retención alta, hasta 100K/día.',
     deliverySpeed: '0-3 hours',
-    keywords: ['youtube', 'views'],
-    exclude: ['subscriber', 'like', 'comment', 'adwords', 'shorts', 'azerbai', 'drip', 'live'],
-    preferRefill: false,
+    providerServiceId: 23911,
   },
+  // 23913: External Ads Views | Instant | 175K/Day | $2.15/1000
   {
     name: 'YouTube Views – Fast',
     platform: 'youtube', category: 'views',
-    description: 'Vistas rápidas para YouTube. Alta velocidad.',
-    deliverySpeed: '0-1 hour',
-    keywords: ['youtube', 'views'],
-    exclude: ['subscriber', 'like', 'comment', 'azerbai', 'drip', 'live'],
-    preferRefill: false,
+    description: 'Vistas YouTube de alta velocidad vía ads externos. Hasta 175K/día.',
+    deliverySpeed: '0-3 hours',
+    providerServiceId: 23913,
   },
+
+  // ── YOUTUBE LIKES ─────────────────────────────────────────────────────
+  // 23944: 365 Day Refill | Max 20K | Instant | $1.25/1000
   {
     name: 'YouTube Likes – Fast',
     platform: 'youtube', category: 'likes',
-    description: 'Likes para videos de YouTube. Entrega rápida.',
-    deliverySpeed: '0-2 hours',
-    keywords: ['youtube', 'likes'],
-    exclude: ['subscriber', 'view', 'comment', 'azerbai', 'drip'],
-    preferRefill: false,
+    description: 'Likes para videos de YouTube con reposición 365 días.',
+    deliverySpeed: '0-15 min',
+    providerServiceId: 23944,
   },
+  // 23972: HQ Quality | Instant Superfast | 30 Days Refill | $3.20/1000
   {
     name: 'YouTube Likes – Premium',
     platform: 'youtube', category: 'likes',
-    description: 'Likes premium con reposición 30 días.',
-    deliverySpeed: '0-3 hours',
-    keywords: ['youtube', 'likes'],
-    exclude: ['subscriber', 'view', 'comment', 'azerbai', 'drip'],
-    preferRefill: true,
+    description: 'Likes YouTube de alta calidad con reposición 30 días.',
+    deliverySpeed: '0-15 min',
+    providerServiceId: 23972,
   },
+
+  // ── YOUTUBE SUBSCRIBERS ───────────────────────────────────────────────
+  // 23945: YouTube Subscribers + Watch Time | 30 Days Refill | $20.80/1000
   {
     name: 'YouTube Subscribers',
     platform: 'youtube', category: 'followers',
-    description: 'Suscriptores para tu canal de YouTube.',
+    description: 'Suscriptores reales para tu canal de YouTube con reposición 30 días.',
     deliverySpeed: '0-6 hours',
-    keywords: ['youtube', 'subscribers'],
-    exclude: ['comment', 'view', 'like', 'azerbai', 'drip', 'watch time'],
-    preferRefill: true,
-  },
-  {
-    name: 'YouTube Comments – Random',
-    platform: 'youtube', category: 'comments',
-    description: 'Comentarios aleatorios en videos de YouTube.',
-    deliverySpeed: '0-3 hours',
-    keywords: ['youtube', 'comments', 'random'],
-    exclude: ['custom', 'drip', 'azerbai', 'targeted'],
-    preferRefill: false,
+    providerServiceId: 23945,
   },
 ];
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-function matchesService(svc: ProviderService, def: ServiceDef): boolean {
-  const combined = `${svc.name.toLowerCase()} ${svc.category.toLowerCase()}`;
-  if (svc.type !== 'Default' && svc.type !== 'Custom Comments') return false;
-  if (svc.type === 'Custom Comments' && !def.category.includes('comment')) return false;
-  const hasAll = def.keywords.every((k) => combined.includes(k.toLowerCase()));
-  if (!hasAll) return false;
-  const hasExcluded = (def.exclude ?? []).some((e) => combined.includes(e.toLowerCase()));
-  if (hasExcluded) return false;
-  return true;
-}
-
-function pickBest(candidates: ProviderService[], def: ServiceDef): ProviderService {
-  return candidates.sort((a, b) => {
-    if (def.preferRefill) {
-      if (a.refill && !b.refill) return -1;
-      if (!a.refill && b.refill) return 1;
-    }
-    return parseFloat(a.rate) - parseFloat(b.rate);
-  })[0];
-}
-
+// ── Helper ─────────────────────────────────────────────────────────────────
 function calcPrice(costUsdPer1000: number): number {
   const costArs = (costUsdPer1000 / 1000) * EXCHANGE_RATE;
   return parseFloat((costArs * MARGIN).toFixed(4));
@@ -270,14 +203,17 @@ function calcPrice(costUsdPer1000: number): number {
 
 // ── Main ───────────────────────────────────────────────────────────────────
 async function main() {
-  console.log('\n🚀 Seeding servicios desde SMM Engineer...\n');
+  console.log(`\n🚀 Seeding servicios | Cambio: $${EXCHANGE_RATE} ARS/USD | Margen: ${MARGIN}x\n`);
 
+  // Obtener lista de precios del proveedor (indexada por service ID)
   const params = new URLSearchParams({ key: PROVIDER_KEY, action: 'services' });
   const { data: provSvcs } = await axios.post<ProviderService[]>(
     PROVIDER_URL, params.toString(),
     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 20000 }
   );
-  console.log(`✅ ${provSvcs.length} servicios recibidos.\n`);
+  const priceMap = new Map<number, ProviderService>();
+  provSvcs.forEach((s) => priceMap.set(s.service, s));
+  console.log(`✅ ${provSvcs.length} servicios recibidos del proveedor.\n`);
 
   const provResult = await db.query(`SELECT id FROM providers WHERE is_active = true LIMIT 1`);
   if (!provResult.rows.length) { console.error('❌ No hay proveedores activos en DB.'); process.exit(1); }
@@ -286,18 +222,16 @@ async function main() {
   let created = 0, updated = 0, skipped = 0;
 
   for (const def of SERVICES_TO_SEED) {
-    const candidates = provSvcs.filter((s) => matchesService(s, def));
-    if (!candidates.length) {
-      console.warn(`⚠️  Sin candidatos: ${def.name}`);
+    const prov = priceMap.get(def.providerServiceId);
+    if (!prov) {
+      console.warn(`⚠️  ID ${def.providerServiceId} no encontrado en proveedor: ${def.name}`);
       skipped++;
       continue;
     }
 
-    const best     = pickBest(candidates, def);
-    const costUSD  = parseFloat(best.rate);
-    const sellARS  = calcPrice(costUSD);
+    const costUSD = parseFloat(prov.rate);
+    const sellARS = calcPrice(costUSD);
 
-    // Upsert: actualizar si existe, insertar si no
     const existing = await db.query(`SELECT id FROM services WHERE name = $1`, [def.name]);
 
     if (existing.rows.length) {
@@ -305,11 +239,13 @@ async function main() {
         `UPDATE services SET
            provider_service_id = $1, provider_id = $2,
            price_per_unit = $3, min_quantity = $4, max_quantity = $5,
+           description = $6, delivery_speed = $7,
            updated_at = NOW()
-         WHERE name = $6`,
-        [best.service, providerId, sellARS, best.min, best.max, def.name]
+         WHERE name = $8`,
+        [def.providerServiceId, providerId, sellARS, prov.min, prov.max,
+         def.description, def.deliverySpeed, def.name]
       );
-      console.log(`🔄 Actualizado: ${def.name} → ID ${best.service} | $${costUSD} USD → $${sellARS} ARS/u`);
+      console.log(`🔄 ${def.name}\n   ID proveedor: ${def.providerServiceId} | Costo: $${costUSD}/1000 USD | Venta: $${sellARS} ARS/u | Refill: ${prov.refill ? '♻️' : '—'}`);
       updated++;
     } else {
       await db.query(
@@ -319,9 +255,9 @@ async function main() {
             provider_id, provider_service_id, is_active)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,true)`,
         [def.name, def.platform, def.category, def.description, def.deliverySpeed,
-         sellARS, best.min, best.max, providerId, best.service]
+         sellARS, prov.min, prov.max, providerId, def.providerServiceId]
       );
-      console.log(`✨ Creado:     ${def.name} → ID ${best.service} | $${costUSD} USD → $${sellARS} ARS/u`);
+      console.log(`✨ ${def.name}\n   ID proveedor: ${def.providerServiceId} | Costo: $${costUSD}/1000 USD | Venta: $${sellARS} ARS/u | Refill: ${prov.refill ? '♻️' : '—'}`);
       created++;
     }
   }
