@@ -57,7 +57,7 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'Instagram Followers – Básico',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores mixtos de entrega instantánea. Ideal para comenzar. Sin reposición.',
+    description: 'Seguidores de entrega instantánea. ⚠️ Precio bajo = sin reposición. Si se caen, no hay reembolso. Ideal para pruebas o cuentas nuevas.',
     deliverySpeed: 'Instantáneo',
     providerServiceId: 5063,   // $0.21/1000 | Mixed | Max 50K | No Refill
     sortOrder: 1,
@@ -65,7 +65,7 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'Instagram Followers – Real',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores reales y mixtos de alta calidad. Max 250K. Sin reposición.',
+    description: 'Seguidores reales de alta calidad. ⚠️ Sin reposición automática. Si se caen, no hay reembolso. Para garantía, usá el servicio Premium 30d.',
     deliverySpeed: 'Instantáneo',
     providerServiceId: 4973,   // $0.24/1000 | Mixed | Max 250K | No Refill
     sortOrder: 2,
@@ -73,7 +73,7 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'Instagram Followers – Premium 30d',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores HQ con reposición automática 30 días. Si caen, se reponen gratis.',
+    description: '✅ Seguidores HQ con reposición automática 30 días. Si se caen, se reponen solos sin costo. Recomendado.',
     deliverySpeed: 'Instantáneo',
     providerServiceId: 3759,   // $0.90/1000 | HQ Mixed | Max 50K | 30d Refill
     sortOrder: 3,
@@ -81,7 +81,7 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'Instagram Followers – Elite 365d',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores HQ con reposición automática 365 días. Máxima garantía anual.',
+    description: '✅ Seguidores HQ con reposición automática 365 días. La opción más segura. Si se caen, se reponen solos por un año completo.',
     deliverySpeed: 'Instantáneo',
     providerServiceId: 4427,   // $1.08/1000 | HQ | Max 800K | 365d Refill
     sortOrder: 4,
@@ -89,7 +89,7 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'Instagram Followers – Max 1M',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores HQ mixtos hasta 1 millón con reposición 30 días.',
+    description: '✅ Seguidores HQ hasta 1 millón con reposición automática 30 días.  Ideal para cuentas que necesitan volumen con garantía.',
     deliverySpeed: 'Instantáneo',
     providerServiceId: 7178,   // $1.05/1000 | HQ Mixed | Max 1M | 30d Refill
     sortOrder: 5,
