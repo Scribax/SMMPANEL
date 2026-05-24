@@ -99,35 +99,35 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'Instagram Likes – Fast',
     platform: 'instagram', category: 'likes',
-    description: 'Likes instantáneos para fotos y reels. Entrega en minutos.',
+    description: 'Likes instantáneos para FOTOS y REELS. ✅ Usar con: instagram.com/p/ (fotos) o instagram.com/reel/ (videos). ❌ NO usar con enlaces de perfil.',
     deliverySpeed: 'Instantáneo',
-    providerServiceId: 1517,   // likes rápidos Instagram
+    providerServiceId: 2985,   // likes rápidos Instagram
     sortOrder: 10,
   },
   {
     name: 'Instagram Likes – Premium',
     platform: 'instagram', category: 'likes',
-    description: 'Likes de cuentas reales HQ con reposición automática.',
-    deliverySpeed: 'Instantáneo',
-    providerServiceId: 1574,   // likes HQ con refill
+    description: 'Likes HQ de cuentas reales para FOTOS y REELS. ✅ Usar con: instagram.com/p/ (fotos) o instagram.com/reel/ (videos). Reposición automática.',
+    deliverySpeed: '0-2 hours',
+    providerServiceId: 6504,   // likes HQ con refill
     sortOrder: 11,
   },
 
   // Views
   {
-    name: 'Instagram Views – Reels & Posts',
+    name: 'Instagram Views – Reels',
     platform: 'instagram', category: 'views',
-    description: 'Vistas para reels y posts. Ultra rápido, hasta millones por día.',
+    description: 'Vistas para VIDEOS/REELS. ⚠️ SOLO funciona con: instagram.com/reel/ (videos) o instagram.com/tv/. ❌ NO funciona con fotos instagram.com/p/',
     deliverySpeed: 'Instantáneo',
-    providerServiceId: 785,    // views reels/posts
+    providerServiceId: 5266,   // views reels
     sortOrder: 20,
   },
   {
     name: 'Instagram Story Views',
     platform: 'instagram', category: 'views',
-    description: 'Vistas para historias de Instagram. Entrega instantánea.',
+    description: 'Vistas para HISTORIAS de Instagram. ⚠️ Solo funciona con historias activas. ❌ NO funciona con posts ni reels.',
     deliverySpeed: 'Instantáneo',
-    providerServiceId: 788,    // story views
+    providerServiceId: 12917,  // story views
     sortOrder: 21,
   },
 

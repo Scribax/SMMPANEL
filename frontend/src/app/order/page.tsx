@@ -147,6 +147,28 @@ function OrderContent() {
     if (!email.trim()) { toast.error('Ingresá tu email'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Email inválido'); return; }
     const linkVal = link.trim();
+
+    // Validación de link según el tipo de servicio
+    if (selected?.platform === 'instagram') {
+      const lowerLink = linkVal.toLowerCase();
+
+      // VIEWS = solo para videos/reels (NO fotos)
+      if (selected.category === 'views') {
+        if (!lowerLink.includes('/reel/') && !lowerLink.includes('/tv/') && !lowerLink.includes('/video/')) {
+          toast.error('⚠️ Este servicio es SOLO para VIDEOS/REELS. Para fotos, usá el servicio de Likes. El link debe contener /reel/ o /tv/');
+          return;
+        }
+      }
+
+      // LIKES = para posts y reels (fotos Y videos)
+      if (selected.category === 'likes') {
+        if (!lowerLink.includes('/p/') && !lowerLink.includes('/reel/') && !lowerLink.includes('/tv/')) {
+          toast.error('⚠️ El link debe ser de un POST o REEL. Ejemplo: instagram.com/p/... o instagram.com/reel/...');
+          return;
+        }
+      }
+    }
+
     if (isFollowers) {
       const username = linkVal.replace(/^@/, '').replace(/^https?:\/\/.+\//, '').replace(/\/$/, '');
       if (!username || username.length < 2 || /\s/.test(username)) {
@@ -411,6 +433,21 @@ function OrderContent() {
                       className="input-field"
                       autoFocus
                     />
+
+                    {/* Warning based on service type */}
+                    {selected?.platform === 'instagram' && selected?.category === 'views' && (
+                      <p className="text-xs text-amber-400 mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        ⚠️ SOLO para VIDEOS/REELS (instagram.com/reel/...). NO funciona con fotos.
+                      </p>
+                    )}
+                    {selected?.platform === 'instagram' && selected?.category === 'likes' && (
+                      <p className="text-xs text-blue-400 mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        Para FOTOS: instagram.com/p/... | Para REELS: instagram.com/reel/...
+                      </p>
+                    )}
+
                     <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
                       <AlertCircle className="w-3.5 h-3.5" />
                       {isFollowers ? 'Tu cuenta debe estar en público' : 'Asegurate que el post sea público'}
