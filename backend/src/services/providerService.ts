@@ -243,3 +243,48 @@ export const getProviderBalance = async (
 
   return response.data;
 };
+
+export const cancelOrderFromProvider = async (
+  providerId: string,
+  providerOrderId: string
+): Promise<{ success: boolean; message?: string }> => {
+  const result = await query<ProviderRow>(
+    'SELECT api_url, api_key_enc FROM providers WHERE id = $1 AND is_active = true',
+    [providerId]
+  );
+
+  if (!result.rows.length) {
+    throw new Error(`Provider ${providerId} not found or inactive`);
+  }
+
+  const { api_url, api_key_enc } = result.rows[0];
+  const apiKey = decrypt(api_key_enc);
+
+  const params = new URLSearchParams({
+    key: apiKey,
+    action: 'cancel',
+    order: providerOrderId,
+  });
+
+  logger.info(`Cancelling order ${providerOrderId} from provider ${providerId}`);
+
+  try {
+    const response = await axios.post<{ error?: string; success?: boolean; message?: string }>(
+      api_url,
+      params.toString(),
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: 15000,
+      }
+    );
+
+    if (response.data.error) {
+      return { success: false, message: response.data.error };
+    }
+
+    return { success: true, message: response.data.message || 'Order cancelled' };
+  } catch (error) {
+    logger.error('Error cancelling order from provider', { providerOrderId, error });
+    return { success: false, message: 'Failed to cancel order on provider' };
+  }
+};

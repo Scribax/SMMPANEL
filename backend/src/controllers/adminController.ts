@@ -293,11 +293,19 @@ export const adminUpdateOrderStatus = async (req: Request, res: Response): Promi
   res.json({ success: true, order: result.rows[0] });
 };
 
+import { cancelOrderFromProvider } from '../services/providerService';
+
 export const adminRefundOrder = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
 
-  const order = await query<{ id: string; user_id: string; price: number; status: string }>(
-    'SELECT id, user_id, price, status FROM orders WHERE id = $1',
+  const order = await query<{
+    id: string; user_id: string; price: number; status: string;
+    provider_id: string; provider_order_id: string;
+  }>(
+    `SELECT o.id, o.user_id, o.price, o.status, s.provider_id, o.provider_order_id
+     FROM orders o
+     LEFT JOIN services s ON o.service_id = s.id
+     WHERE o.id = $1`,
     [id]
   );
 
@@ -312,6 +320,20 @@ export const adminRefundOrder = async (req: Request, res: Response): Promise<voi
     return;
   }
 
+  // Si tiene provider_order_id, intentamos cancelar en el proveedor primero
+  if (o.provider_order_id && o.provider_id) {
+    logger.info('Attempting to cancel order on provider before refund', { orderId: id, providerOrderId: o.provider_order_id });
+    const cancelResult = await cancelOrderFromProvider(o.provider_id, o.provider_order_id);
+    
+    if (!cancelResult.success) {
+      logger.warn('Failed to cancel order on provider, but proceeding with refund', { orderId: id, error: cancelResult.message });
+      // Continuamos igual porque el pedido podría ya estar cancelado o parcial
+    } else {
+      logger.info('Order cancelled on provider successfully', { orderId: id });
+    }
+  }
+
+  // Reembolsar al cliente
   if (o.user_id) {
     await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [o.price, o.user_id]);
   }
@@ -325,8 +347,8 @@ export const adminRefundOrder = async (req: Request, res: Response): Promise<voi
     [id]
   );
 
-  logger.info('Order refunded by admin', { orderId: id });
-  res.json({ success: true, message: 'Order refunded. Credit added to user balance.' });
+  logger.info('Order refunded by admin', { orderId: id, amount: o.price });
+  res.json({ success: true, message: 'Order refunded and cancelled on provider. Credit added to user balance.' });
 };
 
 export const adminRetryOrder = async (req: Request, res: Response): Promise<void> => {
