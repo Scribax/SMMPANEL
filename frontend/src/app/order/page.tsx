@@ -302,14 +302,23 @@ function OrderContent() {
                   <div className="space-y-3">
                     {filteredServices.map((svc) => {
                       const minPrice = parseFloat((svc.price_per_unit * svc.min_quantity).toFixed(2));
+                      const isBasic = svc.name.toLowerCase().includes('básico') || svc.name.toLowerCase().includes('basic');
                       return (
                         <button
                           key={svc.id}
                           onClick={() => setSelectedId(svc.id)}
-                          className="w-full text-left rounded-2xl p-5 border border-white/10 hover:border-primary-500/40 bg-white/5 hover:bg-primary-500/10 transition-all flex items-center justify-between group"
+                          className={`w-full text-left rounded-2xl p-5 border transition-all flex items-center justify-between group ${isBasic ? 'border-amber-500/30 hover:border-amber-500/60 bg-amber-500/5 hover:bg-amber-500/10' : 'border-white/10 hover:border-primary-500/40 bg-white/5 hover:bg-primary-500/10'}`}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="text-white font-semibold">{svc.name}</div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-white font-semibold">{svc.name}</div>
+                              {isBasic && (
+                                <div className="flex items-center gap-1 text-amber-400 text-xs bg-amber-500/10 px-2 py-0.5 rounded-full">
+                                  <AlertCircle className="w-3 h-3" />
+                                  <span>Puede caerse</span>
+                                </div>
+                              )}
+                            </div>
                             {svc.description && (
                               <div className="text-slate-400 text-xs mt-1 mb-1.5">{svc.description}</div>
                             )}
