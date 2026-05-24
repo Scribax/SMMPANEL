@@ -4,6 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 import { createPaymentPreference, getPaymentDetails } from '../services/paymentService';
 import { sendOrderToProvider } from '../services/providerService';
 import { sendOrderConfirmation, sendAdminProviderFailAlert } from '../services/emailService';
+import { env } from '../config/env';
 import { logger } from '../utils/logger';
 
 interface ServiceRow {
@@ -218,6 +219,11 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
 
   sendOrderConfirmation(email, req.user.name, orderId, service.name, qty, finalPrice).catch(() => {});
 
+  // Check referral milestone after successful order
+  checkReferralMilestone(userId).catch((err) =>
+    logger.warn('Referral milestone check failed', { userId, error: String(err) })
+  );
+
   logger.info('Order paid with balance', { orderId, userId, amount: finalPrice });
   res.status(201).json({
     success: true,
@@ -225,6 +231,65 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
     paidWithBalance: true,
     price: finalPrice,
     originalPrice,
+  });
+};
+
+/**
+ * Check if a user (the referred) has spent enough to unlock the referral reward.
+ * Called after every successful order.
+ */
+const checkReferralMilestone = async (userId: string): Promise<void> => {
+  // Find pending referral where this user is the referred
+  const refResult = await query<{ id: string; referrer_id: string; reward_amount: number }>(
+    `SELECT id, referrer_id, reward_amount FROM referrals WHERE referred_id = $1 AND status = 'pending'`,
+    [userId]
+  );
+  if (!refResult.rows.length) return;
+
+  const ref = refResult.rows[0];
+
+  // Calculate total spent by referred user (only completed/processing orders)
+  const spentResult = await query<{ total: string }>(
+    `SELECT COALESCE(SUM(price), 0) AS total FROM orders
+     WHERE user_id = $1 AND status IN ('completed', 'processing', 'in_progress', 'partial')`,
+    [userId]
+  );
+  const totalSpent = parseFloat(spentResult.rows[0].total);
+
+  // Update tracking column
+  await query(
+    `UPDATE referrals SET referred_total_spent = $1 WHERE id = $2`,
+    [totalSpent, ref.id]
+  );
+
+  // Check if threshold met
+  if (totalSpent < env.REFERRAL_SPEND_THRESHOLD) return;
+
+  // Check if referrer is an active user (anti-abuse: must have spent money themselves)
+  const referrerSpent = await query<{ total: string }>(
+    `SELECT COALESCE(SUM(price), 0) AS total FROM orders
+     WHERE user_id = $1 AND status IN ('completed', 'processing', 'in_progress', 'partial')`,
+    [ref.referrer_id]
+  );
+  const referrerTotal = parseFloat(referrerSpent.rows[0].total);
+
+  if (referrerTotal < env.REFERRAL_MIN_REFERRER_SPENT) {
+    logger.info('Referral milestone met but referrer has not spent enough', {
+      referralId: ref.id, referrerSpent: referrerTotal, required: env.REFERRAL_MIN_REFERRER_SPENT,
+    });
+    return;
+  }
+
+  // Pay the reward
+  await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [ref.reward_amount, ref.referrer_id]);
+  await query(
+    `UPDATE referrals SET status = 'qualified', paid_at = NOW() WHERE id = $1`,
+    [ref.id]
+  );
+
+  logger.info('Referral reward paid!', {
+    referralId: ref.id, referrerId: ref.referrer_id, referredId: userId,
+    amount: ref.reward_amount, referredSpent: totalSpent,
   });
 };
 
@@ -334,20 +399,9 @@ export const handleWebhook = async (req: Request, res: Response): Promise<void> 
         ).catch(() => {});
 
         if (order.user_id) {
-          const referral = await query(
-            `SELECT r.id, r.referrer_id, r.reward_amount
-             FROM referrals r
-             WHERE r.referred_id = $1 AND r.status = 'pending'`,
-            [order.user_id]
+          checkReferralMilestone(order.user_id).catch((err: unknown) =>
+            logger.warn('Referral milestone check failed (webhook)', { userId: order.user_id, error: String(err) })
           );
-          if (referral.rows.length) {
-            const ref = referral.rows[0] as { id: string; referrer_id: string; reward_amount: number };
-            await query(
-              'UPDATE users SET balance = balance + $1 WHERE id = $2',
-              [ref.reward_amount, ref.referrer_id]
-            );
-            await query('UPDATE referrals SET status = $1 WHERE id = $2', ['paid', ref.id]);
-          }
         }
 
         logger.info('Order sent to provider after payment', { orderId });

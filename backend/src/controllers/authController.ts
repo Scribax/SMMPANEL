@@ -137,6 +137,57 @@ export const getMe = async (req: Request & { user?: UserRow }, res: Response): P
   res.json({ success: true, user: result.rows[0] });
 };
 
+export const getMyReferrals = async (req: Request & { user?: UserRow }, res: Response): Promise<void> => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ success: false, message: 'Unauthorized' });
+    return;
+  }
+
+  // Get all referrals where this user is the referrer
+  const referrals = await query<{
+    id: string;
+    referred_name: string;
+    referred_email: string;
+    referred_total_spent: number;
+    spend_threshold: number;
+    reward_amount: number;
+    status: string;
+    paid_at: string | null;
+    created_at: string;
+  }>(
+    `SELECT r.id, u.name AS referred_name,
+            CONCAT(LEFT(u.email, 3), '***@', SPLIT_PART(u.email, '@', 2)) AS referred_email,
+            r.referred_total_spent, r.spend_threshold, r.reward_amount,
+            r.status, r.paid_at, r.created_at
+     FROM referrals r
+     JOIN users u ON r.referred_id = u.id
+     WHERE r.referrer_id = $1
+     ORDER BY r.created_at DESC`,
+    [userId]
+  );
+
+  const totalEarned = referrals.rows
+    .filter((r) => r.status === 'qualified' || r.status === 'paid')
+    .reduce((sum, r) => sum + Number(r.reward_amount), 0);
+
+  const pendingCount = referrals.rows.filter((r) => r.status === 'pending').length;
+  const qualifiedCount = referrals.rows.filter((r) => r.status === 'qualified' || r.status === 'paid').length;
+
+  res.json({
+    success: true,
+    referrals: referrals.rows,
+    summary: {
+      total: referrals.rows.length,
+      pending: pendingCount,
+      qualified: qualifiedCount,
+      totalEarned,
+      rewardAmount: env.REFERRAL_REWARD_AMOUNT,
+      spendThreshold: env.REFERRAL_SPEND_THRESHOLD,
+    },
+  });
+};
+
 export const changePassword = async (req: Request & { user?: UserRow }, res: Response): Promise<void> => {
   const { currentPassword, newPassword } = req.body;
   const userId = req.user?.id;

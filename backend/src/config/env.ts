@@ -31,6 +31,8 @@ export const env = {
 
   RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
   RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
-  REFERRAL_REWARD_AMOUNT: parseFloat(process.env.REFERRAL_REWARD_AMOUNT || '5.00'),
+  REFERRAL_REWARD_AMOUNT: parseFloat(process.env.REFERRAL_REWARD_AMOUNT || '2000.00'),
+  REFERRAL_SPEND_THRESHOLD: parseFloat(process.env.REFERRAL_SPEND_THRESHOLD || '2000.00'),
+  REFERRAL_MIN_REFERRER_SPENT: parseFloat(process.env.REFERRAL_MIN_REFERRER_SPENT || '500.00'),
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@followarg.com',
 };

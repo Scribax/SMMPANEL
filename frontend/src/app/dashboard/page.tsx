@@ -8,6 +8,7 @@ import {
   Zap, Package, Clock, CheckCircle, RefreshCw,
   Copy, LogOut, User, DollarSign, ExternalLink,
   PlusCircle, X, ArrowUpRight, Wallet, Lock, Loader2,
+  Users, Gift, TrendingUp,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
@@ -42,6 +43,15 @@ export default function DashboardPage() {
   const [inProgressCount, setInProgressCount] = useState(0);
   const [pwForm, setPwForm] = useState({ current: '', next: '', show: false });
   const [pwLoading, setPwLoading] = useState(false);
+  const [referrals, setReferrals] = useState<Array<{
+    id: string; referred_name: string; referred_email: string;
+    referred_total_spent: number; spend_threshold: number;
+    reward_amount: number; status: string; paid_at: string | null; created_at: string;
+  }>>([]);
+  const [referralSummary, setReferralSummary] = useState<{
+    total: number; pending: number; qualified: number;
+    totalEarned: number; rewardAmount: number; spendThreshold: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated()) { router.push('/login'); return; }
@@ -50,6 +60,7 @@ export default function DashboardPage() {
     fetchOrders(1);
     fetchDeposits();
     refreshBalance();
+    fetchReferrals();
   }, []);
 
   const fetchDeposits = async () => {
@@ -145,6 +156,14 @@ export default function DashboardPage() {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al solicitar recarga';
       toast.error(msg);
     }
+  };
+
+  const fetchReferrals = async () => {
+    try {
+      const res = await authApi.getMyReferrals();
+      setReferrals(res.data.referrals ?? []);
+      setReferralSummary(res.data.summary ?? null);
+    } catch { /* silent */ }
   };
 
   const copyToClipboard = (text: string) => {
@@ -508,10 +527,10 @@ export default function DashboardPage() {
 
               <div className="glass-card p-6">
                 <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-primary-400" /> Programa de referidos
+                  <Gift className="w-5 h-5 text-primary-400" /> Programa de referidos
                 </h3>
                 <p className="text-slate-400 text-sm mb-4">
-                  Compartí tu código y ganá recompensas por cada amigo que haga su primer pedido.
+                  Invitá amigos y ganá <span className="text-primary-400 font-bold">{formatCurrency(referralSummary?.rewardAmount ?? 2000)}</span> cuando gasten {formatCurrency(referralSummary?.spendThreshold ?? 2000)} o más.
                 </p>
                 <div className="glass-card p-3 flex items-center justify-between mb-4 border-primary-500/20">
                   <code className="text-primary-400 font-mono font-bold tracking-widest">{user.referral_code}</code>
@@ -521,10 +540,63 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={() => copyToClipboard(`${window.location.origin}/register?ref=${user.referral_code}`)}
-                  className="btn-secondary w-full text-sm flex items-center justify-center gap-2"
+                  className="btn-secondary w-full text-sm flex items-center justify-center gap-2 mb-5"
                 >
                   <ExternalLink className="w-4 h-4" /> Copiar link de referido
                 </button>
+
+                {/* Referral stats */}
+                {referralSummary && (
+                  <div className="grid grid-cols-3 gap-3 mb-5">
+                    <div className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                      <div className="text-lg font-bold text-white">{referralSummary.total}</div>
+                      <div className="text-[10px] text-slate-500">Invitados</div>
+                    </div>
+                    <div className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                      <div className="text-lg font-bold text-green-400">{referralSummary.qualified}</div>
+                      <div className="text-[10px] text-slate-500">Completados</div>
+                    </div>
+                    <div className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                      <div className="text-lg font-bold text-primary-400">{formatCurrency(referralSummary.totalEarned)}</div>
+                      <div className="text-[10px] text-slate-500">Ganado</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Referral list */}
+                {referrals.length > 0 && (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {referrals.map((ref) => {
+                      const progress = Math.min((Number(ref.referred_total_spent) / Number(ref.spend_threshold)) * 100, 100);
+                      const isQualified = ref.status === 'qualified' || ref.status === 'paid';
+                      return (
+                        <div key={ref.id} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-2">
+                              <Users className="w-3.5 h-3.5 text-slate-500" />
+                              <span className="text-sm text-white">{ref.referred_name}</span>
+                              <span className="text-[10px] text-slate-600">{ref.referred_email}</span>
+                            </div>
+                            {isQualified ? (
+                              <span className="text-[10px] font-semibold text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">+{formatCurrency(Number(ref.reward_amount))}</span>
+                            ) : (
+                              <span className="text-[10px] text-slate-500">{formatCurrency(Number(ref.referred_total_spent))} / {formatCurrency(Number(ref.spend_threshold))}</span>
+                            )}
+                          </div>
+                          <div className="w-full bg-white/[0.06] rounded-full h-1.5">
+                            <div
+                              className={`h-1.5 rounded-full transition-all ${isQualified ? 'bg-green-500' : 'bg-primary-500'}`}
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {referrals.length === 0 && (
+                  <p className="text-center text-slate-600 text-xs">Todavía no invitaste a nadie. ¡Compartí tu link!</p>
+                )}
               </div>
 
               <div className="glass-card p-6 md:col-span-2">

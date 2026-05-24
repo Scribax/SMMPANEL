@@ -163,7 +163,7 @@ export const sendWelcomeEmail = async (
         <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Ya sos parte de la plataforma de crecimiento en redes sociales más rápida de Argentina. ¡Empezá a crecer hoy!</p>
         <p style="margin:0 0 8px;color:#64748b;font-size:14px;">Tu código de referido:</p>
         <p style="margin:0 0 20px;"><span style="display:inline-block;background:#ede9fe;color:#6366f1;padding:6px 18px;border-radius:20px;font-size:16px;font-weight:700;letter-spacing:1px;">${referralCode}</span></p>
-        <p style="margin:0 0 24px;color:#64748b;font-size:14px;">Compartilo y ganás <strong style="color:#1e293b;">$ ${env.REFERRAL_REWARD_AMOUNT} ARS</strong> por cada amigo que haga su primer pedido.</p>
+        <p style="margin:0 0 24px;color:#64748b;font-size:14px;">Compartilo y ganás <strong style="color:#1e293b;">$ ${env.REFERRAL_REWARD_AMOUNT} ARS</strong> por cada amigo que gaste $${env.REFERRAL_SPEND_THRESHOLD} o más en la plataforma.</p>
         <a href="${env.FRONTEND_URL}/order" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Hacer mi primer pedido</a>
       `),
     });

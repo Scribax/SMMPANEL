@@ -38,6 +38,7 @@ export const authApi = {
   login: (data: { email: string; password: string }) =>
     apiClient.post('/auth/login', data),
   getMe: () => apiClient.get('/auth/me'),
+  getMyReferrals: () => apiClient.get('/auth/my-referrals'),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     apiClient.put('/auth/change-password', data),
 };

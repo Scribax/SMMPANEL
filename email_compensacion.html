@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Actualización de pedido - FollowArg</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      color: white;
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .header p {
+      color: rgba(255,255,255,0.9);
+      margin: 8px 0 0 0;
+      font-size: 14px;
+    }
+    .content {
+      padding: 30px;
+    }
+    .greeting {
+      font-size: 18px;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+    .status-box {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .status-box h3 {
+      margin: 0 0 8px 0;
+      color: #92400e;
+      font-size: 16px;
+    }
+    .status-box p {
+      margin: 0;
+      color: #78350f;
+      font-size: 14px;
+    }
+    .compensation-box {
+      background: #d1fae5;
+      border-left: 4px solid #10b981;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .compensation-box h3 {
+      margin: 0 0 15px 0;
+      color: #065f46;
+      font-size: 18px;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      margin: 12px 0;
+    }
+    .check-icon {
+      color: #10b981;
+      font-size: 20px;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    .check-text {
+      color: #065f46;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .highlight {
+      background: #fef3c7;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      color: #92400e;
+    }
+    .order-details {
+      background: #f3f4f6;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .order-details h4 {
+      margin: 0 0 15px 0;
+      color: #374151;
+      font-size: 16px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .detail-label {
+      color: #6b7280;
+    }
+    .detail-value {
+      color: #1f2937;
+      font-weight: 500;
+    }
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      text-decoration: none;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-weight: 600;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .footer {
+      background: #f9fafb;
+      padding: 20px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+    .footer p {
+      color: #6b7280;
+      font-size: 13px;
+      margin: 0;
+    }
+    .footer strong {
+      color: #1f2937;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📦 Actualización de Pedido</h1>
+      <p>Seguimiento de tu orden #a1925bd7</p>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">Hola <strong>Pablo</strong>,</p>
+      
+      <div class="status-box">
+        <h3>⚠️ Situación de tu pedido</h3>
+        <p>Tu pedido de <strong>Instagram Followers</strong> realizado el <strong>22/05/2026</strong> quedó parcial. Se entregaron <strong>564 seguidores</strong> de los 1.000 solicitados.</p>
+        <p style="margin-top: 8px; font-size: 13px; color: #a16207;">Esto ocurrió porque el servicio "Real" tiene drop natural (los followers reales pueden irse con el tiempo).</p>
+      </div>
+      
+      <div class="compensation-box">
+        <h3>🎉 Compensación Aplicada</h3>
+        
+        <div class="check-item">
+          <span class="check-icon">✓</span>
+          <span class="check-text">
+            <strong>Reembolso de $392,40</strong> acreditado a tu saldo. Tu balance actual es <span class="highlight">$6.492,40</span>.
+          </span>
+        </div>
+        
+        <div class="check-item">
+          <span class="check-icon">✓</span>
+          <span class="check-text">
+            <strong>Nuevo pedido GRATIS:</strong> 436 followers con servicio <strong>Premium 30 días</strong> (más estable, con reposición automática si se caen).
+          </span>
+        </div>
+      </div>
+      
+      <div class="order-details">
+        <h4>📋 Resumen de Pedidos</h4>
+        <div class="detail-row">
+          <span class="detail-label">Pedido original:</span>
+          <span class="detail-value">564 followers entregados</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Pedido compensatorio:</span>
+          <span class="detail-value">436 followers Premium (en proceso)</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Total una vez completado:</span>
+          <span class="detail-value">1.000 followers</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Cuenta:</span>
+          <span class="detail-value">@mentorenventas</span>
+        </div>
+      </div>
+      
+      <p style="color: #4b5563; font-size: 14px; line-height: 1.6;">
+        Podés ver el estado de todos tus pedidos en tu <a href="https://followarg.com/dashboard" style="color: #6366f1; text-decoration: none; font-weight: 500;">panel de cliente</a> en cualquier momento.
+      </p>
+      
+      <center>
+        <a href="https://followarg.com/dashboard" class="cta-button">Ver mis pedidos</a>
+      </center>
+      
+      <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin-top: 25px;">
+        Gracias por tu paciencia. Si tenés alguna duda, no dudes en escribirnos respondiendo a este email.
+      </p>
+    </div>
+    
+    <div class="footer">
+      <p><strong>FollowArg</strong> — Crecimiento profesional para redes sociales</p>
+      <p style="margin-top: 8px; font-size: 12px;">© 2026 FollowArg. Todos los derechos reservados.</p>
+    </div>
+  </div>
+</body>
+</html>
