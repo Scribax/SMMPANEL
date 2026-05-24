@@ -139,17 +139,17 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'TikTok Followers – Fast',
     platform: 'tiktok', category: 'followers',
-    description: 'Seguidores TikTok de entrega instantánea. Reposición 30 días.',
+    description: 'Seguidores TikTok de entrega instantánea.',
     deliverySpeed: 'Instantáneo',
-    providerServiceId: 1877,   // TT followers 30d refill
+    providerServiceId: 6816,   // TT followers fast
     sortOrder: 30,
   },
   {
     name: 'TikTok Followers – Premium',
     platform: 'tiktok', category: 'followers',
-    description: 'Seguidores TikTok HQ con reposición automática 365 días.',
+    description: 'Seguidores TikTok HQ premium.',
     deliverySpeed: 'Instantáneo',
-    providerServiceId: 1879,   // TT followers 365d refill
+    providerServiceId: 6821,   // TT followers premium
     sortOrder: 31,
   },
 
@@ -159,8 +159,16 @@ const SERVICES: ServiceDef[] = [
     platform: 'tiktok', category: 'likes',
     description: 'Likes instantáneos para videos de TikTok.',
     deliverySpeed: 'Instantáneo',
-    providerServiceId: 1587,   // TT likes fast
+    providerServiceId: 6804,   // TT likes fast
     sortOrder: 40,
+  },
+  {
+    name: 'TikTok Likes – Premium',
+    platform: 'tiktok', category: 'likes',
+    description: 'Likes premium para videos de TikTok.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 6806,   // TT likes premium
+    sortOrder: 41,
   },
 
   // Views
@@ -169,8 +177,16 @@ const SERVICES: ServiceDef[] = [
     platform: 'tiktok', category: 'views',
     description: 'Vistas para videos TikTok. Ultra rápido.',
     deliverySpeed: 'Instantáneo',
-    providerServiceId: 1584,   // TT views
+    providerServiceId: 2821,   // TT views fast
     sortOrder: 50,
+  },
+  {
+    name: 'TikTok Views – Premium',
+    platform: 'tiktok', category: 'views',
+    description: 'Vistas premium para videos TikTok.',
+    deliverySpeed: 'Instantáneo',
+    providerServiceId: 3826,   // TT views premium
+    sortOrder: 51,
   },
 
   // ════════════════════════════════════════════════════════════════
@@ -181,9 +197,9 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'YouTube Views – Real',
     platform: 'youtube', category: 'views',
-    description: 'Vistas con alta retención y engagement real. Reposición 30 días.',
+    description: 'Vistas con alta retención y engagement real.',
     deliverySpeed: '0-1 hora',
-    providerServiceId: 2697,   // YT views real retention
+    providerServiceId: 5807,   // YT views real
     sortOrder: 60,
   },
 
@@ -193,7 +209,7 @@ const SERVICES: ServiceDef[] = [
     platform: 'youtube', category: 'likes',
     description: 'Likes para videos de YouTube. Entrega rápida.',
     deliverySpeed: '0-15 min',
-    providerServiceId: 2696,   // YT likes
+    providerServiceId: 1287,   // YT likes
     sortOrder: 70,
   },
 
@@ -201,9 +217,9 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'YouTube Subscribers',
     platform: 'youtube', category: 'followers',
-    description: 'Suscriptores reales para tu canal. Reposición 30 días.',
+    description: 'Suscriptores reales para tu canal.',
     deliverySpeed: '0-6 horas',
-    providerServiceId: 2694,   // YT subscribers
+    providerServiceId: 7176,   // YT subscribers
     sortOrder: 80,
   },
 ];
