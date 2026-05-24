@@ -200,6 +200,34 @@ export default function AdminPage() {
     }
   };
 
+  const refundOrder = async (orderId: string, amount?: number) => {
+    try {
+      await adminApi.refundOrder(orderId);
+      toast.success(`✅ Reembolso procesado${amount ? ` ($${amount.toFixed(2)})` : ''}`);
+      loadOrders(ordersPage, statusFilter);
+      loadDashboard();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al reembolsar';
+      toast.error(msg);
+    }
+  };
+
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [alertOrders, setAlertOrders] = useState<Order[]>([]);
+
+  const loadAlertOrders = async () => {
+    try {
+      const res = await adminApi.getOrders(1, 50, 'alerts');
+      setAlertOrders(res.data.orders ?? []);
+    } catch { /* ignore */ }
+  };
+
+  const openOrderDetails = (order: Order) => {
+    setSelectedOrder(order);
+    setShowOrderModal(true);
+  };
+
   const NAV_ITEMS: { id: AdminTab; label: string; icon: React.ElementType }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
@@ -271,6 +299,51 @@ export default function AdminPage() {
                 </div>
               ))}
             </div>
+            {/* Alert Dashboard - Orders requiring attention */}
+            {stats.ordersByStatus && (
+              <div className="glass-card p-6 mb-6 border-amber-500/20">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white font-semibold flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    ⚠️ Requieren Atención
+                  </h3>
+                  <button 
+                    onClick={() => { setStatusFilter('alerts'); handleTabChange('orders'); }}
+                    className="text-xs text-amber-400 hover:text-amber-300 font-medium"
+                  >
+                    Ver todos →
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {(['partial', 'failed', 'cancelled', 'refunded'] as OrderStatus[]).map((status) => {
+                    const count = stats.ordersByStatus[status] || 0;
+                    const priority = status === 'failed' || status === 'cancelled' ? 'high' : 'medium';
+                    return (
+                      <div 
+                        key={status} 
+                        onClick={() => { setStatusFilter(status); handleTabChange('orders'); }}
+                        className={`p-4 rounded-xl cursor-pointer transition-all hover:scale-105 ${
+                          count > 0 
+                            ? priority === 'high' 
+                              ? 'bg-red-500/20 border border-red-500/30 text-red-400' 
+                              : 'bg-amber-500/20 border border-amber-500/30 text-amber-400'
+                            : 'bg-slate-500/10 border border-slate-500/20 text-slate-500'
+                        }`}
+                      >
+                        <div className="text-2xl font-bold">{count}</div>
+                        <div className="text-xs mt-1 font-medium">{STATUS_LABELS[status]}</div>
+                        {count > 0 && (
+                          <div className="text-[10px] mt-2 opacity-75">
+                            {priority === 'high' ? '🔴 Acción urgente' : '🟡 Revisar'}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {stats.ordersByStatus && (
               <div className="glass-card p-6">
                 <h3 className="text-white font-semibold mb-4">Orders by Status</h3>
@@ -320,6 +393,29 @@ export default function AdminPage() {
                   </div>
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     <span className="text-slate-500 text-xs">{formatDate(order.created_at)}</span>
+                    <button
+                      onClick={() => openOrderDetails(order)}
+                      title="Ver detalles"
+                      className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors border border-blue-500/20"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                    {(order.status === 'partial' || order.status === 'failed' || order.status === 'cancelled') && (
+                      <button
+                        onClick={() => refundOrder(order.id, order.price)}
+                        title="Reembolsar"
+                        className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors border border-green-500/20"
+                      >
+                        <DollarSign className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => retryOrder(order.id)}
+                      title="Reintentar en proveedor"
+                      className="p-1.5 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors border border-orange-500/20"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
                     <select
                       defaultValue={order.status}
                       onChange={(e) => updateOrderStatus(order.id, e.target.value)}
@@ -329,13 +425,6 @@ export default function AdminPage() {
                         <option key={v} value={v}>{l}</option>
                       ))}
                     </select>
-                    <button
-                      onClick={() => retryOrder(order.id)}
-                      title="Reintentar en proveedor"
-                      className="p-1.5 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors border border-orange-500/20"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
                   </div>
                 </div>
               ))}
@@ -602,6 +691,93 @@ export default function AdminPage() {
                 <p className="text-slate-500 text-center py-10">No coupons found.</p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Order Details Modal */}
+        {showOrderModal && selectedOrder && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="glass-card max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+                <h3 className="text-white font-bold text-lg">Detalles del Pedido</h3>
+                <button onClick={() => setShowOrderModal(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 text-sm">ID Pedido</span>
+                  <code className="text-xs text-slate-300 font-mono bg-dark-200 px-2 py-1 rounded">{selectedOrder.id.slice(0, 16)}...</code>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 text-sm">Estado</span>
+                  <span className={`status-badge ${STATUS_COLORS[selectedOrder.status]}`}>
+                    {STATUS_LABELS[selectedOrder.status]}
+                  </span>
+                </div>
+                
+                <div className="bg-dark-200/50 p-4 rounded-xl">
+                  <div className="text-slate-400 text-xs mb-1">Servicio</div>
+                  <div className="text-white font-medium">{selectedOrder.service_name}</div>
+                </div>
+                
+                <div className="bg-dark-200/50 p-4 rounded-xl">
+                  <div className="text-slate-400 text-xs mb-1">Enlace</div>
+                  <a href={selectedOrder.link} target="_blank" rel="noopener noreferrer" className="text-primary-400 text-sm break-all hover:underline">
+                    {selectedOrder.link}
+                  </a>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-dark-200/50 p-4 rounded-xl text-center">
+                    <div className="text-slate-400 text-xs mb-1">Cantidad</div>
+                    <div className="text-white font-bold text-xl">{selectedOrder.quantity?.toLocaleString()}</div>
+                    {selectedOrder.remains != null && selectedOrder.remains > 0 && (
+                      <div className="text-amber-400 text-xs mt-1">Faltan: {selectedOrder.remains}</div>
+                    )}
+                  </div>
+                  <div className="bg-dark-200/50 p-4 rounded-xl text-center">
+                    <div className="text-slate-400 text-xs mb-1">Precio</div>
+                    <div className="text-primary-400 font-bold text-xl">{formatCurrency(selectedOrder.price)}</div>
+                  </div>
+                </div>
+                
+                {selectedOrder.provider_order_id && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Provider ID</span>
+                    <code className="text-xs text-slate-300 font-mono">{selectedOrder.provider_order_id}</code>
+                  </div>
+                )}
+                
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-400">Creado</span>
+                  <span className="text-slate-300">{formatDate(selectedOrder.created_at)}</span>
+                </div>
+                
+                <div className="flex gap-2 pt-4 border-t border-white/[0.06]">
+                  {(selectedOrder.status === 'partial' || selectedOrder.status === 'failed' || selectedOrder.status === 'cancelled') && (
+                    <button
+                      onClick={() => { refundOrder(selectedOrder.id, selectedOrder.price); setShowOrderModal(false); }}
+                      className="flex-1 btn-primary bg-green-500/20 text-green-400 hover:bg-green-500/30 border-green-500/30"
+                    >
+                      <DollarSign className="w-4 h-4" /> Reembolsar
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { retryOrder(selectedOrder.id); setShowOrderModal(false); }}
+                    className="flex-1 btn-primary"
+                  >
+                    <RotateCcw className="w-4 h-4" /> Reintentar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </div>
         )}
       </main>
