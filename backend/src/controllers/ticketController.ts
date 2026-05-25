@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { query } from '../config/database';
 import { sendTicketNotificationEmail } from '../services/emailService';
-import logger from '../utils/logger';
+import { logger } from '../utils/logger';
 
 // Crear nuevo ticket
 export const createTicket = async (req: Request & { user?: any }, res: Response): Promise<void> => {
@@ -88,7 +88,7 @@ export const getUserTickets = async (req: Request & { user?: any }, res: Respons
          LIMIT $2 OFFSET $3`,
         [userId, limit, offset]
       ),
-      query(
+      query<{ count: string }>(
         'SELECT COUNT(*) FROM tickets WHERE user_id = $1',
         [userId]
       )
@@ -273,7 +273,7 @@ export const adminGetAllTickets = async (req: Request & { user?: any }, res: Res
          LIMIT $1 OFFSET $2`,
         params
       ),
-      query(
+      query<{ count: string }>(
         `SELECT COUNT(*) FROM tickets ${status ? 'WHERE status = $1' : ''}`,
         status ? [status] : []
       )

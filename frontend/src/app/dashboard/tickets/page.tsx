@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ticketsApi } from '@/lib/api';
-import { formatDateTime } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 
 interface Ticket {
   id: string;
@@ -80,7 +80,7 @@ export default function TicketsPage() {
     try {
       setLoading(true);
       const response = await ticketsApi.getMyTickets();
-      if (response.success) {
+      if (response.data.success) {
         setTickets(response.data.tickets);
       }
     } catch (error) {
@@ -94,7 +94,7 @@ export default function TicketsPage() {
     try {
       setMessagesLoading(true);
       const response = await ticketsApi.getTicketMessages(ticketId);
-      if (response.success) {
+      if (response.data.success) {
         setMessages(response.data.messages);
       }
     } catch (error) {
@@ -113,7 +113,7 @@ export default function TicketsPage() {
     try {
       setCreatingTicket(true);
       const response = await ticketsApi.createTicket(newTicket);
-      if (response.success) {
+      if (response.data.success) {
         toast.success('Ticket created successfully');
         setNewTicket({ subject: '', message: '', priority: 'normal' });
         setShowNewTicketForm(false);
@@ -132,7 +132,7 @@ export default function TicketsPage() {
     try {
       setSendingMessage(true);
       const response = await ticketsApi.addMessage(selectedTicket.id, newMessage);
-      if (response.success) {
+      if (response.data.success) {
         setNewMessage('');
         fetchMessages(selectedTicket.id);
         fetchTickets(); // Update last message time
@@ -257,7 +257,7 @@ export default function TicketsPage() {
                           className="text-sm text-gray-400"
                         >
                           <p>Messages: {ticket.message_count}</p>
-                          <p>Last updated: {formatDateTime(ticket.last_message_at)}</p>
+                          <p>Last updated: {formatDate(ticket.last_message_at)}</p>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -280,7 +280,7 @@ export default function TicketsPage() {
                     </span>
                   </div>
                   <p className="text-gray-400 text-sm">
-                    Created: {formatDateTime(selectedTicket.created_at)}
+                    Created: {formatDate(selectedTicket.created_at)}
                   </p>
                 </div>
 
@@ -313,7 +313,7 @@ export default function TicketsPage() {
                           </div>
                           <p className="text-sm">{message.message}</p>
                           <p className="text-xs opacity-75 mt-2">
-                            {formatDateTime(message.created_at)}
+                            {formatDate(message.created_at)}
                           </p>
                         </div>
                       </motion.div>
