@@ -229,9 +229,19 @@ export const addTicketMessage = async (req: Request & { user?: any }, res: Respo
 
     const newMessage = messageResult.rows[0];
 
-    // Enviar notificación por email
+    // Enviar notificación por email con datos del ticket y usuario
     try {
-      await sendTicketNotificationEmail({ id: ticketId }, isAdmin ? 'admin_reply' : 'user_reply');
+      const ticketInfo = await query(
+        `SELECT t.subject, u.name, u.email 
+         FROM tickets t JOIN users u ON t.user_id = u.id 
+         WHERE t.id = $1`,
+        [ticketId]
+      );
+      const t = ticketInfo.rows[0] as any;
+      await sendTicketNotificationEmail(
+        { id: ticketId, subject: t?.subject, user: { name: t?.name, email: t?.email } },
+        isAdmin ? 'admin_reply' : 'user_reply'
+      );
     } catch (emailError) {
       logger.error('Failed to send ticket notification email', { error: emailError });
     }
