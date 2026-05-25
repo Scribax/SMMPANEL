@@ -27,13 +27,10 @@ router.get('/:ticketId/messages', getTicketMessages);
 // Agregar mensaje a un ticket
 router.post('/:ticketId/messages', addTicketMessage);
 
-// Rutas de admin
-router.use('/admin', requireAdmin);
-
 // Admin: obtener todos los tickets
-router.get('/admin/all', adminGetAllTickets);
+router.get('/admin/all', requireAdmin, adminGetAllTickets);
 
 // Admin: actualizar estado de ticket
-router.put('/admin/:ticketId/status', adminUpdateTicketStatus);
+router.put('/admin/:ticketId/status', requireAdmin, adminUpdateTicketStatus);
 
 export default router;

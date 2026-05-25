@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual VPS — FollowArg</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+    header {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      padding: 32px 40px;
+      text-align: center;
+    }
+    header h1 { font-size: 2rem; font-weight: 800; color: #fff; }
+    header p { color: #e0d9ff; margin-top: 6px; font-size: 0.95rem; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+
+    .toc {
+      background: #1e1e2e;
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 36px;
+    }
+    .toc h2 { color: #a5b4fc; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .toc a { display: block; color: #94a3b8; text-decoration: none; font-size: 0.9rem; padding: 3px 0; }
+    .toc a:hover { color: #6366f1; }
+
+    section { margin-bottom: 40px; }
+    section h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #a5b4fc;
+      border-bottom: 1px solid rgba(99,102,241,0.2);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: #1e1e2e;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .card-label {
+      background: rgba(99,102,241,0.12);
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #a5b4fc;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .card pre {
+      padding: 14px 16px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+    .card pre .comment { color: #64748b; }
+    .card pre .cmd { color: #34d399; }
+    .card pre .flag { color: #fbbf24; }
+    .card pre .path { color: #60a5fa; }
+
+    .copy-btn {
+      display: inline-block;
+      float: right;
+      margin: 8px 12px 0 0;
+      background: rgba(99,102,241,0.15);
+      color: #a5b4fc;
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { background: rgba(99,102,241,0.3); color: #fff; }
+
+    .tip {
+      background: rgba(16,185,129,0.08);
+      border-left: 3px solid #10b981;
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: #86efac;
+      margin-top: 8px;
+    }
+    .warn {
+      background: rgba(245,158,11,0.08);
+      border-left: 3px solid #f59e0b;
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: #fcd34d;
+      margin-top: 8px;
+    }
+    .danger {
+      background: rgba(239,68,68,0.08);
+      border-left: 3px solid #ef4444;
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: #fca5a5;
+      margin-top: 8px;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th { background: rgba(99,102,241,0.15); color: #a5b4fc; padding: 10px 14px; text-align: left; }
+    td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #cbd5e1; }
+    td code { background: rgba(99,102,241,0.15); color: #a5b4fc; padding: 2px 6px; border-radius: 4px; font-size: 0.82rem; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    footer { text-align: center; padding: 32px; color: #475569; font-size: 0.82rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🖥️ Manual VPS — FollowArg</h1>
+  <p>Todos los comandos esenciales para administrar tu servidor en producción</p>
+</header>
+
+<div class="container">
+
+  <!-- TOC -->
+  <div class="toc">
+    <h2>📋 Índice</h2>
+    <a href="#deploy">🚀 Deploy — Actualizar la app</a>
+    <a href="#docker">🐳 Docker — Contenedores</a>
+    <a href="#database">🗄️ Base de Datos — PostgreSQL</a>
+    <a href="#logs">📋 Logs — Ver errores</a>
+    <a href="#usuarios">👥 Usuarios y Pedidos</a>
+    <a href="#servicios">⚙️ Servicios</a>
+    <a href="#ordenes">📦 Órdenes</a>
+    <a href="#emergencia">🚨 Emergencias</a>
+  </div>
+
+  <!-- DEPLOY -->
+  <section id="deploy">
+    <h2>🚀 Deploy — Actualizar la app</h2>
+
+    <div class="card">
+      <div class="card-label">Deploy completo (pull + build + restart)</div>
+      <pre>cd /var/www/smmpanel
+git pull origin main
+docker compose up -d --build</pre>
+    </div>
+    <div class="tip">✅ Usá esto cada vez que hagas cambios en el código y los pushees a GitHub.</div>
+
+    <div class="card">
+      <div class="card-label">Solo reiniciar contenedores (sin rebuild)</div>
+      <pre>docker compose up -d</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Forzar recreación de contenedores</div>
+      <pre>docker compose up -d --force-recreate</pre>
+    </div>
+    <div class="tip">✅ Usá esto cuando cambiaste variables de entorno en docker-compose.yml.</div>
+
+    <div class="card">
+      <div class="card-label">Verificar que el deploy fue exitoso</div>
+      <pre>docker ps</pre>
+    </div>
+  </section>
+
+  <!-- DOCKER -->
+  <section id="docker">
+    <h2>🐳 Docker — Contenedores</h2>
+
+    <table>
+      <thead><tr><th>Contenedor</th><th>Función</th></tr></thead>
+      <tbody>
+        <tr><td><code>boostins_backend</code></td><td>API Node.js/Express</td></tr>
+        <tr><td><code>boostins_frontend</code></td><td>App Next.js</td></tr>
+        <tr><td><code>boostins_db</code></td><td>Base de datos PostgreSQL</td></tr>
+        <tr><td><code>boostins_nginx</code></td><td>Proxy inverso / SSL</td></tr>
+      </tbody>
+    </table>
+
+    <br>
+
+    <div class="card">
+      <div class="card-label">Ver estado de todos los contenedores</div>
+      <pre>docker ps</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Reiniciar un contenedor específico</div>
+      <pre>docker restart boostins_backend
+docker restart boostins_frontend
+docker restart boostins_nginx</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Ver uso de recursos (CPU / RAM)</div>
+      <pre>docker stats</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Parar todos los contenedores</div>
+      <pre>docker compose down</pre>
+    </div>
+    <div class="warn">⚠️ Esto detiene la app. Usalo solo si es necesario.</div>
+  </section>
+
+  <!-- DATABASE -->
+  <section id="database">
+    <h2>🗄️ Base de Datos — PostgreSQL</h2>
+
+    <div class="card">
+      <div class="card-label">Acceder a la consola de PostgreSQL</div>
+      <pre>docker exec -it boostins_db psql -U boostins -d boostins</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Ejecutar un archivo SQL (migraciones)</div>
+      <pre>docker exec -i boostins_db psql -U boostins -d boostins &lt; /var/www/smmpanel/database/migrations/004_tickets.sql</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Ejecutar una query rápida sin entrar a la consola</div>
+      <pre>docker exec -it boostins_db psql -U boostins -d boostins -c "SELECT * FROM users WHERE role = 'user';"</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Backup de la base de datos</div>
+      <pre>docker exec boostins_db pg_dump -U boostins boostins &gt; /var/www/backup_$(date +%Y%m%d).sql</pre>
+    </div>
+    <div class="tip">✅ Hacé esto antes de cualquier migración importante.</div>
+  </section>
+
+  <!-- LOGS -->
+  <section id="logs">
+    <h2>📋 Logs — Ver errores</h2>
+
+    <div class="card">
+      <div class="card-label">Ver logs del backend (últimas 50 líneas)</div>
+      <pre>docker logs boostins_backend --tail 50</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Seguir logs en tiempo real (stream)</div>
+      <pre>docker logs boostins_backend -f</pre>
+    </div>
+    <div class="tip">✅ Presioná Ctrl+C para salir del stream.</div>
+
+    <div class="card">
+      <div class="card-label">Ver logs del frontend</div>
+      <pre>docker logs boostins_frontend --tail 30</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Ver logs de nginx (errores de conexión)</div>
+      <pre>docker logs boostins_nginx --tail 30</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Ver variables de entorno cargadas en el backend</div>
+      <pre>docker exec boostins_backend printenv | grep -E "REFERRAL|SMTP|MP_"</pre>
+    </div>
+  </section>
+
+  <!-- USUARIOS -->
+  <section id="usuarios">
+    <h2>👥 Usuarios y Balance</h2>
+
+    <div class="card">
+      <div class="card-label">Ver todos los clientes con su balance</div>
+      <pre>docker exec -it boostins_db psql -U boostins -d boostins -c \
+"SELECT email, name, balance, created_at FROM users WHERE role = 'user' ORDER BY created_at DESC;"</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Agregar saldo a un usuario</div>
+      <pre>docker exec -it boostins_db psql -U boostins -d boostins -c \
+"UPDATE users SET balance = balance + 1000 WHERE email = 'cliente@gmail.com';"</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Ver historial de pedidos de un usuario</div>
+      <pre>docker exec -it boostins_db psql -U boostins -d boostins -c \
+"SELECT o.quantity, o.price, s.name, o.status, o.created_at
+ FROM orders o
+ JOIN services s ON o.service_id = s.id
+ WHERE o.user_id = (SELECT id FROM users WHERE email = 'cliente@gmail.com')
+ ORDER BY o.created_at DESC;"</pre>
+    </div>
+  </section>
+
+  <!-- SERVICIOS -->
+  <section id="servicios">
+    <h2>⚙️ Servicios</h2>
+
+    <div class="card">
+      <div class="card-label">Ver todos los servicios activos e inactivos</div>
+      <pre>docker exec -it boostins_db psql -U boostins -d boostins -c \
+"SELECT name, provider_service_id, price_per_unit, is_active FROM services ORDER BY platform, sort_order;"</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Cambiar precio de un servicio</div>
+      <pre>docker exec -it boostins_db psql -U boostins -d boostins -c \
+"UPDATE services SET price_per_unit = 4.50 WHERE name = 'Instagram Followers – Premium 365d';"</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Activar / desactivar un servicio</div>
+      <pre>-- Desactivar
+docker exec -it boostins_db psql -U boostins -d boostins -c \
+"UPDATE services SET is_active = false WHERE name = 'Instagram Followers – Elite 365d';"
+
+-- Activar
+docker exec -it boostins_db psql -U boostins -d boostins -c \
+"UPDATE services SET is_active = true WHERE name = 'Instagram Followers – Premium 365d';"</pre>
+    </div>
+  </section>
+
+  <!-- ORDENES -->
+  <section id="ordenes">
+    <h2>📦 Órdenes</h2>
+
+    <div class="card">
+      <div class="card-label">Ver órdenes recientes de todos los usuarios</div>
+      <pre>docker exec -it boostins_db psql -U boostins -d boostins -c \
+"SELECT u.email, s.name, o.quantity, o.price, o.status, o.created_at
+ FROM orders o
+ JOIN users u ON o.user_id = u.id
+ JOIN services s ON o.service_id = s.id
+ ORDER BY o.created_at DESC LIMIT 20;"</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Ver órdenes en progreso (pendientes de completar)</div>
+      <pre>docker exec -it boostins_db psql -U boostins -d boostins -c \
+"SELECT u.email, s.name, o.quantity, o.provider_order_id, o.created_at
+ FROM orders o
+ JOIN users u ON o.user_id = u.id
+ JOIN services s ON o.service_id = s.id
+ WHERE o.status IN ('pending','processing','in_progress')
+ ORDER BY o.created_at;"</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Cambiar estado de una orden manualmente</div>
+      <pre>docker exec -it boostins_db psql -U boostins -d boostins -c \
+"UPDATE orders SET status = 'completed' WHERE id = 'UUID-DE-LA-ORDEN';"</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Reembolsar orden (devuelve saldo al usuario)</div>
+      <pre>-- 1. Obtener precio de la orden
+docker exec -it boostins_db psql -U boostins -d boostins -c \
+"SELECT id, user_id, price, status FROM orders WHERE id = 'UUID-DE-LA-ORDEN';"
+
+-- 2. Devolver saldo y marcar como refunded
+docker exec -it boostins_db psql -U boostins -d boostins -c \
+"UPDATE users SET balance = balance + PRECIO WHERE id = 'UUID-DEL-USUARIO';
+ UPDATE orders SET status = 'refunded' WHERE id = 'UUID-DE-LA-ORDEN';"</pre>
+    </div>
+    <div class="tip">✅ También podés hacer esto desde el panel admin en /admin → Orders → Refund.</div>
+  </section>
+
+  <!-- EMERGENCIAS -->
+  <section id="emergencia">
+    <h2>🚨 Emergencias</h2>
+
+    <div class="card">
+      <div class="card-label">La app no carga / nginx caído</div>
+      <pre>docker compose down
+docker compose up -d</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">El backend crasheó en loop</div>
+      <pre>docker logs boostins_backend --tail 100   # Ver el error
+docker restart boostins_backend</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Limpiar imágenes y cachés Docker acumuladas</div>
+      <pre>docker system prune -f</pre>
+    </div>
+    <div class="warn">⚠️ Esto elimina imágenes no usadas. Los datos de la DB no se tocan.</div>
+
+    <div class="card">
+      <div class="card-label">Ver espacio en disco del VPS</div>
+      <pre>df -h</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Ver uso de RAM y CPU del VPS</div>
+      <pre>htop</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Rollback: volver a versión anterior del código</div>
+      <pre>git log --oneline -10           # Ver commits recientes
+git revert HEAD                 # Revertir último commit
+git push origin main            # Pushear el rollback
+docker compose up -d --build    # Deployar</pre>
+    </div>
+    <div class="danger">🚨 Solo usá git revert si algo salió muy mal. Avisá antes de hacer esto.</div>
+  </section>
+
+</div>
+
+<footer>FollowArg — Manual de administración VPS · Generado para uso interno</footer>
+
+<script>
+  document.querySelectorAll('.card pre').forEach(pre => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copiar';
+    btn.onclick = () => {
+      navigator.clipboard.writeText(pre.innerText.trim());
+      btn.textContent = '✓ Copiado';
+      setTimeout(() => btn.textContent = 'Copiar', 2000);
+    };
+    pre.parentElement.querySelector('.card-label').appendChild(btn);
+  });
+</script>
+
+</body>
+</html>
