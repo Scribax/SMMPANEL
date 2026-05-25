@@ -61,7 +61,7 @@ export default function AdminDashboard() {
       setLoading(true);
       const response = await adminApi.getDashboardStats();
       if (response.data.success) {
-        setData(response.data.data);
+        setData(response.data);
       } else {
         setError('Error loading dashboard data');
       }
