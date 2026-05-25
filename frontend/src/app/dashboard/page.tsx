@@ -8,7 +8,7 @@ import {
   Zap, Package, Clock, CheckCircle, RefreshCw,
   Copy, LogOut, User, DollarSign, ExternalLink,
   PlusCircle, X, ArrowUpRight, Wallet, Lock, Loader2,
-  Users, Gift, TrendingUp,
+  Users, Gift, TrendingUp, MessageCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
@@ -632,6 +632,12 @@ export default function DashboardPage() {
               <div className="glass-card p-6 md:col-span-2">
                 <h3 className="text-white font-semibold mb-4">Acciones de cuenta</h3>
                 <div className="space-y-2">
+                  <Link
+                    href="/dashboard/tickets"
+                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4" /> Soporte Técnico
+                  </Link>
                   {user?.role === 'admin' && (
                     <Link
                       href="/admin/dashboard"

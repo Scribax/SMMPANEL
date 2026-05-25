@@ -171,3 +171,50 @@ export const sendWelcomeEmail = async (
     logger.error('Failed to send welcome email', { email, error: err });
   }
 };
+
+export const sendTicketNotificationEmail = async (ticket: any, type: 'new' | 'admin_reply' | 'user_reply' | 'resolved'): Promise<void> => {
+  if (!env.SMTP_USER) return;
+  try {
+    let subject = '';
+    let content = '';
+    let toEmail = env.SMTP_FROM; // Default to admin email
+
+    if (type === 'new') {
+      subject = '🎫 Nuevo ticket de soporte creado';
+      content = `
+        <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Nuevo ticket de soporte</h2>
+        <p style="margin:0 0 16px;color:#64748b;font-size:15px;">Se ha creado un nuevo ticket que requiere tu atención.</p>
+        <div style="background:#f8fafc;padding:16px;border-radius:8px;margin:0 0 20px;">
+          <p style="margin:0 0 8px;color:#1e293b;font-weight:600;">Asunto:</p>
+          <p style="margin:0 0 16px;color:#64748b;">${ticket.subject}</p>
+          <p style="margin:0 0 8px;color:#1e293b;font-weight:600;">Mensaje:</p>
+          <p style="margin:0;color:#64748b;">${ticket.message}</p>
+        </div>
+        <a href="${env.FRONTEND_URL}/admin/tickets" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Ver ticket</a>
+      `;
+    } else if (type === 'admin_reply') {
+      subject = '💬 Respuesta a tu ticket de soporte';
+      content = `
+        <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Tienes una nueva respuesta</h2>
+        <p style="margin:0 0 16px;color:#64748b;font-size:15px;">El equipo de soporte ha respondido a tu ticket.</p>
+        <a href="${env.FRONTEND_URL}/dashboard/tickets" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Ver respuesta</a>
+      `;
+    } else if (type === 'resolved') {
+      subject = '✅ Tu ticket ha sido resuelto';
+      content = `
+        <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">¡Ticket resuelto!</h2>
+        <p style="margin:0 0 16px;color:#64748b;font-size:15px;">Tu ticket de soporte ha sido marcado como resuelto.</p>
+        <a href="${env.FRONTEND_URL}/dashboard/tickets" style="display:inline-block;background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Ver ticket</a>
+      `;
+    }
+
+    await transporter.sendMail({
+      from: env.SMTP_FROM,
+      to: toEmail,
+      subject,
+      html: baseTemplate(content),
+    });
+  } catch (err) {
+    logger.error('Failed to send ticket notification email', { ticket, type, error: err });
+  }
+};

@@ -78,6 +78,21 @@ export const couponsApi = {
     apiClient.post('/coupons/validate', { code, orderAmount }),
 };
 
+export const ticketsApi = {
+  createTicket: (data: { subject: string; message: string; priority?: string }) =>
+    apiClient.post('/tickets', data),
+  getMyTickets: (page = 1, limit = 20) =>
+    apiClient.get('/tickets/my-tickets', { params: { page, limit } }),
+  getTicketMessages: (ticketId: string) =>
+    apiClient.get(`/tickets/${ticketId}/messages`),
+  addMessage: (ticketId: string, message: string) =>
+    apiClient.post(`/tickets/${ticketId}/messages`, { message }),
+  adminGetAllTickets: (page = 1, limit = 20, status?: string) =>
+    apiClient.get('/tickets/admin/all', { params: { page, limit, status } }),
+  adminUpdateTicketStatus: (ticketId: string, data: { status: string; assigned_to?: string }) =>
+    apiClient.put(`/tickets/admin/${ticketId}/status`, data),
+};
+
 export const adminApi = {
   getStats: () => apiClient.get('/admin/stats'),
   getDashboardStats: () => apiClient.get('/admin/dashboard-stats'),
