@@ -36,18 +36,18 @@ export const createTicket = async (req: Request & { user?: any }, res: Response)
       [ticket.id, userId, message, false]
     );
 
-    // Enviar notificación por email al admin
-    try {
-      await sendTicketNotificationEmail(ticket, 'new');
-    } catch (emailError) {
-      logger.error('Failed to send ticket notification email', { error: emailError });
-    }
-
-    // Obtener información del usuario para la respuesta
+    // Obtener información del usuario
     const userResult = await query(
       'SELECT name, email FROM users WHERE id = $1',
       [userId]
     );
+
+    // Enviar notificación por email al admin con info del usuario
+    try {
+      await sendTicketNotificationEmail({ ...ticket, user: userResult.rows[0] }, 'new');
+    } catch (emailError) {
+      logger.error('Failed to send ticket notification email', { error: emailError });
+    }
 
     res.status(201).json({
       success: true,

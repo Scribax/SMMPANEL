@@ -639,12 +639,20 @@ export default function DashboardPage() {
                     <MessageCircle className="w-4 h-4" /> Soporte Técnico
                   </Link>
                   {user?.role === 'admin' && (
-                    <Link
-                      href="/admin/dashboard"
-                      className="flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
-                    >
-                      <TrendingUp className="w-4 h-4" /> Dashboard Admin
-                    </Link>
+                    <>
+                      <Link
+                        href="/admin/dashboard"
+                        className="flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
+                      >
+                        <TrendingUp className="w-4 h-4" /> Dashboard Admin
+                      </Link>
+                      <Link
+                        href="/admin/tickets"
+                        className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4" /> Gestión de Tickets
+                      </Link>
+                    </>
                   )}
                   <button
                     onClick={handleLogout}

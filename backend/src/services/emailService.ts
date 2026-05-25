@@ -180,14 +180,16 @@ export const sendTicketNotificationEmail = async (ticket: any, type: 'new' | 'ad
     let toEmail = env.SMTP_FROM; // Default to admin email
 
     if (type === 'new') {
-      subject = '🎫 Nuevo ticket de soporte creado';
+      subject = `🎫 Nuevo ticket de ${ticket.user?.name ?? 'un usuario'}: ${ticket.subject}`;
       content = `
         <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Nuevo ticket de soporte</h2>
         <p style="margin:0 0 16px;color:#64748b;font-size:15px;">Se ha creado un nuevo ticket que requiere tu atención.</p>
-        <div style="background:#f8fafc;padding:16px;border-radius:8px;margin:0 0 20px;">
-          <p style="margin:0 0 8px;color:#1e293b;font-weight:600;">Asunto:</p>
-          <p style="margin:0 0 16px;color:#64748b;">${ticket.subject}</p>
-          <p style="margin:0 0 8px;color:#1e293b;font-weight:600;">Mensaje:</p>
+        <div style="background:#f8fafc;padding:16px;border-radius:8px;margin:0 0 12px;">
+          <p style="margin:0 0 4px;color:#1e293b;font-weight:600;">Cliente:</p>
+          <p style="margin:0 0 12px;color:#6366f1;">${ticket.user?.name ?? '-'} &lt;${ticket.user?.email ?? '-'}&gt;</p>
+          <p style="margin:0 0 4px;color:#1e293b;font-weight:600;">Asunto:</p>
+          <p style="margin:0 0 12px;color:#64748b;">${ticket.subject}</p>
+          <p style="margin:0 0 4px;color:#1e293b;font-weight:600;">Mensaje:</p>
           <p style="margin:0;color:#64748b;">${ticket.message}</p>
         </div>
         <a href="${env.FRONTEND_URL}/admin/tickets" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Ver ticket</a>
