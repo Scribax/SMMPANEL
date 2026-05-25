@@ -29,6 +29,33 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
     ),
   ]);
 
+  // Top 5 clientes por gasto total
+  const topClientsResult = await query(
+    `SELECT u.name, u.email, COALESCE(SUM(o.price), 0) as total_spent, COUNT(o.id) as order_count
+     FROM users u
+     LEFT JOIN orders o ON u.id = o.user_id AND o.status = 'completed'
+     WHERE u.role = 'user'
+     GROUP BY u.id, u.name, u.email
+     ORDER BY total_spent DESC
+     LIMIT 5`
+  );
+
+  // Servicios más vendidos
+  const topServicesResult = await query(
+    `SELECT s.name, COUNT(o.id) as order_count, COALESCE(SUM(o.price), 0) as revenue
+     FROM services s
+     LEFT JOIN orders o ON s.id = o.service_id AND o.status = 'completed'
+     WHERE s.is_active = true
+     GROUP BY s.id, s.name
+     ORDER BY order_count DESC
+     LIMIT 5`
+  );
+
+  // Pedidos por estado
+  const ordersByStatusResult = await query(
+    `SELECT status, COUNT(*) as count FROM orders GROUP BY status`
+  );
+
   const dailySales = await query<{ date: string; revenue: string; orders: string }>(
     `SELECT DATE(created_at) AS date,
             COALESCE(SUM(price), 0) AS revenue,
@@ -51,6 +78,18 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
     },
     recentOrders: recentOrders.rows,
     dailySales: dailySales.rows,
+    topClients: topClientsResult.rows.map((row: any) => ({
+      name: row.name,
+      email: row.email,
+      totalSpent: parseFloat(row.total_spent),
+      orderCount: parseInt(row.order_count)
+    })),
+    topServices: topServicesResult.rows.map((row: any) => ({
+      name: row.name,
+      orderCount: parseInt(row.order_count),
+      revenue: parseFloat(row.revenue)
+    })),
+    ordersByStatus: ordersByStatusResult.rows
   });
 };
 

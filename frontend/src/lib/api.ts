@@ -80,6 +80,7 @@ export const couponsApi = {
 
 export const adminApi = {
   getStats: () => apiClient.get('/admin/stats'),
+  getDashboardStats: () => apiClient.get('/admin/dashboard-stats'),
   getServices: () => apiClient.get('/admin/services'),
   createService: (data: object) => apiClient.post('/admin/services', data),
   updateService: (id: string, data: object) => apiClient.put(`/admin/services/${id}`, data),

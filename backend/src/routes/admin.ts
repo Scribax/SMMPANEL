@@ -16,6 +16,7 @@ const router = Router();
 router.use(authenticate, requireAdmin);
 
 router.get('/stats', getDashboardStats);
+router.get('/dashboard-stats', getDashboardStats);
 
 router.get('/services', adminGetServices);
 router.post('/services', adminCreateService);

@@ -631,12 +631,22 @@ export default function DashboardPage() {
 
               <div className="glass-card p-6 md:col-span-2">
                 <h3 className="text-white font-semibold mb-4">Acciones de cuenta</h3>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
-                >
-                  <LogOut className="w-4 h-4" /> Cerrar sesión
-                </button>
+                <div className="space-y-2">
+                  {user?.role === 'admin' && (
+                    <Link
+                      href="/admin/dashboard"
+                      className="flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
+                    >
+                      <TrendingUp className="w-4 h-4" /> Dashboard Admin
+                    </Link>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" /> Cerrar sesión
+                  </button>
+                </div>
               </div>
             </div>
           )}
