@@ -25,11 +25,9 @@ interface TicketMessage {
   message: string;
   is_admin: boolean;
   created_at: string;
-  sender: {
-    name: string;
-    email: string;
-    role: string;
-  };
+  name: string;
+  email: string;
+  role: string;
 }
 
 const statusColors = {
@@ -306,7 +304,7 @@ export default function TicketsPage() {
                           }`}
                         >
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-medium">{message.sender.name}</span>
+                            <span className="text-sm font-medium">{message.name}</span>
                             {message.is_admin && (
                               <span className="text-xs bg-primary-600 px-2 py-1 rounded">Admin</span>
                             )}
