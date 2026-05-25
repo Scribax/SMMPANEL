@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, Package, Users, Tag, Settings,
   TrendingUp, DollarSign, ShoppingCart, UserCheck,
   ChevronDown, ChevronUp, RefreshCw, Trash2, Plus,
   Edit, Eye, X, Loader2, CheckCircle, RotateCcw,
+  BarChart2, MessageCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminApi } from '@/lib/api';
@@ -266,6 +268,22 @@ export default function AdminPage() {
               {item.label}
             </button>
           ))}
+          <div className="pt-2 mt-2 border-t border-white/[0.06] space-y-1">
+            <Link
+              href="/admin/dashboard"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all"
+            >
+              <BarChart2 className="w-4 h-4" />
+              Analytics
+            </Link>
+            <Link
+              href="/admin/tickets"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Tickets
+            </Link>
+          </div>
         </nav>
       </aside>
 
