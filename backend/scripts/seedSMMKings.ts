@@ -65,26 +65,18 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'Instagram Followers – Real',
     platform: 'instagram', category: 'followers',
-    description: 'Seguidores reales de alta calidad. ⚠️ Sin reposición automática. Si se caen, no hay reembolso. Para garantía, usá el servicio Premium 30d.',
+    description: 'Seguidores reales de alta calidad. ⚠️ Sin reposición automática. Si se caen, no hay reembolso. Para garantía, usá el servicio Premium 365d.',
     deliverySpeed: 'Instantáneo',
     providerServiceId: 4973,   // $0.24/1000 | Mixed | Max 250K | No Refill
     sortOrder: 2,
   },
   {
-    name: 'Instagram Followers – Premium 30d',
+    name: 'Instagram Followers – Premium 365d',
     platform: 'instagram', category: 'followers',
-    description: '✅ Seguidores HQ con reposición automática 30 días. Si se caen, se reponen solos sin costo. Recomendado.',
-    deliverySpeed: 'Instantáneo',
-    providerServiceId: 3759,   // $0.90/1000 | HQ Mixed | Max 50K | 30d Refill
-    sortOrder: 3,
-  },
-  {
-    name: 'Instagram Followers – Elite 365d',
-    platform: 'instagram', category: 'followers',
-    description: '✅ Seguidores HQ con reposición automática 365 días. La opción más segura. Si se caen, se reponen solos por un año completo.',
+    description: '✅ Seguidores HQ con reposición automática 365 días. Si se caen, se reponen solos por un año. Recomendado.',
     deliverySpeed: 'Instantáneo',
     providerServiceId: 4427,   // $1.08/1000 | HQ | Max 800K | 365d Refill
-    sortOrder: 4,
+    sortOrder: 3,
   },
   {
     name: 'Instagram Followers – Max 1M',
