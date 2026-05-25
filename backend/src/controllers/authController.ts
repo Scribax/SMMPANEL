@@ -91,7 +91,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 
   const result = await query<UserRow>(
-    'SELECT id, email, name, role, password_hash, balance FROM users WHERE email = $1 AND is_active = true',
+    'SELECT id, email, name, role, password_hash, balance, referral_code FROM users WHERE email = $1 AND is_active = true',
     [email.toLowerCase()]
   );
 
@@ -113,7 +113,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   res.json({
     success: true,
     token,
-    user: { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance },
+    user: { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance, referral_code: user.referral_code },
   });
 };
 

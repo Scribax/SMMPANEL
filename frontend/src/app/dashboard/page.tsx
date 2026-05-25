@@ -74,7 +74,7 @@ export default function DashboardPage() {
     try {
       const res = await authApi.getMe();
       const updated = res.data.user;
-      setUser((prev) => prev ? { ...prev, balance: updated.balance } : prev);
+      setUser(updated);
       setAuth(localStorage.getItem('FollowArg_token') ?? '', updated);
     } catch { /* silent */ }
   };
