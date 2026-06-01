@@ -21,6 +21,7 @@ const QUANTITY_PRESETS: Record<string, number[]> = {
   comments:  [10,  25,  50,  100,  250,  500],
 };
 const DEFAULT_PRESETS = [100, 250, 500, 1000, 2500, 5000];
+const NORMALIZED_SLIDER_MAX = 1000;
 
 function getPresets(service: Service): number[] {
   const base = QUANTITY_PRESETS[service.category] ?? DEFAULT_PRESETS;
@@ -39,11 +40,44 @@ function getSliderStep(service: Service): number {
   const range = service.max_quantity - service.min_quantity;
   if (range <= 50) return 1;
   if (range <= 500) return 5;
-  if (range <= 5_000) return 25;
-  if (range <= 20_000) return 50;
-  if (range <= 100_000) return 100;
-  if (range <= 500_000) return 500;
-  return 1000;
+  if (range <= 5_000) return 10;
+  if (range <= 20_000) return 20;
+  if (range <= 100_000) return 25;
+  // para rangos muy grandes usamos el slider "normalizado" y un step pequeño
+  return 10;
+}
+
+function quantityToSliderValue(service: Service, qty: number): number {
+  const min = service.min_quantity;
+  const max = service.max_quantity;
+  const clamped = Math.min(Math.max(qty || min, min), max);
+  const range = max - min;
+
+  if (range <= 100_000) {
+    const step = getSliderStep(service);
+    return Math.round((clamped - min) / step) * step + min;
+  }
+
+  const t = (clamped - min) / range; // 0..1
+  const curved = t * t; // suaviza el inicio para mejor control en cantidades bajas
+  return Math.round(min + curved * range);
+}
+
+function sliderValueToQuantity(service: Service, sliderValue: number): number {
+  const min = service.min_quantity;
+  const max = service.max_quantity;
+  const range = max - min;
+
+  if (range <= 100_000) {
+    const step = getSliderStep(service);
+    const clamped = Math.min(Math.max(sliderValue, min), max);
+    return Math.round(clamped / step) * step;
+  }
+
+  const clamped = Math.min(Math.max(sliderValue, 0), NORMALIZED_SLIDER_MAX);
+  const t = clamped / NORMALIZED_SLIDER_MAX;
+  const curved = t * t;
+  return Math.round(min + curved * range);
 }
 
 // ── Platform / category meta ─────────────────────────────────────────────────
@@ -518,11 +552,19 @@ function OrderContent() {
                       </div>
                       <input
                         type="range"
-                        min={selected.min_quantity}
-                        max={selected.max_quantity}
+                        min={0}
+                        max={selected.max_quantity - selected.min_quantity > 100_000 ? NORMALIZED_SLIDER_MAX : selected.max_quantity}
                         step={getSliderStep(selected)}
-                        value={quantity || selected.min_quantity}
-                        onChange={(e) => setQuantity(Number(e.target.value))}
+                        value={
+                          selected.max_quantity - selected.min_quantity > 100_000
+                            ? NORMALIZED_SLIDER_MAX * ((quantity || selected.min_quantity) - selected.min_quantity) / (selected.max_quantity - selected.min_quantity || 1)
+                            : quantity || selected.min_quantity
+                        }
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          const newQty = sliderValueToQuantity(selected, val);
+                          setQuantity(newQty);
+                        }}
                         className="w-full accent-primary-400"
                       />
                       <div className="flex items-center justify-between mt-4">
