@@ -69,6 +69,7 @@ function OrderContent() {
   const [category,  setCategory]          = useState('');
   const [selectedId, setSelectedId]       = useState(searchParams.get('service') ?? '');
   const [quantity,  setQuantity]          = useState(0);
+  const [quantityConfirmed, setQuantityConfirmed] = useState(false);
   const [link,      setLink]              = useState('');
   const [email,     setEmail]             = useState('');
   const [couponCode, setCouponCode]       = useState('');
@@ -177,8 +178,16 @@ function OrderContent() {
     };
   }, [link, selected, isFollowers]);
 
-  // step logic
-  const step = !platform ? 1 : !category ? 2 : !selectedId ? 3 : !quantity ? 4 : 5;
+  // step logic: step 5 requires explicitly confirming the quantity
+  const step = !platform
+    ? 1
+    : !category
+      ? 2
+      : !selectedId
+        ? 3
+        : !quantity || !quantityConfirmed
+          ? 4
+          : 5;
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -212,6 +221,7 @@ function OrderContent() {
   // reset downstream when service changes
   useEffect(() => {
     setQuantity(0);
+    setQuantityConfirmed(false);
     setCouponApplied(false);
     setCouponDiscount(0);
     setCouponCode('');
@@ -539,6 +549,20 @@ function OrderContent() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="mt-6">
+                    <button
+                      onClick={() => {
+                        const confirmedQty = quantity || selected.min_quantity;
+                        setQuantity(confirmedQty);
+                        setQuantityConfirmed(true);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="w-full btn-primary py-3 text-base font-semibold"
+                    >
+                      Continuar
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -547,7 +571,13 @@ function OrderContent() {
             {step === 5 && selected && (
               <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <div className="space-y-4">
-                  <button onClick={() => setQuantity(0)} className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors">
+                  <button
+                    onClick={() => {
+                      setQuantity(0);
+                      setQuantityConfirmed(false);
+                    }}
+                    className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors"
+                  >
                     ← Volver al paquete
                   </button>
 
