@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tag, AlertCircle, Loader2, CheckCircle2, ChevronRight, AtSign, Link2, Wallet, PlusCircle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { servicesApi, paymentsApi, couponsApi } from '@/lib/api';
+import { servicesApi, paymentsApi, couponsApi, utilsApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { getStoredUser, isAuthenticated } from '@/lib/auth';
 import { Service } from '@/types';
@@ -25,6 +25,25 @@ const DEFAULT_PRESETS = [100, 250, 500, 1000, 2500, 5000];
 function getPresets(service: Service): number[] {
   const base = QUANTITY_PRESETS[service.category] ?? DEFAULT_PRESETS;
   return base.filter((q) => q >= service.min_quantity && q <= service.max_quantity);
+}
+
+interface LinkPreview {
+  url: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  site?: string;
+}
+
+function getSliderStep(service: Service): number {
+  const range = service.max_quantity - service.min_quantity;
+  if (range <= 50) return 1;
+  if (range <= 500) return 5;
+  if (range <= 5_000) return 25;
+  if (range <= 20_000) return 50;
+  if (range <= 100_000) return 100;
+  if (range <= 500_000) return 500;
+  return 1000;
 }
 
 // ── Platform / category meta ─────────────────────────────────────────────────
@@ -60,10 +79,19 @@ function OrderContent() {
   const [userBalance, setUserBalance]     = useState(0);
   const [loggedIn, setLoggedIn]           = useState(false);
   const [showFundsModal, setShowFundsModal] = useState(false);
+  const [linkPreview, setLinkPreview]     = useState<LinkPreview | null>(null);
+  const [linkPreviewLoading, setLinkPreviewLoading] = useState(false);
+  const [linkPreviewError, setLinkPreviewError] = useState<string | null>(null);
+  const linkPreviewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastPreviewUrlRef = useRef<string>('');
 
   const selected   = services.find((s) => s.id === selectedId);
   const basePrice  = selected && quantity ? parseFloat((selected.price_per_unit * quantity).toFixed(2)) : 0;
   const finalPrice = Math.max(basePrice - couponDiscount, 0.01);
+  const isFollowers = selected?.category === 'followers';
+  const linkPlaceholder = isFollowers
+    ? `@tunombredeusuario`
+    : `https://${platform}.com/p/...`;
 
   // platforms available from loaded services
   const availablePlatforms = [...new Set(services.map((s) => s.platform))] as string[];
@@ -77,6 +105,77 @@ function OrderContent() {
   const filteredServices = services.filter(
     (s) => s.platform === platform && s.category === category
   );
+
+  // Link preview handler -----------------------------------------------------
+  useEffect(() => {
+    if (linkPreviewTimeoutRef.current) {
+      clearTimeout(linkPreviewTimeoutRef.current);
+      linkPreviewTimeoutRef.current = null;
+    }
+
+    const rawLink = link.trim();
+
+    if (!selected || !rawLink) {
+      setLinkPreview(null);
+      setLinkPreviewError(null);
+      setLinkPreviewLoading(false);
+      lastPreviewUrlRef.current = '';
+      return;
+    }
+
+    if (isFollowers) {
+      setLinkPreview(null);
+      setLinkPreviewError(null);
+      setLinkPreviewLoading(false);
+      lastPreviewUrlRef.current = '';
+      return;
+    }
+
+    const sanitized = rawLink.startsWith('http') ? rawLink : `https://${rawLink}`;
+    const allowedDomains = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i;
+
+    if (!allowedDomains.test(sanitized)) {
+      setLinkPreview(null);
+      setLinkPreviewError(null);
+      setLinkPreviewLoading(false);
+      lastPreviewUrlRef.current = '';
+      return;
+    }
+
+    setLinkPreviewLoading(true);
+    setLinkPreviewError(null);
+
+    linkPreviewTimeoutRef.current = setTimeout(async () => {
+      lastPreviewUrlRef.current = sanitized;
+      try {
+        const response = await utilsApi.getLinkPreview(sanitized);
+        if (lastPreviewUrlRef.current !== sanitized) return;
+        const preview = response.data?.preview ?? null;
+        if (preview) {
+          setLinkPreview(preview);
+          setLinkPreviewError(null);
+        } else {
+          setLinkPreview(null);
+          setLinkPreviewError('No pudimos previsualizar el link, pero podés continuar.');
+        }
+      } catch (error) {
+        if (lastPreviewUrlRef.current !== sanitized) return;
+        setLinkPreview(null);
+        setLinkPreviewError('No se pudo validar el link. Verificá que sea público.');
+      } finally {
+        if (lastPreviewUrlRef.current === sanitized) {
+          setLinkPreviewLoading(false);
+        }
+      }
+    }, 600);
+
+    return () => {
+      if (linkPreviewTimeoutRef.current) {
+        clearTimeout(linkPreviewTimeoutRef.current);
+        linkPreviewTimeoutRef.current = null;
+      }
+    };
+  }, [link, selected, isFollowers]);
 
   // step logic
   const step = !platform ? 1 : !category ? 2 : !selectedId ? 3 : !quantity ? 4 : 5;
@@ -209,11 +308,6 @@ function OrderContent() {
       setLoading(false);
     }
   };
-
-  const isFollowers = selected?.category === 'followers';
-  const linkPlaceholder = isFollowers
-    ? `@tunombredeusuario`
-    : `https://${platform}.com/p/...`;
 
   // ── Step indicator ──────────────────────────────────────────────────────────
   const STEPS = ['Plataforma', 'Servicio', 'Paquete', 'Datos', 'Pagar'];
@@ -380,7 +474,12 @@ function OrderContent() {
                       return (
                         <button
                           key={qty}
-                          onClick={() => setQuantity(qty)}
+                          onClick={() => {
+                            setQuantity(qty);
+                            setTimeout(() => {
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }, 150);
+                          }}
                           className={`rounded-2xl p-4 text-center border transition-all hover:scale-105 active:scale-95 ${
                             isActive
                               ? 'border-primary-500 bg-primary-500/20 ring-1 ring-primary-500/40'
@@ -398,15 +497,48 @@ function OrderContent() {
                       );
                     })}
                   </div>
-                  {quantity > 0 && (
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                      onClick={() => {/* advance to step 5 automatically via step logic */}}
-                      className="btn-primary w-full mt-6 flex items-center justify-center gap-2"
-                    >
-                      Continuar — {formatCurrency(basePrice)} <ChevronRight className="w-4 h-4" />
-                    </motion.button>
-                  )}
+                  <div className="mt-8">
+                    <h3 className="text-slate-300 text-sm font-semibold mb-3 flex items-center gap-2">
+                      Ajustar cantidad manualmente
+                    </h3>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                      <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+                        <span>Mín: {formatNumber(selected.min_quantity)}</span>
+                        <span>Máx: {formatNumber(selected.max_quantity)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={selected.min_quantity}
+                        max={selected.max_quantity}
+                        step={getSliderStep(selected)}
+                        value={quantity || selected.min_quantity}
+                        onChange={(e) => setQuantity(Number(e.target.value))}
+                        className="w-full accent-primary-400"
+                      />
+                      <div className="flex items-center justify-between mt-4">
+                        <div className="text-2xl font-black text-white">
+                          {formatNumber(quantity || selected.min_quantity)}
+                        </div>
+                        <div className="text-sm text-slate-300">
+                          {formatCurrency((quantity || selected.min_quantity) * selected.price_per_unit)}
+                        </div>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-500">
+                        <button
+                          onClick={() => setQuantity(selected.min_quantity)}
+                          className="py-2 px-3 rounded-xl border border-white/10 hover:border-primary-400 hover:text-primary-300 transition"
+                        >
+                          Min ({formatNumber(selected.min_quantity)})
+                        </button>
+                        <button
+                          onClick={() => setQuantity(selected.max_quantity)}
+                          className="py-2 px-3 rounded-xl border border-white/10 hover:border-primary-400 hover:text-primary-300 transition"
+                        >
+                          Máx ({formatNumber(selected.max_quantity)})
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -452,6 +584,38 @@ function OrderContent() {
                       <AlertCircle className="w-3.5 h-3.5" />
                       {isFollowers ? 'Tu cuenta debe estar en público' : 'Asegurate que el post sea público'}
                     </p>
+
+                    {!isFollowers && (
+                      <div className="mt-4">
+                        {linkPreviewLoading && (
+                          <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-slate-400 flex items-center gap-3">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary-400" />
+                            Buscando previsualización...
+                          </div>
+                        )}
+                        {linkPreview && !linkPreviewLoading && (
+                          <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                            {linkPreview.image && (
+                              <img src={linkPreview.image} alt={linkPreview.title ?? 'Preview'} className="w-full h-40 object-cover" />
+                            )}
+                            <div className="p-4">
+                              <div className="text-xs uppercase tracking-widest text-slate-500 mb-1">{linkPreview.site}</div>
+                              <h4 className="text-white font-semibold text-sm mb-1 line-clamp-2">
+                                {linkPreview.title ?? 'Contenido encontrado'}
+                              </h4>
+                              {linkPreview.description && (
+                                <p className="text-slate-400 text-xs line-clamp-3">{linkPreview.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {linkPreviewError && !linkPreviewLoading && (
+                          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200">
+                            {linkPreviewError}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Email */}

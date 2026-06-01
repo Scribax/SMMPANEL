@@ -93,6 +93,10 @@ export const ticketsApi = {
     apiClient.put(`/tickets/admin/${ticketId}/status`, data),
 };
 
+export const utilsApi = {
+  getLinkPreview: (url: string) => apiClient.get('/utils/link-preview', { params: { url } }),
+};
+
 export const adminApi = {
   getStats: () => apiClient.get('/admin/stats'),
   getDashboardStats: () => apiClient.get('/admin/dashboard-stats'),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,8 +12,9 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
-import { ordersApi, paymentsApi, authApi } from '@/lib/api';
+import { ordersApi, paymentsApi, authApi, ticketsApi } from '@/lib/api';
 import { Order, User as UserType } from '@/types';
+import type { Ticket } from '@/types/tickets';
 import { getStoredUser, clearAuth, isAuthenticated, setAuth } from '@/lib/auth';
 import { formatCurrency, formatDate, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
 
@@ -52,6 +53,12 @@ export default function DashboardPage() {
     total: number; pending: number; qualified: number;
     totalEarned: number; rewardAmount: number; spendThreshold: number;
   } | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [unreadTickets, setUnreadTickets] = useState<number>(0);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+  const previousUnreadRef = useRef<number>(0);
 
   useEffect(() => {
     if (!isAuthenticated()) { router.push('/login'); return; }
@@ -61,6 +68,7 @@ export default function DashboardPage() {
     fetchDeposits();
     refreshBalance();
     fetchReferrals();
+    fetchTickets();
   }, []);
 
   const fetchDeposits = async () => {
@@ -68,6 +76,25 @@ export default function DashboardPage() {
       const res = await paymentsApi.getDeposits();
       setDeposits(res.data.deposits ?? []);
     } catch { /* silent */ }
+  };
+
+  const fetchTickets = async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    try {
+      if (!silent) setTicketsLoading(true);
+      const res = await ticketsApi.getMyTickets(1, 6);
+      if (res.data.success) {
+        const list: Ticket[] = res.data.tickets ?? [];
+        setTickets(list);
+        const unread = list.filter((t) => !t.last_message_is_admin).length;
+        setUnreadTickets(unread);
+        previousUnreadRef.current = unread;
+      }
+    } catch (error) {
+      toast.error('Error cargando tickets');
+    } finally {
+      if (!silent) setTicketsLoading(false);
+    }
   };
 
   const refreshBalance = async () => {
@@ -176,6 +203,28 @@ export default function DashboardPage() {
     router.push('/');
   };
 
+  // Background polling for new ticket replies
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchTickets({ silent: true });
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+        setSidebarOpen(false);
+      }
+    };
+    if (sidebarOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [sidebarOpen]);
+
   const totalPages = Math.ceil(total / 10);
 
   const statusStats = orders.reduce((acc: Record<string, number>, o) => {
@@ -197,6 +246,91 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-dark-300">
       <Navbar />
+
+      {/* Tickets Sidebar */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.aside
+            ref={sidebarRef}
+            initial={{ x: 320, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 320, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+            className="fixed right-0 top-16 bottom-0 w-full sm:w-80 bg-dark-200/95 border-l border-white/10 shadow-xl z-40 flex flex-col"
+          >
+            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+              <div>
+                <div className="text-xs uppercase tracking-widest text-slate-500">Soporte</div>
+                <div className="text-white font-semibold flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-primary-400" />
+                  Tus tickets
+                </div>
+              </div>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="text-slate-500 hover:text-white transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {ticketsLoading ? (
+                <div className="text-center text-slate-500 text-sm py-6">
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+                  Cargando tickets...
+                </div>
+              ) : tickets.length === 0 ? (
+                <div className="text-center text-slate-500 text-sm py-6">
+                  No tenés tickets abiertos.
+                  <div className="mt-2">
+                    <Link href="/dashboard/tickets" className="text-primary-400 hover:text-primary-300 text-xs underline">
+                      Abrir centro de soporte
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                tickets.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => { window.location.href = `/dashboard/tickets?ticket=${t.id}`; }}
+                    className="w-full text-left bg-dark-100/80 hover:bg-dark-100 border border-white/10 hover:border-primary-400/40 rounded-xl px-3 py-2 text-sm transition flex flex-col gap-1"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-white font-semibold text-xs line-clamp-1">{t.subject}</p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                        t.status === 'open' ? 'bg-blue-500/20 text-blue-300' :
+                        t.status === 'in_progress' ? 'bg-amber-500/20 text-amber-300' :
+                        t.status === 'resolved' ? 'bg-green-500/20 text-green-300' :
+                        'bg-slate-500/20 text-slate-300'
+                      }`}>
+                        {t.status}
+                      </span>
+                    </div>
+                    {t.last_message_excerpt && (
+                      <p className="text-[11px] text-slate-400 line-clamp-2">
+                        {t.last_message_excerpt}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between mt-1 text-[10px] text-slate-500">
+                      <span>{t.last_message_is_admin ? 'Respondido por soporte' : 'Tu último mensaje'}</span>
+                      <span>{t.last_message_at ? formatDate(t.last_message_at) : formatDate(t.created_at)}</span>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+
+            <div className="px-3 py-2 border-t border-white/10 text-[11px] text-slate-500 flex items-center justify-between">
+              <span>{unreadTickets > 0 ? `${unreadTickets} ticket(s) sin leer` : 'Todo al día ✅'}</span>
+              <Link href="/dashboard/tickets" className="text-primary-400 hover:text-primary-300 font-medium flex items-center gap-1">
+                Ver todo <ExternalLink className="w-3 h-3" />
+              </Link>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
 
       {/* Deposit Modal */}
       <AnimatePresence>
@@ -283,6 +417,18 @@ export default function DashboardPage() {
               <p className="text-slate-400 mt-1">Bienvenido, {user?.name?.split(' ')[0]} 👋</p>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen((prev) => !prev)}
+                className="relative flex items-center gap-2 text-sm text-slate-400 hover:text-white transition"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Tickets
+                {unreadTickets > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    {unreadTickets}
+                  </span>
+                )}
+              </button>
               <button onClick={() => setShowDepositModal(true)} className="btn-secondary flex items-center gap-2">
                 <PlusCircle className="w-4 h-4" /> Agregar saldo
               </button>

@@ -81,7 +81,9 @@ export const getUserTickets = async (req: Request & { user?: any }, res: Respons
       query(
         `SELECT t.*, 
                 (SELECT COUNT(*) FROM ticket_messages WHERE ticket_id = t.id) as message_count,
-                (SELECT created_at FROM ticket_messages WHERE ticket_id = t.id ORDER BY created_at DESC LIMIT 1) as last_message_at
+                (SELECT created_at FROM ticket_messages WHERE ticket_id = t.id ORDER BY created_at DESC LIMIT 1) as last_message_at,
+                (SELECT is_admin FROM ticket_messages WHERE ticket_id = t.id ORDER BY created_at DESC LIMIT 1) as last_message_is_admin,
+                (SELECT LEFT(message, 140) FROM ticket_messages WHERE ticket_id = t.id ORDER BY created_at DESC LIMIT 1) as last_message_excerpt
          FROM tickets t 
          WHERE t.user_id = $1 
          ORDER BY t.created_at DESC 
