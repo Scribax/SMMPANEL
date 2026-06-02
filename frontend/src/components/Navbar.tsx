@@ -61,7 +61,7 @@ export default function Navbar() {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <Image
@@ -95,24 +95,44 @@ export default function Navbar() {
           {/* Desktop Auth */}
           <div className="hidden md:flex items-center gap-3">
             {user ? (
-              <div className="relative">
+              <div className="relative flex items-center gap-2">
+                {/* Balance Badge - Más grande y visible */}
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-1.5 glass-card px-3 py-1.5 text-xs font-semibold text-green-400 border-green-500/20 hover:border-green-500/40 transition-all"
+                  className="flex items-center gap-2 glass-card px-4 py-2.5 text-sm font-bold text-green-400 border-green-500/30 hover:border-green-500/60 hover:bg-green-500/10 transition-all shadow-lg shadow-green-500/10"
                 >
-                  <Wallet className="w-3.5 h-3.5" />$
-                  {parseFloat(String(user.balance ?? 0)).toFixed(2)}
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500/20">
+                    <Wallet className="w-4 h-4" />
+                  </div>
+                  <span className="text-base">
+                    ${parseFloat(String(user.balance ?? 0)).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  </span>
                 </Link>
+
+                {/* Profile Button - Más grande */}
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 glass-card px-3 py-2 hover:border-primary-500/30 transition-all"
+                  className="flex items-center gap-3 glass-card px-4 py-2.5 hover:border-primary-500/40 hover:bg-primary-500/10 transition-all shadow-lg shadow-primary-500/10"
                 >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-xs font-bold">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-primary-500/30">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-sm text-slate-300">
-                    {user.name.split(" ")[0]}
-                  </span>
+                  <div className="text-left">
+                    <span className="text-sm font-medium text-white block">
+                      {user.name.split(" ")[0]}
+                    </span>
+                    {user.role === "admin" && (
+                      <span className="text-[10px] text-primary-400 font-semibold uppercase tracking-wide">Admin</span>
+                    )}
+                  </div>
+                  <svg 
+                    className={`w-4 h-4 text-slate-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
                 <AnimatePresence>
                   {dropdownOpen && (
@@ -121,30 +141,67 @@ export default function Navbar() {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-48 glass-card border-white/[0.1] shadow-xl overflow-hidden"
+                      className="absolute right-0 top-full mt-2 w-56 glass-card border-white/[0.1] shadow-xl overflow-hidden z-50"
                     >
-                      <Link
-                        href="/dashboard"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-white/[0.05] transition-colors"
-                      >
-                        <LayoutDashboard className="w-4 h-4" /> Mi Panel
-                      </Link>
-                      {user.role === "admin" && (
+                      {/* Header del menú con info del usuario */}
+                      <div className="px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-white">{user.name}</p>
+                            <p className="text-xs text-slate-400">{user.email}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="py-1">
                         <Link
-                          href="/admin"
+                          href="/dashboard"
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-3 text-sm text-primary-400 hover:text-primary-300 hover:bg-white/[0.05] transition-colors"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/[0.05] transition-colors"
                         >
-                          <ShieldCheck className="w-4 h-4" /> Panel Admin
+                          <div className="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center">
+                            <LayoutDashboard className="w-4 h-4 text-primary-400" />
+                          </div>
+                          Mi Panel
                         </Link>
-                      )}
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-white/[0.05] transition-colors border-t border-white/[0.06]"
-                      >
-                        <LogOut className="w-4 h-4" /> Cerrar sesión
-                      </button>
+                        <Link
+                          href="/order"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/[0.05] transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                            <Wallet className="w-4 h-4 text-green-400" />
+                          </div>
+                          Nuevo Pedido
+                        </Link>
+                        {user.role === "admin" && (
+                          <Link
+                            href="/admin"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-primary-400 hover:text-primary-300 hover:bg-white/[0.05] transition-colors"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center">
+                              <ShieldCheck className="w-4 h-4 text-primary-400" />
+                            </div>
+                            Panel Admin
+                          </Link>
+                        )}
+                      </div>
+
+                      <div className="border-t border-white/[0.06] py-1">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                            <LogOut className="w-4 h-4" />
+                          </div>
+                          Cerrar sesión
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
