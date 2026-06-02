@@ -117,9 +117,9 @@ const SERVICES: ServiceDef[] = [
   {
     name: 'Instagram Views – Reels',
     platform: 'instagram', category: 'views',
-    description: 'Vistas para VIDEOS/REELS. ⚠️ SOLO funciona con: instagram.com/reel/ (videos) o instagram.com/tv/. ❌ NO funciona con fotos instagram.com/p/',
-    deliverySpeed: 'Instantáneo',
-    providerServiceId: 5266,   // views reels
+    description: 'Vistas para VIDEOS/REELS. S1 Worldwide, ideal para publicaciones que necesitan velocidad extra. ⚠️ SOLO funciona con: instagram.com/reel/ (videos) o instagram.com/tv/. ❌ NO funciona con fotos instagram.com/p/',
+    deliverySpeed: '0-1 hora',
+    providerServiceId: 5264,   // views reels worldwide S1 (faster)
     sortOrder: 20,
   },
   {
