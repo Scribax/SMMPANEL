@@ -104,6 +104,14 @@ const SERVICES: ServiceDef[] = [
     providerServiceId: 6504,   // likes HQ con refill
     sortOrder: 11,
   },
+  {
+    name: 'Instagram Story Stickers – Likes & Clicks',
+    platform: 'instagram', category: 'likes',
+    description: 'Interacciones reales en stickers de Historias (links, encuestas, preguntas). Ideal para campañas que buscan engagement además de vistas.',
+    deliverySpeed: '0-12 horas',
+    providerServiceId: 4115,   // sticker links clicks
+    sortOrder: 12,
+  },
 
   // Views
   {
@@ -115,12 +123,28 @@ const SERVICES: ServiceDef[] = [
     sortOrder: 20,
   },
   {
-    name: 'Instagram Story Views',
+    name: 'Instagram Story Views – Real (últimos 5 posts)',
     platform: 'instagram', category: 'views',
-    description: 'Vistas para HISTORIAS de Instagram. ⚠️ Solo funciona con historias activas. ❌ NO funciona con posts ni reels.',
-    deliverySpeed: 'Instantáneo',
-    providerServiceId: 12917,  // story views
+    description: 'Vistas reales para tus Historias más recientes. Distribuye la entrega en las últimas 5 historias activas.',
+    deliverySpeed: '0-3 horas',
+    providerServiceId: 5296,   // story views real last 5 posts
     sortOrder: 21,
+  },
+  {
+    name: 'Instagram Story Views – HQ (todas las historias activas)',
+    platform: 'instagram', category: 'views',
+    description: 'Cobertura HQ para todas tus historias activas. Ideal para cuentas con alto volumen que quieren evitar drops.',
+    deliverySpeed: '0-6 horas',
+    providerServiceId: 5202,   // story views HQ all posts
+    sortOrder: 22,
+  },
+  {
+    name: 'Instagram Story Views + Reach – HQ',
+    platform: 'instagram', category: 'views',
+    description: 'Combiná vistas y alcance en todas tus historias activas (hasta 10K). Perfecto para empujar métricas de descubrimiento.',
+    deliverySpeed: '0-6 horas',
+    providerServiceId: 3933,   // story views + reach
+    sortOrder: 23,
   },
 
   // ════════════════════════════════════════════════════════════════
