@@ -86,6 +86,25 @@ export default function AdminPage() {
     provider_service_id: "",
   });
 
+  // Estados para crear pedidos manualmente
+  const [showCreateOrder, setShowCreateOrder] = useState(false);
+  const [newOrder, setNewOrder] = useState({
+    userId: "",
+    serviceId: "",
+    quantity: "",
+    link: "",
+  });
+  const [creatingOrder, setCreatingOrder] = useState(false);
+
+  // Estados para detalle de usuario y balance
+  const [selectedUser, setSelectedUser] = useState<Record<string, unknown> | null>(null);
+  const [showUserDetail, setShowUserDetail] = useState(false);
+  const [balanceAdjustment, setBalanceAdjustment] = useState("");
+  const [adjustmentReason, setAdjustmentReason] = useState("");
+  const [adjustingBalance, setAdjustingBalance] = useState(false);
+  const [userOrders, setUserOrders] = useState<Order[]>([]);
+  const [userStats, setUserStats] = useState<Record<string, unknown> | null>(null);
+
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/login");
@@ -321,6 +340,82 @@ export default function AdminPage() {
   const openOrderDetails = (order: Order) => {
     setSelectedOrder(order);
     setShowOrderModal(true);
+  };
+
+  // Crear pedido manualmente desde admin
+  const createOrder = async () => {
+    if (!newOrder.userId || !newOrder.serviceId || !newOrder.quantity || !newOrder.link) {
+      toast.error("Todos los campos son requeridos");
+      return;
+    }
+    setCreatingOrder(true);
+    try {
+      const res = await adminApi.createOrder({
+        userId: newOrder.userId,
+        serviceId: newOrder.serviceId,
+        quantity: parseInt(newOrder.quantity),
+        link: newOrder.link,
+      });
+      toast.success(`✅ Pedido creado #${res.data.order.id}`);
+      setShowCreateOrder(false);
+      setNewOrder({ userId: "", serviceId: "", quantity: "", link: "" });
+      loadOrders(ordersPage, statusFilter);
+      loadDashboard();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Error al crear pedido";
+      toast.error(msg);
+    } finally {
+      setCreatingOrder(false);
+    }
+  };
+
+  // Ver detalle de usuario
+  const openUserDetail = async (user: Record<string, unknown>) => {
+    setSelectedUser(user);
+    setShowUserDetail(true);
+    try {
+      const res = await adminApi.getUserDetail(String(user.id));
+      setUserOrders(res.data.orders ?? []);
+      setUserStats(res.data.stats ?? null);
+    } catch {
+      toast.error("Error al cargar detalle del usuario");
+    }
+  };
+
+  // Ajustar saldo de usuario
+  const adjustBalance = async () => {
+    if (!selectedUser || !balanceAdjustment) return;
+    const amount = parseFloat(balanceAdjustment);
+    if (isNaN(amount) || amount === 0) {
+      toast.error("Monto inválido");
+      return;
+    }
+    setAdjustingBalance(true);
+    try {
+      const res = await adminApi.adjustUserBalance(
+        String(selectedUser.id),
+        amount,
+        adjustmentReason || undefined
+      );
+      toast.success(`✅ Saldo ${amount > 0 ? "agregado" : "deducido"}: ${formatCurrency(Math.abs(amount))}`);
+      setBalanceAdjustment("");
+      setAdjustmentReason("");
+      // Actualizar datos del usuario
+      const userRes = await adminApi.getUserDetail(String(selectedUser.id));
+      setSelectedUser(userRes.data.user);
+      setUserOrders(userRes.data.orders ?? []);
+      setUserStats(userRes.data.stats ?? null);
+      loadUsers();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Error al ajustar saldo";
+      toast.error(msg);
+    } finally {
+      setAdjustingBalance(false);
+    }
   };
 
   const NAV_ITEMS: { id: AdminTab; label: string; icon: React.ElementType }[] =
@@ -567,21 +662,29 @@ export default function AdminPage() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-black text-white">Orders</h1>
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  loadOrders(1, e.target.value);
-                }}
-                className="input-field w-auto text-sm"
-              >
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowCreateOrder(true)}
+                  className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
+                >
+                  <Plus className="w-4 h-4" /> Crear Pedido
+                </button>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    loadOrders(1, e.target.value);
+                  }}
+                  className="input-field w-auto text-sm"
+                >
                 <option value="">All Statuses</option>
                 {Object.entries(STATUS_LABELS).map(([v, l]) => (
                   <option key={v} value={v}>
                     {l}
                   </option>
                 ))}
-              </select>
+                </select>
+              </div>
             </div>
             <div className="space-y-2">
               {orders.map((order) => (
@@ -1212,9 +1315,21 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-right flex-shrink-0">
-                    <span className="text-primary-400 text-sm font-semibold">
-                      {String(u.order_count ?? 0)} orders
-                    </span>
+                    <div className="text-right mr-2">
+                      <div className="text-primary-400 text-sm font-semibold">
+                        {formatCurrency(Number(u.balance ?? 0))}
+                      </div>
+                      <div className="text-slate-500 text-xs">
+                        {String(u.order_count ?? 0)} pedidos
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => openUserDetail(u)}
+                      className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors border border-blue-500/20"
+                      title="Ver detalle"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
                     {String(u.role) !== "admin" && (
                       <button
                         onClick={() => toggleUserStatus(String(u.id))}
@@ -1394,6 +1509,221 @@ export default function AdminPage() {
                     <RotateCcw className="w-4 h-4" /> Reintentar
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Create Order Modal */}
+        {showCreateOrder && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="glass-card max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+                <h3 className="text-white font-bold text-lg">
+                  Crear Pedido Manual
+                </h3>
+                <button
+                  onClick={() => setShowCreateOrder(false)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="text-slate-400 text-sm mb-1 block">ID de Usuario</label>
+                  <input
+                    type="text"
+                    value={newOrder.userId}
+                    onChange={(e) => setNewOrder({ ...newOrder, userId: e.target.value })}
+                    placeholder="uuid del usuario"
+                    className="input-field w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-400 text-sm mb-1 block">Servicio</label>
+                  <select
+                    value={newOrder.serviceId}
+                    onChange={(e) => setNewOrder({ ...newOrder, serviceId: e.target.value })}
+                    className="input-field w-full"
+                  >
+                    <option value="">Seleccionar servicio</option>
+                    {services.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.platform} - {s.category})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 text-sm mb-1 block">Cantidad</label>
+                  <input
+                    type="number"
+                    value={newOrder.quantity}
+                    onChange={(e) => setNewOrder({ ...newOrder, quantity: e.target.value })}
+                    placeholder="100"
+                    className="input-field w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-400 text-sm mb-1 block">Link</label>
+                  <input
+                    type="text"
+                    value={newOrder.link}
+                    onChange={(e) => setNewOrder({ ...newOrder, link: e.target.value })}
+                    placeholder="https://instagram.com/p/..."
+                    className="input-field w-full"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <button
+                    onClick={() => setShowCreateOrder(false)}
+                    className="flex-1 btn-secondary"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={createOrder}
+                    disabled={creatingOrder}
+                    className="flex-1 btn-primary"
+                  >
+                    {creatingOrder ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}{" "}
+                    Crear Pedido
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* User Detail Modal */}
+        {showUserDetail && selectedUser && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="glass-card max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+                <h3 className="text-white font-bold text-lg">
+                  Detalle de Usuario
+                </h3>
+                <button
+                  onClick={() => setShowUserDetail(false)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* User Info */}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
+                    {String(selectedUser.name ?? "?").charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-white font-medium text-lg">{String(selectedUser.name)}</div>
+                    <div className="text-slate-400 text-sm">{String(selectedUser.email)}</div>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                {userStats && (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-dark-200/50 p-4 rounded-xl text-center">
+                      <div className="text-slate-400 text-xs mb-1">Saldo</div>
+                      <div className="text-primary-400 font-bold text-xl">
+                        {formatCurrency(Number(selectedUser.balance))}
+                      </div>
+                    </div>
+                    <div className="bg-dark-200/50 p-4 rounded-xl text-center">
+                      <div className="text-slate-400 text-xs mb-1">Pedidos</div>
+                      <div className="text-white font-bold text-xl">
+                        {String(userStats.total_orders ?? 0)}
+                      </div>
+                    </div>
+                    <div className="bg-dark-200/50 p-4 rounded-xl text-center">
+                      <div className="text-slate-400 text-xs mb-1">Gastado</div>
+                      <div className="text-white font-bold text-xl">
+                        {formatCurrency(Number(userStats.total_spent ?? 0))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Balance Adjustment */}
+                <div className="border-t border-white/[0.06] pt-4">
+                  <h4 className="text-white font-medium mb-3">Ajustar Saldo</h4>
+                  <div className="flex gap-3">
+                    <input
+                      type="number"
+                      value={balanceAdjustment}
+                      onChange={(e) => setBalanceAdjustment(e.target.value)}
+                      placeholder="Monto (+/-)"
+                      className="input-field flex-1"
+                    />
+                    <input
+                      type="text"
+                      value={adjustmentReason}
+                      onChange={(e) => setAdjustmentReason(e.target.value)}
+                      placeholder="Razón (opcional)"
+                      className="input-field flex-1"
+                    />
+                    <button
+                      onClick={adjustBalance}
+                      disabled={adjustingBalance}
+                      className="btn-primary px-4"
+                    >
+                      {adjustingBalance ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <DollarSign className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-slate-500 text-xs mt-2">
+                    Usar valor positivo para agregar saldo, negativo para deducir.
+                  </p>
+                </div>
+
+                {/* Recent Orders */}
+                {userOrders.length > 0 && (
+                  <div className="border-t border-white/[0.06] pt-4">
+                    <h4 className="text-white font-medium mb-3">Últimos Pedidos</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {userOrders.map((order) => (
+                        <div
+                          key={order.id}
+                          className="bg-dark-200/30 p-3 rounded-lg flex items-center justify-between"
+                        >
+                          <div>
+                            <div className="text-white text-sm">{order.service_name}</div>
+                            <div className="text-slate-500 text-xs">
+                              {order.quantity} unidades • {formatCurrency(order.price)}
+                            </div>
+                          </div>
+                          <span className={`status-badge text-xs ${STATUS_COLORS[order.status]}`}>
+                            {STATUS_LABELS[order.status]}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

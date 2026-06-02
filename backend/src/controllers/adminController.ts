@@ -651,6 +651,225 @@ export const adminToggleUser = async (
   });
 };
 
+export const adminGetUserDetail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { id } = req.params;
+
+  const userResult = await query(
+    `SELECT id, email, name, role, balance, is_active, created_at
+     FROM users WHERE id = $1`,
+    [id],
+  );
+
+  if (!userResult.rows.length) {
+    res.status(404).json({ success: false, message: "User not found" });
+    return;
+  }
+
+  const [ordersResult, statsResult] = await Promise.all([
+    query(
+      `SELECT o.id, o.link, o.quantity, o.price, o.status, o.provider_order_id,
+              o.created_at, s.name as service_name, s.platform
+       FROM orders o
+       LEFT JOIN services s ON o.service_id = s.id
+       WHERE o.user_id = $1
+       ORDER BY o.created_at DESC
+       LIMIT 10`,
+      [id],
+    ),
+    query(
+      `SELECT 
+        COUNT(*) as total_orders,
+        COALESCE(SUM(CASE WHEN status NOT IN ('cancelled', 'refunded') THEN price ELSE 0 END), 0) as total_spent
+       FROM orders
+       WHERE user_id = $1`,
+      [id],
+    ),
+  ]);
+
+  res.json({
+    success: true,
+    user: userResult.rows[0],
+    orders: ordersResult.rows,
+    stats: statsResult.rows[0],
+  });
+};
+
+export const adminAdjustUserBalance = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { id } = req.params;
+  const { amount, reason } = req.body;
+
+  if (typeof amount !== "number" || amount === 0) {
+    res.status(400).json({ success: false, message: "Amount must be a non-zero number" });
+    return;
+  }
+
+  const userResult = await query<{ id: string; email: string; name: string; balance: string }>(
+    "SELECT id, email, name, balance FROM users WHERE id = $1",
+    [id],
+  );
+
+  if (!userResult.rows.length) {
+    res.status(404).json({ success: false, message: "User not found" });
+    return;
+  }
+
+  const user = userResult.rows[0];
+  const newBalance = parseFloat(user.balance) + amount;
+
+  if (newBalance < 0) {
+    res.status(400).json({ success: false, message: "Insufficient balance for deduction" });
+    return;
+  }
+
+  await query(
+    "UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2",
+    [newBalance, id],
+  );
+
+  logger.info("User balance adjusted by admin", {
+    userId: id,
+    amount,
+    newBalance,
+    reason: reason || "No reason provided",
+  });
+
+  res.json({
+    success: true,
+    message: `Balance ${amount > 0 ? "added" : "deducted"} successfully`,
+    newBalance,
+    adjustment: amount,
+  });
+};
+
+export const adminCreateOrder = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { userId, serviceId, quantity, link } = req.body;
+
+  if (!userId || !serviceId || !quantity || !link) {
+    res.status(400).json({
+      success: false,
+      message: "userId, serviceId, quantity, and link are required",
+    });
+    return;
+  }
+
+  const userResult = await query(
+    "SELECT id, balance FROM users WHERE id = $1",
+    [userId],
+  );
+  if (!userResult.rows.length) {
+    res.status(404).json({ success: false, message: "User not found" });
+    return;
+  }
+
+  const serviceResult = await query<{
+    id: string;
+    name: string;
+    price_per_unit: string;
+    min_quantity: number;
+    max_quantity: number;
+    provider_id: string;
+    provider_service_id: number;
+    api_url: string;
+    api_key_enc: string;
+  }>(
+    `SELECT s.id, s.name, s.price_per_unit, s.min_quantity, s.max_quantity,
+            s.provider_id, s.provider_service_id, p.api_url, p.api_key_enc
+     FROM services s
+     LEFT JOIN providers p ON s.provider_id = p.id
+     WHERE s.id = $1 AND s.is_active = true`,
+    [serviceId],
+  );
+  if (!serviceResult.rows.length) {
+    res.status(404).json({ success: false, message: "Service not found or inactive" });
+    return;
+  }
+
+  const service = serviceResult.rows[0];
+  const qty = parseInt(quantity as string, 10);
+
+  if (qty < service.min_quantity || qty > service.max_quantity) {
+    res.status(400).json({
+      success: false,
+      message: `Quantity must be between ${service.min_quantity} and ${service.max_quantity}`,
+    });
+    return;
+  }
+
+  const price = parseFloat(service.price_per_unit) * qty;
+
+  const orderId = await query<{ id: string }>(
+    `INSERT INTO orders (user_id, service_id, quantity, price, link, status, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+     RETURNING id`,
+    [userId, serviceId, qty, price, link, "pending"],
+  );
+
+  const newOrderId = orderId.rows[0].id;
+
+  logger.info("Order created by admin", {
+    orderId: newOrderId,
+    userId,
+    serviceId,
+    quantity: qty,
+    price,
+  });
+
+  if (service.provider_id && service.provider_service_id) {
+    try {
+      const { sendOrderToProvider } = await import("../services/providerService");
+      const providerResult = await sendOrderToProvider({
+        providerId: service.provider_id,
+        serviceId: service.provider_service_id,
+        link,
+        quantity: qty,
+      });
+
+      await query(
+        "UPDATE orders SET provider_order_id = $1, status = $2, updated_at = NOW() WHERE id = $3",
+        [String(providerResult.orderId), "in_progress", newOrderId],
+      );
+
+      logger.info("Order sent to provider by admin", {
+        orderId: newOrderId,
+        providerOrderId: providerResult.orderId,
+      });
+
+      res.json({
+        success: true,
+        order: {
+          id: newOrderId,
+          provider_order_id: providerResult.orderId,
+          status: "in_progress",
+          price,
+        },
+        message: "Order created and sent to provider",
+      });
+      return;
+    } catch (err) {
+      logger.error("Failed to send order to provider", { orderId: newOrderId, error: err });
+    }
+  }
+
+  res.json({
+    success: true,
+    order: {
+      id: newOrderId,
+      status: "pending",
+      price,
+    },
+    message: "Order created (provider delivery pending)",
+  });
+};
+
 // ─── COUPONS MANAGEMENT ──────────────────────────────────────────────────────
 
 export const adminGetCoupons = async (

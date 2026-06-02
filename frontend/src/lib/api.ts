@@ -113,9 +113,14 @@ export const adminApi = {
     apiClient.put(`/admin/orders/${id}/status`, { status }),
   refundOrder: (id: string) => apiClient.post(`/admin/orders/${id}/refund`),
   retryOrder: (id: string) => apiClient.post(`/admin/orders/${id}/retry`),
+  createOrder: (data: { userId: string; serviceId: string; quantity: number; link: string }) =>
+    apiClient.post('/admin/orders', data),
   getUsers: (page = 1, limit = 20) =>
     apiClient.get('/admin/users', { params: { page, limit } }),
+  getUserDetail: (id: string) => apiClient.get(`/admin/users/${id}`),
   toggleUser: (id: string) => apiClient.post(`/admin/users/${id}/toggle`),
+  adjustUserBalance: (id: string, amount: number, reason?: string) =>
+    apiClient.post(`/admin/users/${id}/balance`, { amount, reason }),
   getCoupons: () => apiClient.get('/admin/coupons'),
   createCoupon: (data: object) => apiClient.post('/admin/coupons', data),
   updateCoupon: (id: string, data: object) => apiClient.put(`/admin/coupons/${id}`, data),
