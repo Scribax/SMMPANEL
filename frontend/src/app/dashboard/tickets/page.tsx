@@ -1,20 +1,29 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  MessageCircle, Plus, Send, Clock, CheckCircle, AlertCircle,
-  X, ChevronDown, ChevronUp, Loader2, HelpCircle,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import { ticketsApi } from '@/lib/api';
-import { formatDate } from '@/lib/utils';
+  MessageCircle,
+  Plus,
+  Send,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  HelpCircle,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import { ticketsApi } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 
 interface Ticket {
   id: string;
   subject: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+  status: "open" | "in_progress" | "resolved" | "closed";
+  priority: "low" | "normal" | "high" | "urgent";
   message_count: number;
   last_message_at: string;
   created_at: string;
@@ -31,10 +40,10 @@ interface TicketMessage {
 }
 
 const statusColors = {
-  open: 'text-blue-400 bg-blue-400/10',
-  in_progress: 'text-yellow-400 bg-yellow-400/10',
-  resolved: 'text-green-400 bg-green-400/10',
-  closed: 'text-gray-400 bg-gray-400/10',
+  open: "text-blue-400 bg-blue-400/10",
+  in_progress: "text-yellow-400 bg-yellow-400/10",
+  resolved: "text-green-400 bg-green-400/10",
+  closed: "text-gray-400 bg-gray-400/10",
 };
 
 const statusIcons = {
@@ -45,10 +54,10 @@ const statusIcons = {
 };
 
 const priorityColors = {
-  low: 'text-gray-400',
-  normal: 'text-blue-400',
-  high: 'text-orange-400',
-  urgent: 'text-red-400',
+  low: "text-gray-400",
+  normal: "text-blue-400",
+  high: "text-orange-400",
+  urgent: "text-red-400",
 };
 
 export default function TicketsPage() {
@@ -58,15 +67,17 @@ export default function TicketsPage() {
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
+  const [expandedTickets, setExpandedTickets] = useState<Set<string>>(
+    new Set(),
+  );
 
   // New ticket form
   const [newTicket, setNewTicket] = useState({
-    subject: '',
-    message: '',
-    priority: 'normal' as const,
+    subject: "",
+    message: "",
+    priority: "normal" as const,
   });
   const [creatingTicket, setCreatingTicket] = useState(false);
 
@@ -82,7 +93,7 @@ export default function TicketsPage() {
         setTickets(response.data.tickets);
       }
     } catch (error) {
-      toast.error('Error loading tickets');
+      toast.error("Error loading tickets");
     } finally {
       setLoading(false);
     }
@@ -96,7 +107,7 @@ export default function TicketsPage() {
         setMessages(response.data.messages);
       }
     } catch (error) {
-      toast.error('Error loading messages');
+      toast.error("Error loading messages");
     } finally {
       setMessagesLoading(false);
     }
@@ -104,7 +115,7 @@ export default function TicketsPage() {
 
   const createTicket = async () => {
     if (!newTicket.subject.trim() || !newTicket.message.trim()) {
-      toast.error('Please fill in all fields');
+      toast.error("Please fill in all fields");
       return;
     }
 
@@ -112,13 +123,13 @@ export default function TicketsPage() {
       setCreatingTicket(true);
       const response = await ticketsApi.createTicket(newTicket);
       if (response.data.success) {
-        toast.success('Ticket created successfully');
-        setNewTicket({ subject: '', message: '', priority: 'normal' });
+        toast.success("Ticket created successfully");
+        setNewTicket({ subject: "", message: "", priority: "normal" });
         setShowNewTicketForm(false);
         fetchTickets();
       }
     } catch (error) {
-      toast.error('Error creating ticket');
+      toast.error("Error creating ticket");
     } finally {
       setCreatingTicket(false);
     }
@@ -129,14 +140,17 @@ export default function TicketsPage() {
 
     try {
       setSendingMessage(true);
-      const response = await ticketsApi.addMessage(selectedTicket.id, newMessage);
+      const response = await ticketsApi.addMessage(
+        selectedTicket.id,
+        newMessage,
+      );
       if (response.data.success) {
-        setNewMessage('');
+        setNewMessage("");
         fetchMessages(selectedTicket.id);
         fetchTickets(); // Update last message time
       }
     } catch (error) {
-      toast.error('Error sending message');
+      toast.error("Error sending message");
     } finally {
       setSendingMessage(false);
     }
@@ -159,7 +173,7 @@ export default function TicketsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark-300 p-6">
+      <div className="min-h-screen bg-dark-300 p-4 sm:p-6">
         <div className="max-w-6xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-700 rounded w-64 mb-8"></div>
@@ -178,20 +192,22 @@ export default function TicketsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-300 p-6">
+    <div className="min-h-screen bg-dark-300 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <MessageCircle className="w-8 h-8 text-primary-400" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
+              <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 text-primary-400" />
               Soporte Técnico
             </h1>
-            <p className="text-gray-400 mt-2">Gestioná tus tickets de soporte</p>
+            <p className="text-gray-400 mt-1 sm:mt-2 text-sm">
+              Gestioná tus tickets de soporte
+            </p>
           </div>
           <button
             onClick={() => setShowNewTicketForm(true)}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary flex items-center gap-2 self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
             Nuevo Ticket
@@ -205,20 +221,24 @@ export default function TicketsPage() {
               <div className="bg-dark-100 p-8 rounded-lg text-center">
                 <HelpCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                 <p className="text-gray-400">No tickets yet</p>
-                <p className="text-gray-500 text-sm mt-2">Create your first support ticket</p>
+                <p className="text-gray-500 text-sm mt-2">
+                  Create your first support ticket
+                </p>
               </div>
             ) : (
               tickets.map((ticket) => {
                 const StatusIcon = statusIcons[ticket.status];
                 const isExpanded = expandedTickets.has(ticket.id);
-                
+
                 return (
                   <motion.div
                     key={ticket.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={`bg-dark-100 p-4 rounded-lg cursor-pointer transition-all ${
-                      selectedTicket?.id === ticket.id ? 'ring-2 ring-primary-400' : ''
+                      selectedTicket?.id === ticket.id
+                        ? "ring-2 ring-primary-400"
+                        : ""
                     }`}
                     onClick={() => selectTicket(ticket)}
                   >
@@ -226,14 +246,20 @@ export default function TicketsPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <StatusIcon className="w-4 h-4" />
-                          <span className={`text-xs px-2 py-1 rounded-full ${statusColors[ticket.status]}`}>
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${statusColors[ticket.status]}`}
+                          >
                             {ticket.status}
                           </span>
-                          <span className={`text-xs ${priorityColors[ticket.priority]}`}>
+                          <span
+                            className={`text-xs ${priorityColors[ticket.priority]}`}
+                          >
                             {ticket.priority}
                           </span>
                         </div>
-                        <h3 className="text-white font-medium">{ticket.subject}</h3>
+                        <h3 className="text-white font-medium">
+                          {ticket.subject}
+                        </h3>
                       </div>
                       <button
                         onClick={(e) => {
@@ -242,20 +268,26 @@ export default function TicketsPage() {
                         }}
                         className="text-gray-400 hover:text-white"
                       >
-                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
-                    
+
                     <AnimatePresence>
                       {isExpanded && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
+                          animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           className="text-sm text-gray-400"
                         >
                           <p>Messages: {ticket.message_count}</p>
-                          <p>Last updated: {formatDate(ticket.last_message_at)}</p>
+                          <p>
+                            Last updated: {formatDate(ticket.last_message_at)}
+                          </p>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -268,12 +300,16 @@ export default function TicketsPage() {
           {/* Ticket Details */}
           <div className="lg:col-span-2">
             {selectedTicket ? (
-              <div className="bg-dark-100 rounded-lg h-[600px] flex flex-col">
+              <div className="bg-dark-100 rounded-lg min-h-[400px] lg:h-[600px] flex flex-col">
                 {/* Ticket Header */}
                 <div className="p-6 border-b border-gray-700">
                   <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-xl font-semibold text-white">{selectedTicket.subject}</h2>
-                    <span className={`text-xs px-2 py-1 rounded-full ${statusColors[selectedTicket.status]}`}>
+                    <h2 className="text-xl font-semibold text-white">
+                      {selectedTicket.subject}
+                    </h2>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${statusColors[selectedTicket.status]}`}
+                    >
                       {selectedTicket.status}
                     </span>
                   </div>
@@ -294,19 +330,23 @@ export default function TicketsPage() {
                         key={message.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`flex ${message.is_admin ? 'justify-start' : 'justify-end'}`}
+                        className={`flex ${message.is_admin ? "justify-start" : "justify-end"}`}
                       >
                         <div
                           className={`max-w-md p-4 rounded-lg ${
                             message.is_admin
-                              ? 'bg-gray-700 text-white'
-                              : 'bg-primary-500 text-white'
+                              ? "bg-gray-700 text-white"
+                              : "bg-primary-500 text-white"
                           }`}
                         >
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-medium">{message.name}</span>
+                            <span className="text-sm font-medium">
+                              {message.name}
+                            </span>
                             {message.is_admin && (
-                              <span className="text-xs bg-primary-600 px-2 py-1 rounded">Admin</span>
+                              <span className="text-xs bg-primary-600 px-2 py-1 rounded">
+                                Admin
+                              </span>
                             )}
                           </div>
                           <p className="text-sm">{message.message}</p>
@@ -320,7 +360,7 @@ export default function TicketsPage() {
                 </div>
 
                 {/* Message Input */}
-                {selectedTicket.status !== 'closed' && (
+                {selectedTicket.status !== "closed" && (
                   <div className="p-6 border-t border-gray-700">
                     <div className="flex gap-3">
                       <input
@@ -329,7 +369,7 @@ export default function TicketsPage() {
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type your message..."
                         className="flex-1 bg-dark-200 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
-                        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                        onKeyPress={(e) => e.key === "Enter" && sendMessage()}
                       />
                       <button
                         onClick={sendMessage}
@@ -348,10 +388,12 @@ export default function TicketsPage() {
                 )}
               </div>
             ) : (
-              <div className="bg-dark-100 rounded-lg h-[600px] flex items-center justify-center">
+              <div className="hidden lg:flex bg-dark-100 rounded-lg h-[600px] items-center justify-center">
                 <div className="text-center">
                   <MessageCircle className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                  <p className="text-gray-400">Select a ticket to view messages</p>
+                  <p className="text-gray-400">
+                    Seleccioná un ticket para ver los mensajes
+                  </p>
                 </div>
               </div>
             )}
@@ -375,8 +417,10 @@ export default function TicketsPage() {
                 className="bg-dark-100 rounded-lg p-6 max-w-md w-full"
                 onClick={(e) => e.stopPropagation()}
               >
-                <h3 className="text-xl font-semibold text-white mb-4">Create New Ticket</h3>
-                
+                <h3 className="text-xl font-semibold text-white mb-4">
+                  Create New Ticket
+                </h3>
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -385,7 +429,9 @@ export default function TicketsPage() {
                     <input
                       type="text"
                       value={newTicket.subject}
-                      onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
+                      onChange={(e) =>
+                        setNewTicket({ ...newTicket, subject: e.target.value })
+                      }
                       className="w-full bg-dark-200 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
                       placeholder="Brief description of your issue"
                     />
@@ -397,7 +443,12 @@ export default function TicketsPage() {
                     </label>
                     <select
                       value={newTicket.priority}
-                      onChange={(e) => setNewTicket({ ...newTicket, priority: e.target.value as any })}
+                      onChange={(e) =>
+                        setNewTicket({
+                          ...newTicket,
+                          priority: e.target.value as any,
+                        })
+                      }
                       className="w-full bg-dark-200 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
                     >
                       <option value="low">Low</option>
@@ -413,7 +464,9 @@ export default function TicketsPage() {
                     </label>
                     <textarea
                       value={newTicket.message}
-                      onChange={(e) => setNewTicket({ ...newTicket, message: e.target.value })}
+                      onChange={(e) =>
+                        setNewTicket({ ...newTicket, message: e.target.value })
+                      }
                       className="w-full bg-dark-200 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400 min-h-[120px]"
                       placeholder="Describe your issue in detail"
                     />
@@ -435,7 +488,7 @@ export default function TicketsPage() {
                     {creatingTicket ? (
                       <Loader2 className="w-4 h-4 animate-spin mx-auto" />
                     ) : (
-                      'Create Ticket'
+                      "Create Ticket"
                     )}
                   </button>
                 </div>

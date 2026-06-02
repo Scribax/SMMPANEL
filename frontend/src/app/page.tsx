@@ -1,76 +1,91 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { motion, useInView } from 'framer-motion';
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { motion, useInView } from "framer-motion";
 import {
-  Zap, TrendingUp, Shield, Clock, Users, Heart, Eye,
-  ChevronRight, CheckCircle, ArrowRight, Play,
-} from 'lucide-react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { servicesApi } from '@/lib/api';
-import { Service } from '@/types';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+  Zap,
+  TrendingUp,
+  Shield,
+  Clock,
+  Users,
+  Heart,
+  Eye,
+  ChevronRight,
+  CheckCircle,
+  ArrowRight,
+  Play,
+} from "lucide-react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { servicesApi } from "@/lib/api";
+import { Service } from "@/types";
+import { formatCurrency, formatNumber } from "@/lib/utils";
 
 const STATS = [
-  { label: 'Entrega promedio', value: '< 1hr', icon: Zap },
-  { label: 'Plataformas', value: '3', icon: Users },
-  { label: 'Uptime del sistema', value: '99.9%', icon: Shield },
-  { label: 'Soporte disponible', value: '7 días', icon: Clock },
+  { label: "Entrega promedio", value: "< 1hr", icon: Zap },
+  { label: "Plataformas", value: "3", icon: Users },
+  { label: "Uptime del sistema", value: "99.9%", icon: Shield },
+  { label: "Soporte disponible", value: "7 días", icon: Clock },
 ];
 
 const FAQS = [
   {
-    q: '¿Necesito darles mi contraseña?',
-    a: 'No. Nunca pedimos tu contraseña. Solo necesitamos el link de tu perfil o publicación. Tu cuenta está 100% segura.',
+    q: "¿Necesito darles mi contraseña?",
+    a: "No. Nunca pedimos tu contraseña. Solo necesitamos el link de tu perfil o publicación. Tu cuenta está 100% segura.",
   },
   {
-    q: '¿Cuánto tarda en llegar el pedido?',
-    a: 'La mayoría de los pedidos comienzan en menos de 1 hora. Los seguidores y suscriptores pueden tardar hasta 24hs según la cantidad.',
+    q: "¿Cuánto tarda en llegar el pedido?",
+    a: "La mayoría de los pedidos comienzan en menos de 1 hora. Los seguidores y suscriptores pueden tardar hasta 24hs según la cantidad.",
   },
   {
-    q: '¿Los seguidores son reales?',
-    a: 'Trabajamos con proveedores que ofrecen cuentas reales con publicaciones activas y bajo drop. Tenemos opciones con reposición automática si alguno cae.',
+    q: "¿Los seguidores son reales?",
+    a: "Trabajamos con proveedores que ofrecen cuentas reales con publicaciones activas y bajo drop. Tenemos opciones con reposición automática si alguno cae.",
   },
   {
-    q: '¿Cómo pago?',
-    a: 'Cargás saldo en tu cuenta vía MercadoPago (tarjeta, débito o transferencia) y lo usás para hacer pedidos. Sin suscripciones ni cargos ocultos.',
+    q: "¿Cómo pago?",
+    a: "Cargás saldo en tu cuenta vía MercadoPago (tarjeta, débito o transferencia) y lo usás para hacer pedidos. Sin suscripciones ni cargos ocultos.",
   },
   {
-    q: '¿Qué pasa si mi pedido no llega?',
-    a: 'Podés hacer seguimiento desde tu panel. Si hay algún problema, escribinos y lo resolvemos. Ofrecemos reposición o reembolso según el caso.',
+    q: "¿Qué pasa si mi pedido no llega?",
+    a: "Podés hacer seguimiento desde tu panel. Si hay algún problema, escribinos y lo resolvemos. Ofrecemos reposición o reembolso según el caso.",
   },
   {
-    q: '¿Funciona para cuentas privadas?',
-    a: 'Para seguidores tu cuenta tiene que estar en público durante la entrega. Para likes y vistas podés tener la cuenta privada.',
+    q: "¿Funciona para cuentas privadas?",
+    a: "Para seguidores tu cuenta tiene que estar en público durante la entrega. Para likes y vistas podés tener la cuenta privada.",
   },
 ];
 
 const HOW_IT_WORKS = [
   {
-    step: '01',
-    title: 'Elegí tu servicio',
-    desc: 'Explorá nuestro catálogo y elegí el servicio ideal para tu plataforma y objetivos.',
+    step: "01",
+    title: "Elegí tu servicio",
+    desc: "Explorá nuestro catálogo y elegí el servicio ideal para tu plataforma y objetivos.",
   },
   {
-    step: '02',
-    title: 'Ingresá tus datos',
-    desc: 'Proporcioná tu usuario o link de publicación, seleccioná la cantidad e ingresá tu email.',
+    step: "02",
+    title: "Ingresá tus datos",
+    desc: "Proporcioná tu usuario o link de publicación, seleccioná la cantidad e ingresá tu email.",
   },
   {
-    step: '03',
-    title: 'Completá el pago',
-    desc: 'Pagá de forma segura vía MercadoPago — tarjeta de crédito, débito o transferencia.',
+    step: "03",
+    title: "Completá el pago",
+    desc: "Pagá de forma segura vía MercadoPago — tarjeta de crédito, débito o transferencia.",
   },
   {
-    step: '04',
-    title: 'Mirá crecer tu cuenta',
-    desc: 'Tu pedido comienza automáticamente. Seguí el progreso desde tu panel en tiempo real.',
+    step: "04",
+    title: "Mirá crecer tu cuenta",
+    desc: "Tu pedido comienza automáticamente. Seguí el progreso desde tu panel en tiempo real.",
   },
 ];
 
-function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
+function AnimatedCounter({
+  target,
+  suffix = "",
+}: {
+  target: number;
+  suffix?: string;
+}) {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true });
@@ -89,16 +104,24 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
     return () => clearInterval(timer);
   }, [inView, target]);
 
-  return <span ref={ref}>{formatNumber(count)}{suffix}</span>;
+  return (
+    <span ref={ref}>
+      {formatNumber(count)}
+      {suffix}
+    </span>
+  );
 }
 
 export default function HomePage() {
   const [featuredServices, setFeaturedServices] = useState<Service[]>([]);
 
   useEffect(() => {
-    servicesApi.getAll().then((res) => {
-      setFeaturedServices(res.data.services?.slice(0, 3) ?? []);
-    }).catch(() => {});
+    servicesApi
+      .getAll()
+      .then((res) => {
+        setFeaturedServices(res.data.services?.slice(0, 3) ?? []);
+      })
+      .catch(() => {});
   }, []);
 
   const fadeUp = {
@@ -126,17 +149,18 @@ export default function HomePage() {
             className="inline-flex items-center gap-2 glass-card px-4 py-2 mb-8 border-primary-500/30"
           >
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-sm text-primary-300 font-medium">+1.200.000 pedidos entregados</span>
+            <span className="text-sm text-primary-300 font-medium">
+              +1.200.000 pedidos entregados
+            </span>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-tight mb-6"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-6"
           >
-            Impulsá tu{' '}
-            <span className="text-gradient">Presencia Digital</span>
+            Impulsá tu <span className="text-gradient">Presencia Digital</span>
             <br />
             al Instante
           </motion.h1>
@@ -145,7 +169,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed"
+            className="text-base sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
             Seguidores, likes y vistas reales para Instagram, TikTok y YouTube.
             Entrega rápida, pagos seguros y soporte disponible.
@@ -157,11 +181,17 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link href="/order" className="btn-primary text-base px-8 py-4 flex items-center gap-2">
+            <Link
+              href="/order"
+              className="btn-primary text-base px-8 py-4 flex items-center gap-2"
+            >
               <Zap className="w-5 h-5" />
               Empezar ahora
             </Link>
-            <Link href="/order" className="btn-secondary text-base px-8 py-4 flex items-center gap-2">
+            <Link
+              href="/order"
+              className="btn-secondary text-base px-8 py-4 flex items-center gap-2"
+            >
               Ver servicios <ChevronRight className="w-4 h-4" />
             </Link>
           </motion.div>
@@ -170,10 +200,18 @@ export default function HomePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="mt-16 flex flex-wrap items-center justify-center gap-6"
+            className="mt-16 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-6"
           >
-            {['⚡ Entrega instantánea', '🔒 100% Seguro', '💯 Resultados reales', '🔄 Soporte disponible'].map((item) => (
-              <div key={item} className="flex items-center gap-2 text-slate-400 text-sm">
+            {[
+              "⚡ Entrega instantánea",
+              "🔒 100% Seguro",
+              "💯 Resultados reales",
+              "🔄 Soporte disponible",
+            ].map((item) => (
+              <div
+                key={item}
+                className="flex items-center gap-2 text-slate-400 text-sm"
+              >
                 <span>{item}</span>
               </div>
             ))}
@@ -197,7 +235,9 @@ export default function HomePage() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 border border-primary-500/20 mb-4">
                   <stat.icon className="w-6 h-6 text-primary-400" />
                 </div>
-                <div className="text-3xl font-black text-white mb-1">{stat.value}</div>
+                <div className="text-3xl font-black text-white mb-1">
+                  {stat.value}
+                </div>
                 <div className="text-slate-500 text-sm">{stat.label}</div>
               </motion.div>
             ))}
@@ -219,24 +259,60 @@ export default function HomePage() {
               Nuestros <span className="gradient-text">Servicios</span>
             </h2>
             <p className="section-subtitle mx-auto">
-              Crecé en todas las plataformas principales con servicios probados y resultados garantizados.
+              Crecé en todas las plataformas principales con servicios probados
+              y resultados garantizados.
             </p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {(featuredServices.length ? featuredServices : [
-              { id: '1', name: 'Seguidores Instagram', platform: 'instagram', category: 'followers', price_per_unit: 0.0025, min_quantity: 100, delivery_speed: '1-3 días', description: 'Seguidores reales de Instagram' },
-              { id: '2', name: 'Seguidores TikTok', platform: 'tiktok', category: 'followers', price_per_unit: 0.003, min_quantity: 100, delivery_speed: '1-2 días', description: 'Seguidores reales de TikTok' },
-              { id: '3', name: 'Vistas YouTube', platform: 'youtube', category: 'views', price_per_unit: 0.004, min_quantity: 500, delivery_speed: '1-3 días', description: 'Vistas de alta retención' },
-            ] as Partial<Service>[]).map((service, i) => {
+            {(featuredServices.length
+              ? featuredServices
+              : ([
+                  {
+                    id: "1",
+                    name: "Seguidores Instagram",
+                    platform: "instagram",
+                    category: "followers",
+                    price_per_unit: 0.0025,
+                    min_quantity: 100,
+                    delivery_speed: "1-3 días",
+                    description: "Seguidores reales de Instagram",
+                  },
+                  {
+                    id: "2",
+                    name: "Seguidores TikTok",
+                    platform: "tiktok",
+                    category: "followers",
+                    price_per_unit: 0.003,
+                    min_quantity: 100,
+                    delivery_speed: "1-2 días",
+                    description: "Seguidores reales de TikTok",
+                  },
+                  {
+                    id: "3",
+                    name: "Vistas YouTube",
+                    platform: "youtube",
+                    category: "views",
+                    price_per_unit: 0.004,
+                    min_quantity: 500,
+                    delivery_speed: "1-3 días",
+                    description: "Vistas de alta retención",
+                  },
+                ] as Partial<Service>[])
+            ).map((service, i) => {
               const icons = { followers: Users, likes: Heart, views: Eye };
-              const Icon = icons[(service.category as keyof typeof icons) ?? 'followers'] ?? Users;
+              const Icon =
+                icons[
+                  (service.category as keyof typeof icons) ?? "followers"
+                ] ?? Users;
               const platformColors: Record<string, string> = {
-                instagram: 'from-pink-500 to-purple-600',
-                tiktok: 'from-slate-800 to-slate-600',
-                youtube: 'from-red-600 to-red-500',
+                instagram: "from-pink-500 to-purple-600",
+                tiktok: "from-slate-800 to-slate-600",
+                youtube: "from-red-600 to-red-500",
               };
-              const gradient = platformColors[service.platform ?? 'instagram'] ?? platformColors.instagram;
+              const gradient =
+                platformColors[service.platform ?? "instagram"] ??
+                platformColors.instagram;
               return (
                 <motion.div
                   key={service.id}
@@ -247,19 +323,32 @@ export default function HomePage() {
                   transition={{ delay: i * 0.1 }}
                   className="glass-card-hover p-6 group cursor-pointer"
                 >
-                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} mb-4 shadow-lg`}>
+                  <div
+                    className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} mb-4 shadow-lg`}
+                  >
                     <Icon className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-white font-semibold text-lg mb-2">{service.name}</h3>
-                  <p className="text-slate-400 text-sm mb-4">{service.description}</p>
+                  <h3 className="text-white font-semibold text-lg mb-2">
+                    {service.name}
+                  </h3>
+                  <p className="text-slate-400 text-sm mb-4">
+                    {service.description}
+                  </p>
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-primary-400 font-bold text-xl">
-                        {formatCurrency((service.price_per_unit ?? 0) * (service.min_quantity ?? 100))}
+                        {formatCurrency(
+                          (service.price_per_unit ?? 0) *
+                            (service.min_quantity ?? 100),
+                        )}
                       </span>
-                      <span className="text-slate-500 text-xs ml-1">/ {formatNumber(service.min_quantity ?? 100)}</span>
+                      <span className="text-slate-500 text-xs ml-1">
+                        / {formatNumber(service.min_quantity ?? 100)}
+                      </span>
                     </div>
-                    <span className="text-xs text-slate-500 glass-card px-2 py-1">{service.delivery_speed}</span>
+                    <span className="text-xs text-slate-500 glass-card px-2 py-1">
+                      {service.delivery_speed}
+                    </span>
                   </div>
                 </motion.div>
               );
@@ -267,7 +356,10 @@ export default function HomePage() {
           </div>
 
           <div className="text-center">
-            <Link href="/order" className="btn-secondary inline-flex items-center gap-2">
+            <Link
+              href="/order"
+              className="btn-secondary inline-flex items-center gap-2"
+            >
               Ver todos los servicios <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -304,9 +396,15 @@ export default function HomePage() {
                 className="relative"
               >
                 <div className="glass-card p-6 h-full hover:border-primary-500/30 transition-all">
-                  <div className="text-5xl font-black text-primary-500/20 mb-4">{step.step}</div>
-                  <h3 className="text-white font-semibold mb-3">{step.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">{step.desc}</p>
+                  <div className="text-5xl font-black text-primary-500/20 mb-4">
+                    {step.step}
+                  </div>
+                  <h3 className="text-white font-semibold mb-3">
+                    {step.title}
+                  </h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    {step.desc}
+                  </p>
                 </div>
                 {i < 3 && (
                   <div className="hidden lg:block absolute top-1/2 -right-4 -translate-y-1/2 z-10">
@@ -350,11 +448,15 @@ export default function HomePage() {
               >
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 rounded-full bg-primary-500/20 border border-primary-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-primary-400 text-xs font-bold">?</span>
+                    <span className="text-primary-400 text-xs font-bold">
+                      ?
+                    </span>
                   </div>
                   <div>
                     <div className="text-white font-semibold mb-2">{faq.q}</div>
-                    <div className="text-slate-400 text-sm leading-relaxed">{faq.a}</div>
+                    <div className="text-slate-400 text-sm leading-relaxed">
+                      {faq.a}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -371,27 +473,41 @@ export default function HomePage() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="glass-card p-12 border-primary-500/20 relative overflow-hidden"
+            className="glass-card p-6 sm:p-12 border-primary-500/20 relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-radial-glow" />
             <div className="relative z-10">
               <h2 className="text-4xl font-black text-white mb-4">
                 ¿Listo para <span className="gradient-text">crecer</span>?
               </h2>
-              <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
-                Seguidores, likes y vistas reales para Instagram, TikTok y YouTube. Pagás con MercadoPago, entrega instantánea.
+              <p className="text-slate-400 text-sm sm:text-lg mb-8 max-w-xl mx-auto">
+                Seguidores, likes y vistas reales para Instagram, TikTok y
+                YouTube. Pagás con MercadoPago, entrega instantánea.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/order" className="btn-primary text-lg px-10 py-4 flex items-center gap-2 justify-center">
+                <Link
+                  href="/order"
+                  className="btn-primary text-lg px-10 py-4 flex items-center gap-2 justify-center"
+                >
                   <Zap className="w-5 h-5" /> Empezar ahora
                 </Link>
-                <Link href="/register" className="btn-secondary text-lg px-10 py-4 flex items-center gap-2 justify-center">
+                <Link
+                  href="/register"
+                  className="btn-secondary text-lg px-10 py-4 flex items-center gap-2 justify-center"
+                >
                   Crear cuenta gratis <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
-              <div className="flex items-center justify-center gap-6 mt-8">
-                {['Sin suscripción', 'Entrega instantánea', 'Sin contraseña requerida'].map((f) => (
-                  <div key={f} className="flex items-center gap-1.5 text-slate-400 text-sm">
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-6 mt-8">
+                {[
+                  "Sin suscripción",
+                  "Entrega instantánea",
+                  "Sin contraseña requerida",
+                ].map((f) => (
+                  <div
+                    key={f}
+                    className="flex items-center gap-1.5 text-slate-400 text-sm"
+                  >
                     <CheckCircle className="w-4 h-4 text-primary-400" />
                     {f}
                   </div>

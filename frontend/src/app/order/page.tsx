@@ -1,30 +1,46 @@
-'use client';
+"use client";
 
-import { useEffect, useState, Suspense, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Tag, AlertCircle, Loader2, CheckCircle2, ChevronRight, AtSign, Link2, Wallet, PlusCircle, X, Rocket, ShieldCheck, Sparkles } from 'lucide-react';
-import toast from 'react-hot-toast';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { servicesApi, paymentsApi, couponsApi, utilsApi } from '@/lib/api';
-import { useRouter } from 'next/navigation';
-import { getStoredUser, isAuthenticated } from '@/lib/auth';
-import { Service } from '@/types';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { useEffect, useState, Suspense, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Tag,
+  AlertCircle,
+  Loader2,
+  CheckCircle2,
+  ChevronRight,
+  AtSign,
+  Link2,
+  Wallet,
+  PlusCircle,
+  X,
+  Rocket,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { servicesApi, paymentsApi, couponsApi, utilsApi } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { getStoredUser, isAuthenticated } from "@/lib/auth";
+import { Service } from "@/types";
+import { formatCurrency, formatNumber } from "@/lib/utils";
 
 // ── Preset quantity packages ────────────────────────────────────────────────
 const QUANTITY_PRESETS: Record<string, number[]> = {
   followers: [100, 250, 500, 1000, 2500, 5000, 10000],
-  likes:     [50,  100, 250, 500,  1000, 2500, 5000],
-  views:     [100, 250, 500, 1000, 2500, 5000, 10000, 50000, 100000],
-  comments:  [10,  25,  50,  100,  250,  500],
+  likes: [50, 100, 250, 500, 1000, 2500, 5000],
+  views: [100, 250, 500, 1000, 2500, 5000, 10000, 50000, 100000],
+  comments: [10, 25, 50, 100, 250, 500],
 };
 const DEFAULT_PRESETS = [100, 250, 500, 1000, 2500, 5000];
 
 function getPresets(service: Service): number[] {
   const base = QUANTITY_PRESETS[service.category] ?? DEFAULT_PRESETS;
-  return base.filter((q) => q >= service.min_quantity && q <= service.max_quantity);
+  return base.filter(
+    (q) => q >= service.min_quantity && q <= service.max_quantity,
+  );
 }
 
 interface LinkPreview {
@@ -39,63 +55,87 @@ interface LinkPreview {
 
 // ── Platform / category meta ─────────────────────────────────────────────────
 const PLATFORMS = [
-  { id: 'instagram', label: 'Instagram', emoji: '📸', gradient: 'from-pink-500 to-purple-600' },
-  { id: 'tiktok',    label: 'TikTok',    emoji: '🎵', gradient: 'from-slate-600 to-slate-800' },
-  { id: 'youtube',   label: 'YouTube',   emoji: '▶️', gradient: 'from-red-600 to-red-700' },
+  {
+    id: "instagram",
+    label: "Instagram",
+    emoji: "📸",
+    gradient: "from-pink-500 to-purple-600",
+  },
+  {
+    id: "tiktok",
+    label: "TikTok",
+    emoji: "🎵",
+    gradient: "from-slate-600 to-slate-800",
+  },
+  {
+    id: "youtube",
+    label: "YouTube",
+    emoji: "▶️",
+    gradient: "from-red-600 to-red-700",
+  },
 ];
 
 const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
-  followers: { label: 'Seguidores', emoji: '👥' },
-  likes:     { label: 'Likes',      emoji: '❤️' },
-  views:     { label: 'Vistas',     emoji: '👁️' },
-  comments:  { label: 'Comentarios',emoji: '💬' },
+  followers: { label: "Seguidores", emoji: "👥" },
+  likes: { label: "Likes", emoji: "❤️" },
+  views: { label: "Vistas", emoji: "👁️" },
+  comments: { label: "Comentarios", emoji: "💬" },
 };
 
 function OrderContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [services, setServices]           = useState<Service[]>([]);
-  const [platform,  setPlatform]          = useState('');
-  const [category,  setCategory]          = useState('');
-  const [selectedId, setSelectedId]       = useState(searchParams.get('service') ?? '');
-  const [quantity,  setQuantity]          = useState(0);
+  const [services, setServices] = useState<Service[]>([]);
+  const [platform, setPlatform] = useState("");
+  const [category, setCategory] = useState("");
+  const [selectedId, setSelectedId] = useState(
+    searchParams.get("service") ?? "",
+  );
+  const [quantity, setQuantity] = useState(0);
   const [quantityConfirmed, setQuantityConfirmed] = useState(false);
-  const [link,      setLink]              = useState('');
-  const [email,     setEmail]             = useState('');
-  const [couponCode, setCouponCode]       = useState('');
+  const [link, setLink] = useState("");
+  const [email, setEmail] = useState("");
+  const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponApplied, setCouponApplied] = useState(false);
-  const [loading,   setLoading]           = useState(false);
-  const [validating, setValidating]       = useState(false);
-  const [userBalance, setUserBalance]     = useState(0);
-  const [loggedIn, setLoggedIn]           = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [userBalance, setUserBalance] = useState(0);
+  const [loggedIn, setLoggedIn] = useState(false);
   const [showFundsModal, setShowFundsModal] = useState(false);
-  const [linkPreview, setLinkPreview]     = useState<LinkPreview | null>(null);
+  const [linkPreview, setLinkPreview] = useState<LinkPreview | null>(null);
   const [linkPreviewLoading, setLinkPreviewLoading] = useState(false);
   const [linkPreviewError, setLinkPreviewError] = useState<string | null>(null);
   const linkPreviewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastPreviewUrlRef = useRef<string>('');
+  const lastPreviewUrlRef = useRef<string>("");
 
-  const selected   = services.find((s) => s.id === selectedId);
-  const basePrice  = selected && quantity ? parseFloat((selected.price_per_unit * quantity).toFixed(2)) : 0;
+  const selected = services.find((s) => s.id === selectedId);
+  const basePrice =
+    selected && quantity
+      ? parseFloat((selected.price_per_unit * quantity).toFixed(2))
+      : 0;
   const finalPrice = Math.max(basePrice - couponDiscount, 0.01);
-  const isFollowers = selected?.category === 'followers';
+  const isFollowers = selected?.category === "followers";
   const linkPlaceholder = isFollowers
     ? `@tunombredeusuario`
     : `https://${platform}.com/p/...`;
 
   // platforms available from loaded services
-  const availablePlatforms = [...new Set(services.map((s) => s.platform))] as string[];
+  const availablePlatforms = [
+    ...new Set(services.map((s) => s.platform)),
+  ] as string[];
 
   // categories for selected platform
-  const categories = [...new Set(
-    services.filter((s) => s.platform === platform).map((s) => s.category)
-  )];
+  const categories = [
+    ...new Set(
+      services.filter((s) => s.platform === platform).map((s) => s.category),
+    ),
+  ];
 
   // services for selected platform + category
   const filteredServices = services.filter(
-    (s) => s.platform === platform && s.category === category
+    (s) => s.platform === platform && s.category === category,
   );
 
   // Link preview handler -----------------------------------------------------
@@ -111,7 +151,7 @@ function OrderContent() {
       setLinkPreview(null);
       setLinkPreviewError(null);
       setLinkPreviewLoading(false);
-      lastPreviewUrlRef.current = '';
+      lastPreviewUrlRef.current = "";
       return;
     }
 
@@ -119,18 +159,21 @@ function OrderContent() {
       setLinkPreview(null);
       setLinkPreviewError(null);
       setLinkPreviewLoading(false);
-      lastPreviewUrlRef.current = '';
+      lastPreviewUrlRef.current = "";
       return;
     }
 
-    const sanitized = rawLink.startsWith('http') ? rawLink : `https://${rawLink}`;
-    const allowedDomains = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i;
+    const sanitized = rawLink.startsWith("http")
+      ? rawLink
+      : `https://${rawLink}`;
+    const allowedDomains =
+      /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i;
 
     if (!allowedDomains.test(sanitized)) {
       setLinkPreview(null);
       setLinkPreviewError(null);
       setLinkPreviewLoading(false);
-      lastPreviewUrlRef.current = '';
+      lastPreviewUrlRef.current = "";
       return;
     }
 
@@ -148,12 +191,16 @@ function OrderContent() {
           setLinkPreviewError(null);
         } else {
           setLinkPreview(null);
-          setLinkPreviewError('No pudimos previsualizar el link, pero podés continuar.');
+          setLinkPreviewError(
+            "No pudimos previsualizar el link, pero podés continuar.",
+          );
         }
       } catch (error) {
         if (lastPreviewUrlRef.current !== sanitized) return;
         setLinkPreview(null);
-        setLinkPreviewError('No se pudo validar el link. Verificá que sea público.');
+        setLinkPreviewError(
+          "No se pudo validar el link. Verificá que sea público.",
+        );
       } finally {
         if (lastPreviewUrlRef.current === sanitized) {
           setLinkPreviewLoading(false);
@@ -190,23 +237,26 @@ function OrderContent() {
   }, []);
 
   useEffect(() => {
-    servicesApi.getAll().then((res) => {
-      const all: Service[] = (res.data.services ?? []).map((s: Service) => ({
-        ...s,
-        price_per_unit: parseFloat(String(s.price_per_unit)),
-      }));
-      setServices(all);
-      // if coming from ?service=id, pre-select everything
-      const preselect = searchParams.get('service');
-      if (preselect) {
-        const svc = all.find((s) => s.id === preselect);
-        if (svc) {
-          setPlatform(svc.platform);
-          setCategory(svc.category);
-          setSelectedId(svc.id);
+    servicesApi
+      .getAll()
+      .then((res) => {
+        const all: Service[] = (res.data.services ?? []).map((s: Service) => ({
+          ...s,
+          price_per_unit: parseFloat(String(s.price_per_unit)),
+        }));
+        setServices(all);
+        // if coming from ?service=id, pre-select everything
+        const preselect = searchParams.get("service");
+        if (preselect) {
+          const svc = all.find((s) => s.id === preselect);
+          if (svc) {
+            setPlatform(svc.platform);
+            setCategory(svc.category);
+            setSelectedId(svc.id);
+          }
         }
-      }
-    }).catch(() => {});
+      })
+      .catch(() => {});
   }, []);
 
   // reset downstream when service changes
@@ -215,7 +265,7 @@ function OrderContent() {
     setQuantityConfirmed(false);
     setCouponApplied(false);
     setCouponDiscount(0);
-    setCouponCode('');
+    setCouponCode("");
   }, [selectedId]);
 
   const handleApplyCoupon = async () => {
@@ -226,58 +276,91 @@ function OrderContent() {
       const { coupon } = res.data;
       setCouponDiscount(coupon.discountAmount);
       setCouponApplied(true);
-      toast.success(`¡Cupón aplicado! Ahorrás ${formatCurrency(coupon.discountAmount)}`);
+      toast.success(
+        `¡Cupón aplicado! Ahorrás ${formatCurrency(coupon.discountAmount)}`,
+      );
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Cupón inválido';
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Cupón inválido";
       toast.error(msg);
     } finally {
       setValidating(false);
     }
   };
 
-  const hasEnoughBalance = loggedIn && userBalance >= finalPrice && finalPrice > 0;
+  const hasEnoughBalance =
+    loggedIn && userBalance >= finalPrice && finalPrice > 0;
 
   const handleCheckout = async () => {
     if (!loggedIn) {
-      toast.error('Necesitás una cuenta para hacer pedidos');
-      router.push('/register?redirect=/order');
+      toast.error("Necesitás una cuenta para hacer pedidos");
+      router.push("/register?redirect=/order");
       return;
     }
-    if (!link.trim())  { toast.error('Ingresá tu usuario o link'); return; }
-    if (!email.trim()) { toast.error('Ingresá tu email'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Email inválido'); return; }
+    if (!link.trim()) {
+      toast.error("Ingresá tu usuario o link");
+      return;
+    }
+    if (!email.trim()) {
+      toast.error("Ingresá tu email");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Email inválido");
+      return;
+    }
     const linkVal = link.trim();
 
     // Validación de link según el tipo de servicio
-    if (selected?.platform === 'instagram') {
+    if (selected?.platform === "instagram") {
       const lowerLink = linkVal.toLowerCase();
 
       // VIEWS = solo para videos/reels (NO fotos)
-      if (selected.category === 'views') {
-        if (!lowerLink.includes('/reel/') && !lowerLink.includes('/tv/') && !lowerLink.includes('/video/')) {
-          toast.error('⚠️ Este servicio es SOLO para VIDEOS/REELS. Para fotos, usá el servicio de Likes. El link debe contener /reel/ o /tv/');
+      if (selected.category === "views") {
+        if (
+          !lowerLink.includes("/reel/") &&
+          !lowerLink.includes("/tv/") &&
+          !lowerLink.includes("/video/")
+        ) {
+          toast.error(
+            "⚠️ Este servicio es SOLO para VIDEOS/REELS. Para fotos, usá el servicio de Likes. El link debe contener /reel/ o /tv/",
+          );
           return;
         }
       }
 
       // LIKES = para posts y reels (fotos Y videos)
-      if (selected.category === 'likes') {
-        if (!lowerLink.includes('/p/') && !lowerLink.includes('/reel/') && !lowerLink.includes('/tv/')) {
-          toast.error('⚠️ El link debe ser de un POST o REEL. Ejemplo: instagram.com/p/... o instagram.com/reel/...');
+      if (selected.category === "likes") {
+        if (
+          !lowerLink.includes("/p/") &&
+          !lowerLink.includes("/reel/") &&
+          !lowerLink.includes("/tv/")
+        ) {
+          toast.error(
+            "⚠️ El link debe ser de un POST o REEL. Ejemplo: instagram.com/p/... o instagram.com/reel/...",
+          );
           return;
         }
       }
     }
 
     if (isFollowers) {
-      const username = linkVal.replace(/^@/, '').replace(/^https?:\/\/.+\//, '').replace(/\/$/, '');
+      const username = linkVal
+        .replace(/^@/, "")
+        .replace(/^https?:\/\/.+\//, "")
+        .replace(/\/$/, "");
       if (!username || username.length < 2 || /\s/.test(username)) {
-        toast.error('Usuario inválido. Ingresá solo el nombre de usuario, ej: @tuusuario');
+        toast.error(
+          "Usuario inválido. Ingresá solo el nombre de usuario, ej: @tuusuario",
+        );
         return;
       }
     } else {
-      if (!linkVal.startsWith('http')) {
-        toast.error('Ingresá el link completo del post, ej: https://www.instagram.com/p/...');
+      if (!linkVal.startsWith("http")) {
+        toast.error(
+          "Ingresá el link completo del post, ej: https://www.instagram.com/p/...",
+        );
         return;
       }
     }
@@ -296,14 +379,20 @@ function OrderContent() {
         email: email.trim(),
         couponCode: couponApplied ? couponCode : undefined,
       });
-      toast.success('¡Pedido creado! Saldo descontado correctamente.');
-      window.location.href = '/dashboard';
+      toast.success("¡Pedido creado! Saldo descontado correctamente.");
+      window.location.href = "/dashboard";
     } catch (err: unknown) {
-      const errData = (err as { response?: { data?: { insufficientBalance?: boolean; message?: string } } })?.response?.data;
+      const errData = (
+        err as {
+          response?: {
+            data?: { insufficientBalance?: boolean; message?: string };
+          };
+        }
+      )?.response?.data;
       if (errData?.insufficientBalance) {
         setShowFundsModal(true);
       } else {
-        toast.error(errData?.message ?? 'Error al procesar. Intentá de nuevo.');
+        toast.error(errData?.message ?? "Error al procesar. Intentá de nuevo.");
       }
     } finally {
       setLoading(false);
@@ -311,20 +400,22 @@ function OrderContent() {
   };
 
   // ── Step indicator ──────────────────────────────────────────────────────────
-  const STEPS = ['Plataforma', 'Servicio', 'Paquete', 'Datos', 'Pagar'];
-  const progress = Math.min(100, Math.max(0, ((step - 1) / (STEPS.length - 1)) * 100));
+  const STEPS = ["Plataforma", "Servicio", "Paquete", "Datos", "Pagar"];
+  const progress = Math.min(
+    100,
+    Math.max(0, ((step - 1) / (STEPS.length - 1)) * 100),
+  );
 
   return (
     <div className="min-h-screen bg-dark-300">
       <Navbar />
       <div className="pt-24 pb-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative mb-12 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-primary-500/30 via-primary-500/5 to-sky-500/10 px-8 py-12 shadow-[0_40px_80px_-40px_rgba(99,102,241,0.7)]"
+            className="relative mb-12 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-primary-500/30 via-primary-500/5 to-sky-500/10 px-5 py-8 sm:px-8 sm:py-12 shadow-[0_40px_80px_-40px_rgba(99,102,241,0.7)]"
           >
             <div className="absolute -top-32 -right-24 h-64 w-64 rounded-full bg-primary-500/30 blur-3xl" />
             <div className="absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-sky-400/30 blur-3xl" />
@@ -333,94 +424,139 @@ function OrderContent() {
                 <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">
                   <Sparkles className="h-3 w-3" /> flujo guiado
                 </p>
-                <h1 className="text-4xl font-black text-white sm:text-5xl">
-                  Potenciá tu cuenta en <span className="text-primary-200">5 pasos</span>
+                <h1 className="text-3xl font-black text-white sm:text-4xl md:text-5xl">
+                  Potenciá tu cuenta en{" "}
+                  <span className="text-primary-200">5 pasos</span>
                 </h1>
                 <p className="mt-4 text-sm leading-relaxed text-slate-200/80">
-                  Elegí plataforma, paquetizá tu pedido y pagá seguro con MercadoPago. Te guiamos paso a paso y monitoreamos la entrega en vivo.
+                  Elegí plataforma, paquetizá tu pedido y pagá seguro con
+                  MercadoPago. Te guiamos paso a paso y monitoreamos la entrega
+                  en vivo.
                 </p>
               </div>
               <div className="grid gap-3 text-left sm:grid-cols-2">
                 <div className="rounded-2xl border border-white/15 bg-white/8 p-4 backdrop-blur">
                   <div className="flex items-center gap-3 text-sm font-semibold text-white">
-                    <ShieldCheck className="h-4 w-4 text-emerald-400" /> Garantía de reposición
+                    <ShieldCheck className="h-4 w-4 text-emerald-400" />{" "}
+                    Garantía de reposición
                   </div>
-                  <p className="mt-2 text-xs text-slate-300">Servicios curados con refill automático y monitoreo 24/7.</p>
+                  <p className="mt-2 text-xs text-slate-300">
+                    Servicios curados con refill automático y monitoreo 24/7.
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-white/15 bg-white/8 p-4 backdrop-blur">
                   <div className="flex items-center gap-3 text-sm font-semibold text-white">
-                    <Rocket className="h-4 w-4 text-sky-400" /> Entrega ultrarrápida
+                    <Rocket className="h-4 w-4 text-sky-400" /> Entrega
+                    ultrarrápida
                   </div>
-                  <p className="mt-2 text-xs text-slate-300">Pedidos procesados en minutos con seguimiento desde tu dashboard.</p>
+                  <p className="mt-2 text-xs text-slate-300">
+                    Pedidos procesados en minutos con seguimiento desde tu
+                    dashboard.
+                  </p>
                 </div>
               </div>
             </div>
           </motion.div>
 
           {/* Progress steps */}
-          <div className="relative mx-auto mb-16 max-w-3xl px-4">
-            <div className="relative h-2 rounded-full bg-white/10">
+          <div className="relative mx-auto mb-10 max-w-3xl">
+            <div className="relative flex items-start">
+              {/* Background line – from center of first dot to center of last dot */}
+              <div className="pointer-events-none absolute left-[10%] right-[10%] top-[18px] h-0.5 bg-white/10" />
+              {/* Progress fill */}
               <div
-                className="absolute inset-y-0 left-0 h-full rounded-full bg-gradient-to-r from-primary-500 via-fuchsia-500 to-sky-400 transition-all duration-500"
-                style={{ width: `${progress}%` }}
+                className="pointer-events-none absolute left-[10%] top-[18px] h-0.5 bg-gradient-to-r from-primary-500 via-fuchsia-500 to-sky-400 transition-all duration-500"
+                style={{
+                  width: `calc(80% * ${(step - 1) / (STEPS.length - 1)})`,
+                }}
               />
-            </div>
-            {STEPS.map((s, i) => {
-              const n = i + 1;
-              const done = step > n;
-              const active = step === n;
-              const position = (i / (STEPS.length - 1)) * 100;
-              return (
-                <div
-                  key={s}
-                  className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2"
-                  style={{ left: `${position}%`, top: '50%' }}
-                >
+              {STEPS.map((s, i) => {
+                const n = i + 1;
+                const done = step > n;
+                const active = step === n;
+                return (
                   <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition-all duration-300 ${
-                      done
-                        ? 'border-emerald-400 bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                        : active
-                          ? 'border-primary-400 bg-primary-500 text-white shadow-lg shadow-primary-500/40'
-                          : 'border-white/15 bg-dark-200 text-slate-500'
-                    }`}
+                    key={s}
+                    className="relative z-10 flex w-1/5 flex-col items-center gap-1.5"
                   >
-                    {done ? <CheckCircle2 className="h-4 w-4" /> : n}
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition-all duration-300 ${
+                        done
+                          ? "border-emerald-400 bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
+                          : active
+                            ? "border-primary-400 bg-primary-500 text-white shadow-lg shadow-primary-500/40"
+                            : "border-white/15 bg-dark-200 text-slate-500"
+                      }`}
+                    >
+                      {done ? <CheckCircle2 className="h-4 w-4" /> : n}
+                    </div>
+                    <span
+                      className={`w-full text-center text-[8px] uppercase leading-tight tracking-[0.05em] sm:text-[10px] sm:tracking-[0.15em] ${active ? "text-primary-200" : "text-slate-500"}`}
+                    >
+                      {s}
+                    </span>
                   </div>
-                  <span className={`whitespace-nowrap text-[10px] uppercase tracking-[0.2em] ${active ? 'text-primary-200' : 'text-slate-500'}`}>
-                    {s}
-                  </span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
           <AnimatePresence mode="wait">
-
             {/* ── STEP 1: Platform ─────────────────────────────────────────── */}
             {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <div className="glass-card p-10">
-                  <h2 className="text-white font-bold text-2xl text-center">¿En qué plataforma?</h2>
-                  <p className="mt-2 text-center text-sm text-slate-400">Seleccioná dónde querés crecer. Cada plataforma tiene presets optimizados.</p>
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <div className="glass-card p-5 sm:p-10">
+                  <h2 className="text-white font-bold text-2xl text-center">
+                    ¿En qué plataforma?
+                  </h2>
+                  <p className="mt-2 text-center text-sm text-slate-400">
+                    Seleccioná dónde querés crecer. Cada plataforma tiene
+                    presets optimizados.
+                  </p>
                   {services.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Cargando servicios...</div>
+                    <div className="text-center py-8 text-slate-500">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                      Cargando servicios...
+                    </div>
                   ) : (
                     <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      {PLATFORMS.filter((p) => availablePlatforms.includes(p.id)).map((p) => (
+                      {PLATFORMS.filter((p) =>
+                        availablePlatforms.includes(p.id),
+                      ).map((p) => (
                         <button
                           key={p.id}
-                          onClick={() => { setPlatform(p.id); setCategory(''); setSelectedId(''); }}
+                          onClick={() => {
+                            setPlatform(p.id);
+                            setCategory("");
+                            setSelectedId("");
+                          }}
                           className="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/8 via-dark-300 to-dark-200/80 p-6 text-left shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-400/80 hover:shadow-primary-500/30"
                         >
-                          <div className={`absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br ${p.gradient} mix-blend-screen`} />
+                          <div
+                            className={`absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br ${p.gradient} mix-blend-screen`}
+                          />
                           <div className="relative z-10 flex h-full flex-col justify-between">
                             <div className="flex items-center gap-3">
-                              <span className="text-4xl drop-shadow-[0_6px_24px_rgba(0,0,0,0.35)]">{p.emoji}</span>
-                              <span className="text-lg font-semibold text-white">{p.label}</span>
+                              <span className="text-4xl drop-shadow-[0_6px_24px_rgba(0,0,0,0.35)]">
+                                {p.emoji}
+                              </span>
+                              <span className="text-lg font-semibold text-white">
+                                {p.label}
+                              </span>
                             </div>
                             <div className="mt-6 flex items-center justify-between text-xs text-slate-400">
-                              <span>{services.filter((s) => s.platform === p.id).length} servicios</span>
+                              <span>
+                                {
+                                  services.filter((s) => s.platform === p.id)
+                                    .length
+                                }{" "}
+                                servicios
+                              </span>
                               <span className="inline-flex items-center gap-1 rounded-full border border-white/20 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-white/70">
                                 Explorar <ChevronRight className="h-3 w-3" />
                               </span>
@@ -436,26 +572,51 @@ function OrderContent() {
 
             {/* ── STEP 2: Category ─────────────────────────────────────────── */}
             {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <div className="glass-card p-10">
-                  <button onClick={() => setPlatform('')} className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white">
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <div className="glass-card p-5 sm:p-10">
+                  <button
+                    onClick={() => setPlatform("")}
+                    className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+                  >
                     ← Volver
                   </button>
-                  <h2 className="text-white text-center text-2xl font-bold">¿Qué tipo de servicio?</h2>
-                  <p className="mt-2 text-center text-sm text-slate-400">Elegí el objetivo de tu campaña para ver servicios compatibles.</p>
+                  <h2 className="text-white text-center text-2xl font-bold">
+                    ¿Qué tipo de servicio?
+                  </h2>
+                  <p className="mt-2 text-center text-sm text-slate-400">
+                    Elegí el objetivo de tu campaña para ver servicios
+                    compatibles.
+                  </p>
                   <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
                     {categories.map((cat) => {
-                      const meta = CATEGORY_LABELS[cat] ?? { label: cat, emoji: '⚡' };
-                      const count = services.filter((s) => s.platform === platform && s.category === cat).length;
+                      const meta = CATEGORY_LABELS[cat] ?? {
+                        label: cat,
+                        emoji: "⚡",
+                      };
+                      const count = services.filter(
+                        (s) => s.platform === platform && s.category === cat,
+                      ).length;
                       return (
                         <button
                           key={cat}
-                          onClick={() => { setCategory(cat); setSelectedId(''); }}
+                          onClick={() => {
+                            setCategory(cat);
+                            setSelectedId("");
+                          }}
                           className="rounded-3xl border border-white/10 bg-white/6 p-6 text-left shadow-md shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-400/60 hover:bg-primary-500/10"
                         >
                           <div className="text-3xl">{meta.emoji}</div>
-                          <div className="mt-3 text-lg font-semibold text-white">{meta.label}</div>
-                          <div className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">{count} opción{count !== 1 ? 'es' : ''}</div>
+                          <div className="mt-3 text-lg font-semibold text-white">
+                            {meta.label}
+                          </div>
+                          <div className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">
+                            {count} opción{count !== 1 ? "es" : ""}
+                          </div>
                         </button>
                       );
                     })}
@@ -466,30 +627,49 @@ function OrderContent() {
 
             {/* ── STEP 3: Service variant ──────────────────────────────────── */}
             {step === 3 && (
-              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <div className="glass-card p-10">
-                  <button onClick={() => setCategory('')} className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white">
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <div className="glass-card p-5 sm:p-10">
+                  <button
+                    onClick={() => setCategory("")}
+                    className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+                  >
                     ← Volver
                   </button>
-                  <h2 className="text-white text-center text-2xl font-bold">Elegí el tipo</h2>
-                  <p className="mt-2 text-center text-sm text-slate-400">Compará velocidad, reposición y precio mínimo antes de continuar.</p>
+                  <h2 className="text-white text-center text-2xl font-bold">
+                    Elegí el tipo
+                  </h2>
+                  <p className="mt-2 text-center text-sm text-slate-400">
+                    Compará velocidad, reposición y precio mínimo antes de
+                    continuar.
+                  </p>
                   <div className="mt-8 space-y-3">
                     {filteredServices.map((svc) => {
-                      const minPrice = parseFloat((svc.price_per_unit * svc.min_quantity).toFixed(2));
-                      const isBasic = svc.name.toLowerCase().includes('básico') || svc.name.toLowerCase().includes('basic');
+                      const minPrice = parseFloat(
+                        (svc.price_per_unit * svc.min_quantity).toFixed(2),
+                      );
+                      const isBasic =
+                        svc.name.toLowerCase().includes("básico") ||
+                        svc.name.toLowerCase().includes("basic");
                       return (
                         <button
                           key={svc.id}
                           onClick={() => setSelectedId(svc.id)}
                           className={`group flex w-full items-start justify-between gap-6 rounded-3xl border p-6 text-left transition-all hover:-translate-y-1 hover:shadow-xl ${
                             isBasic
-                              ? 'border-amber-400/40 bg-amber-500/10 hover:border-amber-400/70 hover:bg-amber-500/20'
-                              : 'border-white/12 bg-white/6 hover:border-primary-400/60 hover:bg-primary-500/10'
+                              ? "border-amber-400/40 bg-amber-500/10 hover:border-amber-400/70 hover:bg-amber-500/20"
+                              : "border-white/12 bg-white/6 hover:border-primary-400/60 hover:bg-primary-500/10"
                           }`}
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-3">
-                              <span className="text-sm font-semibold text-white md:text-base">{svc.name}</span>
+                              <span className="text-sm font-semibold text-white md:text-base">
+                                {svc.name}
+                              </span>
                               {isBasic && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-200">
                                   <AlertCircle className="h-3 w-3" /> Básico
@@ -497,17 +677,26 @@ function OrderContent() {
                               )}
                             </div>
                             {svc.description && (
-                              <p className="mt-2 text-xs leading-relaxed text-slate-300 md:text-sm">{svc.description}</p>
+                              <p className="mt-2 text-xs leading-relaxed text-slate-300 md:text-sm">
+                                {svc.description}
+                              </p>
                             )}
                             <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] uppercase tracking-[0.2em] text-slate-500">
                               <span>⚡ {svc.delivery_speed}</span>
-                              <span>📦 {formatNumber(svc.min_quantity)}–{formatNumber(svc.max_quantity)}</span>
+                              <span>
+                                📦 {formatNumber(svc.min_quantity)}–
+                                {formatNumber(svc.max_quantity)}
+                              </span>
                             </div>
                           </div>
                           <div className="flex shrink-0 items-center gap-4">
                             <div className="text-right">
-                              <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">desde</div>
-                              <div className="text-sm font-bold text-primary-300 md:text-base">{formatCurrency(minPrice)}</div>
+                              <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">
+                                desde
+                              </div>
+                              <div className="text-sm font-bold text-primary-300 md:text-base">
+                                {formatCurrency(minPrice)}
+                              </div>
                             </div>
                             <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/8 text-slate-400 transition-colors group-hover:border-primary-400 group-hover:text-primary-200">
                               <ChevronRight className="h-4 w-4" />
@@ -523,32 +712,58 @@ function OrderContent() {
 
             {/* ── STEP 4: Quantity packages ────────────────────────────────── */}
             {step === 4 && selected && (
-              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <div className="glass-card p-10">
-                  <button onClick={() => setSelectedId('')} className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white">
+              <motion.div
+                key="step4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <div className="glass-card p-5 sm:p-10">
+                  <button
+                    onClick={() => setSelectedId("")}
+                    className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+                  >
                     ← Volver
                   </button>
                   <div className="rounded-3xl border border-white/10 bg-white/6 p-6 md:flex md:items-center md:justify-between md:gap-10">
                     <div>
-                      <h2 className="text-2xl font-bold text-white">Elegí el paquete ideal</h2>
-                      <p className="mt-2 text-sm text-slate-300">{selected.name}</p>
+                      <h2 className="text-2xl font-bold text-white">
+                        Elegí el paquete ideal
+                      </h2>
+                      <p className="mt-2 text-sm text-slate-300">
+                        {selected.name}
+                      </p>
                       <div className="mt-4 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-slate-500">
                         <span>⚡ {selected.delivery_speed}</span>
-                        <span>📦 {formatNumber(selected.min_quantity)}–{formatNumber(selected.max_quantity)}</span>
+                        <span>
+                          📦 {formatNumber(selected.min_quantity)}–
+                          {formatNumber(selected.max_quantity)}
+                        </span>
                       </div>
                     </div>
                     <div className="mt-6 md:mt-0">
                       <div className="rounded-2xl border border-primary-500/30 bg-primary-500/10 px-5 py-4 text-right">
-                        <p className="text-[11px] uppercase tracking-[0.3em] text-primary-200/80">precio actual</p>
-                        <p className="text-2xl font-black text-primary-200">{formatCurrency(basePrice || selected.price_per_unit * selected.min_quantity)}</p>
+                        <p className="text-[11px] uppercase tracking-[0.3em] text-primary-200/80">
+                          precio actual
+                        </p>
+                        <p className="text-2xl font-black text-primary-200">
+                          {formatCurrency(
+                            basePrice ||
+                              selected.price_per_unit * selected.min_quantity,
+                          )}
+                        </p>
                       </div>
                     </div>
                   </div>
 
-                  <h3 className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">Paquetes recomendados</h3>
+                  <h3 className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">
+                    Paquetes recomendados
+                  </h3>
                   <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {getPresets(selected).map((qty) => {
-                      const price = parseFloat((selected.price_per_unit * qty).toFixed(2));
+                      const price = parseFloat(
+                        (selected.price_per_unit * qty).toFixed(2),
+                      );
                       const isActive = quantity === qty;
                       return (
                         <button
@@ -556,22 +771,27 @@ function OrderContent() {
                           onClick={() => {
                             setQuantity(qty);
                             setTimeout(() => {
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              window.scrollTo({ top: 0, behavior: "smooth" });
                             }, 150);
                           }}
                           className={`rounded-3xl border p-4 text-center transition-all hover:-translate-y-1 ${
                             isActive
-                              ? 'border-primary-400 bg-primary-500/20 shadow-lg shadow-primary-500/30'
-                              : 'border-white/12 bg-white/6 hover:border-primary-400/60 hover:bg-primary-500/10'
+                              ? "border-primary-400 bg-primary-500/20 shadow-lg shadow-primary-500/30"
+                              : "border-white/12 bg-white/6 hover:border-primary-400/60 hover:bg-primary-500/10"
                           }`}
                         >
-                          <div className={`text-2xl font-black ${isActive ? 'text-primary-100' : 'text-white'}`}>
+                          <div
+                            className={`text-2xl font-black ${isActive ? "text-primary-100" : "text-white"}`}
+                          >
                             {formatNumber(qty)}
                           </div>
                           <div className="mt-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">
-                            {CATEGORY_LABELS[selected.category]?.label ?? selected.category}
+                            {CATEGORY_LABELS[selected.category]?.label ??
+                              selected.category}
                           </div>
-                          <div className={`mt-2 text-sm font-bold ${isActive ? 'text-primary-200' : 'text-slate-300'}`}>
+                          <div
+                            className={`mt-2 text-sm font-bold ${isActive ? "text-primary-200" : "text-slate-300"}`}
+                          >
                             {formatCurrency(price)}
                           </div>
                           {isActive && (
@@ -599,7 +819,10 @@ function OrderContent() {
                           onChange={(e) => {
                             const raw = Number(e.target.value);
                             if (Number.isNaN(raw)) return;
-                            const clamped = Math.min(selected.max_quantity, Math.max(selected.min_quantity, raw));
+                            const clamped = Math.min(
+                              selected.max_quantity,
+                              Math.max(selected.min_quantity, raw),
+                            );
                             setQuantity(clamped);
                             setQuantityConfirmed(false);
                           }}
@@ -607,13 +830,19 @@ function OrderContent() {
                         />
                         <div className="flex gap-2">
                           <button
-                            onClick={() => { setQuantity(selected.min_quantity); setQuantityConfirmed(false); }}
+                            onClick={() => {
+                              setQuantity(selected.min_quantity);
+                              setQuantityConfirmed(false);
+                            }}
                             className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition-colors hover:border-primary-400 hover:text-primary-200"
                           >
                             Mín
                           </button>
                           <button
-                            onClick={() => { setQuantity(selected.max_quantity); setQuantityConfirmed(false); }}
+                            onClick={() => {
+                              setQuantity(selected.max_quantity);
+                              setQuantityConfirmed(false);
+                            }}
                             className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition-colors hover:border-primary-400 hover:text-primary-200"
                           >
                             Máx
@@ -626,9 +855,18 @@ function OrderContent() {
                         <ShieldCheck className="h-4 w-4" /> Consejos rápidos
                       </h4>
                       <ul className="mt-3 space-y-2 text-xs leading-relaxed text-slate-200/80">
-                        <li>Elegí un paquete proporcional al alcance real de tu contenido para evitar drops.</li>
-                        <li>¿Campaña escalonada? Ajustá manualmente para repartir en varias publicaciones.</li>
-                        <li>Podés confirmar y volver a editar antes de pagar en el siguiente paso.</li>
+                        <li>
+                          Elegí un paquete proporcional al alcance real de tu
+                          contenido para evitar drops.
+                        </li>
+                        <li>
+                          ¿Campaña escalonada? Ajustá manualmente para repartir
+                          en varias publicaciones.
+                        </li>
+                        <li>
+                          Podés confirmar y volver a editar antes de pagar en el
+                          siguiente paso.
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -639,7 +877,7 @@ function OrderContent() {
                         const confirmedQty = quantity || selected.min_quantity;
                         setQuantity(confirmedQty);
                         setQuantityConfirmed(true);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
                       className="w-full btn-primary py-3 text-base font-semibold"
                     >
@@ -652,7 +890,12 @@ function OrderContent() {
 
             {/* ── STEP 5: Details + Pay ────────────────────────────────────── */}
             {step === 5 && selected && (
-              <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <motion.div
+                key="step5"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
                 <div className="space-y-4">
                   <button
                     onClick={() => {
@@ -667,8 +910,16 @@ function OrderContent() {
                   {/* Username / Link */}
                   <div className="glass-card p-6">
                     <label className="block text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-                      {isFollowers ? <AtSign className="w-4 h-4 text-primary-400" /> : <Link2 className="w-4 h-4 text-primary-400" />}
-                      {isFollowers ? 'Tu usuario de ' + platform.charAt(0).toUpperCase() + platform.slice(1) : 'Link del post'}
+                      {isFollowers ? (
+                        <AtSign className="w-4 h-4 text-primary-400" />
+                      ) : (
+                        <Link2 className="w-4 h-4 text-primary-400" />
+                      )}
+                      {isFollowers
+                        ? "Tu usuario de " +
+                          platform.charAt(0).toUpperCase() +
+                          platform.slice(1)
+                        : "Link del post"}
                     </label>
                     <input
                       type="text"
@@ -680,22 +931,28 @@ function OrderContent() {
                     />
 
                     {/* Warning based on service type */}
-                    {selected?.platform === 'instagram' && selected?.category === 'views' && (
-                      <p className="text-xs text-amber-400 mt-2 flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        ⚠️ SOLO para VIDEOS/REELS (instagram.com/reel/...). NO funciona con fotos.
-                      </p>
-                    )}
-                    {selected?.platform === 'instagram' && selected?.category === 'likes' && (
-                      <p className="text-xs text-blue-400 mt-2 flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        Para FOTOS: instagram.com/p/... | Para REELS: instagram.com/reel/...
-                      </p>
-                    )}
+                    {selected?.platform === "instagram" &&
+                      selected?.category === "views" && (
+                        <p className="text-xs text-amber-400 mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          ⚠️ SOLO para VIDEOS/REELS (instagram.com/reel/...). NO
+                          funciona con fotos.
+                        </p>
+                      )}
+                    {selected?.platform === "instagram" &&
+                      selected?.category === "likes" && (
+                        <p className="text-xs text-blue-400 mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          Para FOTOS: instagram.com/p/... | Para REELS:
+                          instagram.com/reel/...
+                        </p>
+                      )}
 
                     <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
                       <AlertCircle className="w-3.5 h-3.5" />
-                      {isFollowers ? 'Tu cuenta debe estar en público' : 'Asegurate que el post sea público'}
+                      {isFollowers
+                        ? "Tu cuenta debe estar en público"
+                        : "Asegurate que el post sea público"}
                     </p>
 
                     {!isFollowers && (
@@ -709,15 +966,23 @@ function OrderContent() {
                         {linkPreview && !linkPreviewLoading && (
                           <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
                             {linkPreview.image && (
-                              <img src={linkPreview.image} alt={linkPreview.title ?? 'Preview'} className="w-full h-40 object-cover" />
+                              <img
+                                src={linkPreview.image}
+                                alt={linkPreview.title ?? "Preview"}
+                                className="w-full h-40 object-cover"
+                              />
                             )}
                             <div className="p-4">
-                              <div className="text-xs uppercase tracking-widest text-slate-500 mb-1">{linkPreview.site}</div>
+                              <div className="text-xs uppercase tracking-widest text-slate-500 mb-1">
+                                {linkPreview.site}
+                              </div>
                               <h4 className="text-white font-semibold text-sm mb-1 line-clamp-2">
-                                {linkPreview.title ?? 'Contenido encontrado'}
+                                {linkPreview.title ?? "Contenido encontrado"}
                               </h4>
                               {linkPreview.description && (
-                                <p className="text-slate-400 text-xs line-clamp-3">{linkPreview.description}</p>
+                                <p className="text-slate-400 text-xs line-clamp-3">
+                                  {linkPreview.description}
+                                </p>
                               )}
                             </div>
                           </div>
@@ -733,7 +998,9 @@ function OrderContent() {
 
                   {/* Email */}
                   <div className="glass-card p-6">
-                    <label className="block text-sm font-semibold text-slate-300 mb-3">📧 Email para seguimiento del pedido</label>
+                    <label className="block text-sm font-semibold text-slate-300 mb-3">
+                      📧 Email para seguimiento del pedido
+                    </label>
                     <input
                       type="email"
                       value={email}
@@ -746,13 +1013,21 @@ function OrderContent() {
                   {/* Coupon */}
                   <div className="glass-card p-6">
                     <label className="block text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-                      <Tag className="w-4 h-4 text-primary-400" /> Cupón de descuento <span className="text-slate-500 font-normal">(opcional)</span>
+                      <Tag className="w-4 h-4 text-primary-400" /> Cupón de
+                      descuento{" "}
+                      <span className="text-slate-500 font-normal">
+                        (opcional)
+                      </span>
                     </label>
                     <div className="flex gap-3">
                       <input
                         type="text"
                         value={couponCode}
-                        onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponApplied(false); setCouponDiscount(0); }}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value.toUpperCase());
+                          setCouponApplied(false);
+                          setCouponDiscount(0);
+                        }}
                         placeholder="BOOST20"
                         className="input-field flex-1 uppercase tracking-widest"
                         disabled={couponApplied}
@@ -762,52 +1037,84 @@ function OrderContent() {
                         disabled={!couponCode || validating || couponApplied}
                         className={`px-4 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap ${
                           couponApplied
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                            : 'bg-primary-500/20 text-primary-400 border border-primary-500/30 hover:bg-primary-500/30'
+                            ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                            : "bg-primary-500/20 text-primary-400 border border-primary-500/30 hover:bg-primary-500/30"
                         }`}
                       >
-                        {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : couponApplied ? '✓ Aplicado' : 'Aplicar'}
+                        {validating ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : couponApplied ? (
+                          "✓ Aplicado"
+                        ) : (
+                          "Aplicar"
+                        )}
                       </button>
                     </div>
                   </div>
 
                   {/* Order summary + pay */}
                   <div className="glass-card p-6">
-                    <h3 className="text-white font-bold text-lg mb-4">Resumen del pedido</h3>
+                    <h3 className="text-white font-bold text-lg mb-4">
+                      Resumen del pedido
+                    </h3>
                     <div className="space-y-3 mb-5">
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-400">Servicio</span>
-                        <span className="text-white text-right max-w-[200px] text-xs leading-snug">{selected.name}</span>
+                        <span className="text-white text-right max-w-[200px] text-xs leading-snug">
+                          {selected.name}
+                        </span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-400">Cantidad</span>
-                        <span className="text-white font-semibold">{formatNumber(quantity)} {CATEGORY_LABELS[selected.category]?.label ?? ''}</span>
+                        <span className="text-white font-semibold">
+                          {formatNumber(quantity)}{" "}
+                          {CATEGORY_LABELS[selected.category]?.label ?? ""}
+                        </span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-400">Entrega</span>
-                        <span className="text-white">⚡ {selected.delivery_speed}</span>
+                        <span className="text-white">
+                          ⚡ {selected.delivery_speed}
+                        </span>
                       </div>
                       {couponApplied && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-green-400">Descuento ({couponCode})</span>
-                          <span className="text-green-400 font-semibold">−{formatCurrency(couponDiscount)}</span>
+                          <span className="text-green-400">
+                            Descuento ({couponCode})
+                          </span>
+                          <span className="text-green-400 font-semibold">
+                            −{formatCurrency(couponDiscount)}
+                          </span>
                         </div>
                       )}
                       <div className="border-t border-white/[0.08] pt-3 flex justify-between items-center">
-                        <span className="text-white font-bold text-lg">Total</span>
+                        <span className="text-white font-bold text-lg">
+                          Total
+                        </span>
                         <div className="text-right">
                           {couponApplied && (
-                            <div className="text-slate-500 text-xs line-through">{formatCurrency(basePrice)}</div>
+                            <div className="text-slate-500 text-xs line-through">
+                              {formatCurrency(basePrice)}
+                            </div>
                           )}
-                          <div className="text-primary-400 font-black text-3xl">{formatCurrency(finalPrice)}</div>
+                          <div className="text-primary-400 font-black text-3xl">
+                            {formatCurrency(finalPrice)}
+                          </div>
                         </div>
                       </div>
                       {loggedIn && (
-                        <div className={`flex justify-between text-xs pt-1 ${
-                          hasEnoughBalance ? 'text-green-400' : 'text-slate-500'
-                        }`}>
+                        <div
+                          className={`flex justify-between text-xs pt-1 ${
+                            hasEnoughBalance
+                              ? "text-green-400"
+                              : "text-slate-500"
+                          }`}
+                        >
                           <span>Tu saldo</span>
-                          <span className="font-semibold">{formatCurrency(userBalance)}{hasEnoughBalance ? ' ✓' : ' (insuficiente)'}</span>
+                          <span className="font-semibold">
+                            {formatCurrency(userBalance)}
+                            {hasEnoughBalance ? " ✓" : " (insuficiente)"}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -816,10 +1123,12 @@ function OrderContent() {
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-3">
                         <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
                         <p className="text-xs text-amber-300">
-                          Saldo insuficiente. Necesitás {formatCurrency(finalPrice)} y tenés {formatCurrency(userBalance)}.
+                          Saldo insuficiente. Necesitás{" "}
+                          {formatCurrency(finalPrice)} y tenés{" "}
+                          {formatCurrency(userBalance)}.
                         </p>
                         <button
-                          onClick={() => router.push('/add-funds')}
+                          onClick={() => router.push("/add-funds")}
                           className="ml-auto text-xs font-semibold text-amber-400 hover:text-amber-300 whitespace-nowrap flex items-center gap-1"
                         >
                           <PlusCircle className="w-3.5 h-3.5" /> Cargar saldo
@@ -832,20 +1141,26 @@ function OrderContent() {
                       disabled={loading || !link.trim() || !email.trim()}
                       className="w-full flex items-center justify-center gap-2 py-4 text-base btn-primary disabled:opacity-50"
                     >
-                      {loading
-                        ? <Loader2 className="w-5 h-5 animate-spin" />
-                        : <><Wallet className="w-5 h-5" /> {hasEnoughBalance ? `Pagar con Saldo — ${formatCurrency(finalPrice)}` : 'Saldo insuficiente — Cargar saldo'}</>
-                      }
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          <Wallet className="w-5 h-5" />{" "}
+                          {hasEnoughBalance
+                            ? `Pagar con Saldo — ${formatCurrency(finalPrice)}`
+                            : "Saldo insuficiente — Cargar saldo"}
+                        </>
+                      )}
                     </button>
 
                     <p className="text-center text-slate-500 text-xs mt-3 flex items-center justify-center gap-1.5">
-                      🔒 Pago 100% seguro · Los seguidores se entregan automáticamente
+                      🔒 Pago 100% seguro · Los seguidores se entregan
+                      automáticamente
                     </p>
                   </div>
                 </div>
               </motion.div>
             )}
-
           </AnimatePresence>
         </div>
       </div>
@@ -863,7 +1178,12 @@ function OrderContent() {
             <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
               <div>
                 <div className="text-xs text-slate-400">{selected?.name}</div>
-                <div className="text-white font-bold">{formatNumber(quantity)} · <span className="text-primary-400">{formatCurrency(finalPrice)}</span></div>
+                <div className="text-white font-bold">
+                  {formatNumber(quantity)} ·{" "}
+                  <span className="text-primary-400">
+                    {formatCurrency(finalPrice)}
+                  </span>
+                </div>
               </div>
               {step === 5 && (
                 <button
@@ -871,7 +1191,13 @@ function OrderContent() {
                   disabled={loading || !link.trim() || !email.trim()}
                   className="btn-primary py-2.5 px-5 text-sm flex items-center gap-2 disabled:opacity-50"
                 >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Wallet className="w-4 h-4" /> Pagar</>}
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Wallet className="w-4 h-4" /> Pagar
+                    </>
+                  )}
                 </button>
               )}
             </div>
@@ -883,30 +1209,64 @@ function OrderContent() {
       <AnimatePresence>
         {showFundsModal && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={() => setShowFundsModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
               className="glass-card p-8 max-w-sm w-full text-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <button onClick={() => setShowFundsModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5" /></button>
+              <button
+                onClick={() => setShowFundsModal(false)}
+                className="absolute top-4 right-4 text-slate-500 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
               <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-5">
                 <Wallet className="w-8 h-8 text-amber-400" />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Saldo insuficiente</h2>
-              <p className="text-slate-400 text-sm mb-1">Necesitás <span className="text-white font-semibold">{formatCurrency(finalPrice)}</span> para este pedido.</p>
-              <p className="text-slate-400 text-sm mb-6">Tu saldo actual: <span className="text-amber-400 font-semibold">{formatCurrency(userBalance)}</span></p>
-              <p className="text-slate-500 text-xs mb-6">Cargá saldo a tu cuenta vía MercadoPago y volvé a hacer el pedido.</p>
+              <h2 className="text-xl font-bold text-white mb-2">
+                Saldo insuficiente
+              </h2>
+              <p className="text-slate-400 text-sm mb-1">
+                Necesitás{" "}
+                <span className="text-white font-semibold">
+                  {formatCurrency(finalPrice)}
+                </span>{" "}
+                para este pedido.
+              </p>
+              <p className="text-slate-400 text-sm mb-6">
+                Tu saldo actual:{" "}
+                <span className="text-amber-400 font-semibold">
+                  {formatCurrency(userBalance)}
+                </span>
+              </p>
+              <p className="text-slate-500 text-xs mb-6">
+                Cargá saldo a tu cuenta vía MercadoPago y volvé a hacer el
+                pedido.
+              </p>
               <button
-                onClick={() => router.push(`/add-funds?amount=${Math.ceil(finalPrice - userBalance)}`)}
+                onClick={() =>
+                  router.push(
+                    `/add-funds?amount=${Math.ceil(finalPrice - userBalance)}`,
+                  )
+                }
                 className="btn-primary w-full flex items-center justify-center gap-2"
               >
                 <PlusCircle className="w-5 h-5" /> Cargar saldo ahora
               </button>
-              <button onClick={() => setShowFundsModal(false)} className="mt-3 text-slate-500 hover:text-slate-300 text-sm w-full">Cancelar</button>
+              <button
+                onClick={() => setShowFundsModal(false)}
+                className="mt-3 text-slate-500 hover:text-slate-300 text-sm w-full"
+              >
+                Cancelar
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -917,11 +1277,13 @@ function OrderContent() {
 
 export default function OrderPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-dark-300 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-dark-300 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
       <OrderContent />
     </Suspense>
   );
