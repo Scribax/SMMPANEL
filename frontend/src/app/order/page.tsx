@@ -53,6 +53,57 @@ interface LinkPreview {
 
 // ya no usamos slider avanzado; la cantidad manual se controla con un input numérico
 
+// ── Validación de links según servicio ────────────────────────────────────────
+function validateLinkForService(link: string, service: Service): { valid: boolean; message?: string } {
+  const lowerLink = link.toLowerCase().trim();
+  
+  // Servicios de STORIES solo funcionan con historias
+  if (service.name.toLowerCase().includes("story")) {
+    if (!lowerLink.includes("/stories/") && !lowerLink.includes("instagram.com/stories/")) {
+      return {
+        valid: false,
+        message: "⚠️ Este servicio es SOLO para historias de Instagram (instagram.com/stories/...)"
+      };
+    }
+    return { valid: true };
+  }
+  
+  // Servicios de POSTS/REELS/LIKES/VIEWS - NO funcionan con historias
+  if (service.category === "likes" || service.category === "views" || service.category === "comments") {
+    if (lowerLink.includes("/stories/") || lowerLink.includes("instagram.com/stories/")) {
+      return {
+        valid: false,
+        message: "⚠️ Este servicio NO funciona con historias. Usá el servicio 'Story Views' o 'Story Stickers' para historias."
+      };
+    }
+    // Validar que sea un link válido de Instagram
+    if (lowerLink.includes("instagram.com")) {
+      const validPatterns = ["/p/", "/reel/", "/reels/", "/tv/"];
+      const hasValidPattern = validPatterns.some(pattern => lowerLink.includes(pattern));
+      if (!hasValidPattern && !service.name.toLowerCase().includes("story")) {
+        return {
+          valid: false,
+          message: "⚠️ Link de Instagram inválido. Usá: /p/ (posts), /reel/ o /reels/ (videos), /tv/ (IGTV)"
+        };
+      }
+    }
+    return { valid: true };
+  }
+  
+  // Seguidores - solo username o perfil
+  if (service.category === "followers") {
+    if (lowerLink.includes("/p/") || lowerLink.includes("/reel/") || lowerLink.includes("/stories/")) {
+      return {
+        valid: false,
+        message: "⚠️ Para seguidores, usá el link del perfil (instagram.com/usuario) o el @username"
+      };
+    }
+    return { valid: true };
+  }
+  
+  return { valid: true };
+}
+
 // ── Platform / category meta ─────────────────────────────────────────────────
 const PLATFORMS = [
   {
@@ -108,6 +159,7 @@ function OrderContent() {
   const [linkPreview, setLinkPreview] = useState<LinkPreview | null>(null);
   const [linkPreviewLoading, setLinkPreviewLoading] = useState(false);
   const [linkPreviewError, setLinkPreviewError] = useState<string | null>(null);
+  const [linkValidation, setLinkValidation] = useState<{ valid: boolean; message?: string } | null>(null);
   const linkPreviewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastPreviewUrlRef = useRef<string>("");
 
@@ -143,6 +195,16 @@ function OrderContent() {
     (s) => s.platform === platform && s.category === category,
   );
 
+  // Link validation handler --------------------------------------------------
+  useEffect(() => {
+    if (selected && link.trim()) {
+      const validation = validateLinkForService(link, selected);
+      setLinkValidation(validation);
+    } else {
+      setLinkValidation(null);
+    }
+  }, [link, selected]);
+
   // Link preview handler -----------------------------------------------------
   useEffect(() => {
     if (linkPreviewTimeoutRef.current) {
@@ -153,6 +215,15 @@ function OrderContent() {
     const rawLink = link.trim();
 
     if (!selected || !rawLink) {
+      setLinkPreview(null);
+      setLinkPreviewError(null);
+      setLinkPreviewLoading(false);
+      lastPreviewUrlRef.current = "";
+      return;
+    }
+    
+    // Si hay error de validación, no buscamos preview
+    if (linkValidation && !linkValidation.valid) {
       setLinkPreview(null);
       setLinkPreviewError(null);
       setLinkPreviewLoading(false);
@@ -680,6 +751,8 @@ function OrderContent() {
                       const isBasic =
                         svc.name.toLowerCase().includes("básico") ||
                         svc.name.toLowerCase().includes("basic");
+                      const isStoryService = svc.name.toLowerCase().includes("story");
+                      const isReelService = svc.name.toLowerCase().includes("reel");
                       return (
                         <button
                           key={svc.id}
@@ -698,6 +771,26 @@ function OrderContent() {
                               {isBasic && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-200">
                                   <AlertCircle className="h-3 w-3" /> Básico
+                                </span>
+                              )}
+                              {isStoryService && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-purple-200">
+                                  📱 SOLO Historias
+                                </span>
+                              )}
+                              {isReelService && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-200">
+                                  🎬 Posts & Reels
+                                </span>
+                              )}
+                              {!isStoryService && !isReelService && svc.category === "likes" && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-green-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-green-200">
+                                  📸 Posts & Reels
+                                </span>
+                              )}
+                              {!isStoryService && !isReelService && svc.category === "views" && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-cyan-200">
+                                  🎬 Videos & Reels
                                 </span>
                               )}
                             </div>
@@ -986,9 +1079,29 @@ function OrderContent() {
                       value={link}
                       onChange={(e) => setLink(e.target.value)}
                       placeholder={linkPlaceholder}
-                      className="input-field"
+                      className={`input-field ${linkValidation && !linkValidation.valid ? 'border-red-500/50 focus:border-red-500' : ''}`}
                       autoFocus
                     />
+
+                    {/* Link validation error */}
+                    {linkValidation && !linkValidation.valid && (
+                      <div className="mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                        <p className="text-sm text-red-400 flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                          {linkValidation.message}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Link validation success */}
+                    {linkValidation && linkValidation.valid && link.trim() && (
+                      <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+                        <p className="text-sm text-green-400 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" />
+                          ✓ Link válido para este servicio
+                        </p>
+                      </div>
+                    )}
 
                     {/* Warning based on service type */}
                     {selected?.platform === "instagram" &&
