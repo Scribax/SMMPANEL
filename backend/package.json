@@ -2,11 +2,11 @@
   "name": "boostins-backend",
   "version": "1.0.0",
   "description": "BoostIns API backend",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "lint": "eslint src --ext .ts",
     "sync:services": "ts-node --transpile-only scripts/syncProviderServices.ts",
     "seed:services": "ts-node --transpile-only scripts/seedServices.ts",
