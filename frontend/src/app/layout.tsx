@@ -1,27 +1,40 @@
-import type { Metadata } from 'next';
-import { Toaster } from 'react-hot-toast';
-import './globals.css';
+import type { Metadata } from "next";
+import { Toaster } from "react-hot-toast";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'FollowArg — Crecé en redes sociales',
+  title: {
+    default: "FollowArg — Seguidores, Likes y Vistas Reales",
+    template: "%s | FollowArg",
+  },
   description:
-    'Seguidores, likes y vistas reales para Instagram, TikTok y YouTube. Entrega rápida, pagos seguros con MercadoPago.',
-  keywords: ['seguidores instagram', 'seguidores tiktok', 'vistas youtube', 'comprar seguidores argentina'],
+    "Comprá seguidores, likes y vistas reales para Instagram, TikTok y YouTube. Entrega rápida, pagos seguros con MercadoPago. El panel SMM #1 de Argentina.",
+  keywords: [
+    "seguidores instagram",
+    "seguidores tiktok",
+    "vistas youtube",
+    "comprar seguidores argentina",
+  ],
   icons: {
-    icon: '/logo.jpeg',
-    apple: '/logo.jpeg',
+    icon: "/logo.jpeg",
+    apple: "/logo.jpeg",
   },
   openGraph: {
-    title: 'FollowArg — Crecé en redes sociales',
-    description: 'Seguidores, likes y vistas reales. Entrega instantánea, pagás con MercadoPago.',
-    type: 'website',
-    images: [{ url: '/logo.jpeg' }],
+    title: "FollowArg — Crecé en redes sociales",
+    description:
+      "Seguidores, likes y vistas reales. Entrega instantánea, pagás con MercadoPago.",
+    type: "website",
+    images: [{ url: "/logo.jpeg" }],
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body className="min-h-screen bg-dark-300 text-white antialiased">
         {children}
 
@@ -53,13 +66,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#1e1e2e',
-              color: '#e2e8f0',
-              border: '1px solid rgba(99,102,241,0.3)',
-              borderRadius: '12px',
+              background: "#1e1e2e",
+              color: "#e2e8f0",
+              border: "1px solid rgba(99,102,241,0.3)",
+              borderRadius: "12px",
             },
-            success: { iconTheme: { primary: '#6366f1', secondary: '#fff' } },
-            error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+            success: { iconTheme: { primary: "#6366f1", secondary: "#fff" } },
+            error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
           }}
         />
       </body>

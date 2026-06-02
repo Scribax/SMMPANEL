@@ -1,11 +1,17 @@
-import { Request, Response } from 'express';
-import { query, getClient } from '../config/database';
-import { AuthRequest } from '../middleware/auth';
-import { createPaymentPreference, getPaymentDetails } from '../services/paymentService';
-import { sendOrderToProvider } from '../services/providerService';
-import { sendOrderConfirmation, sendAdminProviderFailAlert } from '../services/emailService';
-import { env } from '../config/env';
-import { logger } from '../utils/logger';
+import { Request, Response } from "express";
+import { query, getClient } from "../config/database";
+import { AuthRequest } from "../middleware/auth";
+import {
+  createPaymentPreference,
+  getPaymentDetails,
+} from "../services/paymentService";
+import { sendOrderToProvider } from "../services/providerService";
+import {
+  sendOrderConfirmation,
+  sendAdminProviderFailAlert,
+} from "../services/emailService";
+import { env } from "../config/env";
+import { logger } from "../utils/logger";
 
 interface ServiceRow {
   id: string;
@@ -29,34 +35,42 @@ interface CouponRow {
   expires_at: string | null;
 }
 
-export const createDeposit = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createDeposit = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   const userId = req.user!.id;
   const { amount } = req.body;
   const parsedAmount = parseFloat(String(amount));
   if (!parsedAmount || parsedAmount < 100) {
-    res.status(400).json({ success: false, message: 'El monto mínimo es $100 ARS' });
+    res
+      .status(400)
+      .json({ success: false, message: "El monto mínimo es $100 ARS" });
     return;
   }
 
   try {
     const depositResult = await query<{ id: string }>(
       `INSERT INTO deposits (user_id, amount, status) VALUES ($1, $2, 'pending') RETURNING id`,
-      [userId, parsedAmount]
+      [userId, parsedAmount],
     );
     const depositId = depositResult.rows[0].id;
 
     const pref = await createPaymentPreference({
       orderId: `deposit_${depositId}`,
-      title: 'Recarga de saldo — FollowArg',
+      title: "Recarga de saldo — FollowArg",
       quantity: 1,
       unitPrice: parsedAmount,
       payerEmail: req.user!.email,
       payerName: req.user!.name,
     });
 
-    await query(`UPDATE deposits SET preference_id = $1 WHERE id = $2`, [pref.id, depositId]);
+    await query(`UPDATE deposits SET preference_id = $1 WHERE id = $2`, [
+      pref.id,
+      depositId,
+    ]);
 
-    logger.info('Deposit created', { depositId, amount: parsedAmount });
+    logger.info("Deposit created", { depositId, amount: parsedAmount });
     res.status(201).json({
       success: true,
       depositId,
@@ -65,63 +79,100 @@ export const createDeposit = async (req: AuthRequest, res: Response): Promise<vo
       sandboxInitPoint: pref.sandboxInitPoint,
     });
   } catch (err: unknown) {
-    const mpError = err as { message?: string; cause?: unknown; status?: number };
-    logger.error('Error creating deposit', {
+    const mpError = err as {
+      message?: string;
+      cause?: unknown;
+      status?: number;
+    };
+    logger.error("Error creating deposit", {
       message: mpError?.message,
       cause: JSON.stringify(mpError?.cause ?? err),
       status: mpError?.status,
     });
-    res.status(500).json({ success: false, message: 'Error al procesar el pago con MercadoPago' });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error al procesar el pago con MercadoPago",
+      });
   }
 };
 
-export const getMyDeposits = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMyDeposits = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   const userId = req.user!.id;
   const result = await query(
     `SELECT id, amount, status, created_at FROM deposits WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30`,
-    [userId]
+    [userId],
   );
   res.json({ success: true, deposits: result.rows });
 };
 
-export const createCheckout = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createCheckout = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   const { serviceId, quantity, link, email, couponCode } = req.body;
 
   if (!serviceId || !quantity || !link || !email) {
-    res.status(400).json({ success: false, message: 'serviceId, quantity, link and email are required' });
+    res
+      .status(400)
+      .json({
+        success: false,
+        message: "serviceId, quantity, link and email are required",
+      });
     return;
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    res.status(400).json({ success: false, message: 'Invalid email address' });
+    res.status(400).json({ success: false, message: "Invalid email address" });
     return;
   }
 
   const serviceResult = await query<ServiceRow>(
-    'SELECT id, name, price_per_unit, min_quantity, max_quantity, provider_id, provider_service_id, platform, category FROM services WHERE id = $1 AND is_active = true',
-    [serviceId]
+    "SELECT id, name, price_per_unit, min_quantity, max_quantity, provider_id, provider_service_id, platform, category FROM services WHERE id = $1 AND is_active = true",
+    [serviceId],
   );
 
   if (!serviceResult.rows.length) {
-    res.status(404).json({ success: false, message: 'Service not found or inactive' });
+    res
+      .status(404)
+      .json({ success: false, message: "Service not found or inactive" });
     return;
   }
 
   const service = serviceResult.rows[0];
   const qty = parseInt(String(quantity), 10);
 
-  const normalizeLink = (rawLink: string, platform: string, category: string): string => {
+  const normalizeLink = (
+    rawLink: string,
+    platform: string,
+    category: string,
+  ): string => {
     const trimmed = rawLink.trim();
-    if (category === 'followers') {
-      const username = trimmed.replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
-      if (platform === 'instagram') return `https://www.instagram.com/${username}/`;
-      if (platform === 'tiktok') return `https://www.tiktok.com/@${username}`;
-      if (platform === 'youtube') return trimmed.startsWith('http') ? trimmed : `https://www.youtube.com/@${username}`;
+    if (category === "followers") {
+      const username = trimmed
+        .replace(/^@/, "")
+        .replace(/^https?:\/\/(www\.)?instagram\.com\//, "")
+        .replace(/\/$/, "");
+      if (platform === "instagram")
+        return `https://www.instagram.com/${username}/`;
+      if (platform === "tiktok") return `https://www.tiktok.com/@${username}`;
+      if (platform === "youtube")
+        return trimmed.startsWith("http")
+          ? trimmed
+          : `https://www.youtube.com/@${username}`;
     }
     return trimmed;
   };
-  const normalizedLink = normalizeLink(link.trim(), service.platform, service.category);
+  const normalizedLink = normalizeLink(
+    link.trim(),
+    service.platform,
+    service.category,
+  );
 
   if (qty < service.min_quantity || qty > service.max_quantity) {
     res.status(400).json({
@@ -140,18 +191,20 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
       `SELECT id, discount_type, discount_value, min_order_value, max_uses, used_count, expires_at
        FROM coupons
        WHERE UPPER(code) = UPPER($1) AND is_active = true`,
-      [couponCode]
+      [couponCode],
     );
 
     if (couponResult.rows.length) {
       const coupon = couponResult.rows[0];
-      const isExpired = coupon.expires_at && new Date(coupon.expires_at) < new Date();
-      const isMaxed = coupon.max_uses !== null && coupon.used_count >= coupon.max_uses;
+      const isExpired =
+        coupon.expires_at && new Date(coupon.expires_at) < new Date();
+      const isMaxed =
+        coupon.max_uses !== null && coupon.used_count >= coupon.max_uses;
       const meetsMinValue = originalPrice >= coupon.min_order_value;
 
       if (!isExpired && !isMaxed && meetsMinValue) {
         couponId = coupon.id;
-        if (coupon.discount_type === 'percentage') {
+        if (coupon.discount_type === "percentage") {
           finalPrice = originalPrice * (1 - coupon.discount_value / 100);
         } else {
           finalPrice = originalPrice - coupon.discount_value;
@@ -165,13 +218,18 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
 
   // ── Balance-only checkout ──
   if (!userId || !req.user) {
-    res.status(401).json({ success: false, message: 'Debés iniciar sesión para hacer un pedido' });
+    res
+      .status(401)
+      .json({
+        success: false,
+        message: "Debés iniciar sesión para hacer un pedido",
+      });
     return;
   }
 
   const balResult = await query<{ balance: number }>(
-    'SELECT balance FROM users WHERE id = $1',
-    [userId]
+    "SELECT balance FROM users WHERE id = $1",
+    [userId],
   );
   const userBalance = parseFloat(String(balResult.rows[0]?.balance ?? 0));
 
@@ -179,27 +237,70 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
     res.status(402).json({
       success: false,
       insufficientBalance: true,
-      message: 'Saldo insuficiente',
+      message: "Saldo insuficiente",
       required: finalPrice,
       current: userBalance,
     });
     return;
   }
 
-  const orderResult = await query<{ id: string }>(
-    `INSERT INTO orders (user_id, service_id, link, quantity, price, original_price, coupon_id, status, email)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, 'processing', $8)
-     RETURNING id`,
-    [userId, serviceId, normalizedLink, qty, finalPrice, originalPrice, couponId, email]
-  );
-  const orderId = orderResult.rows[0].id;
+  // Wrap balance deduction + order creation in a transaction to prevent
+  // race conditions (e.g. concurrent requests draining the same balance).
+  const client = await getClient();
+  let orderId: string;
+  try {
+    await client.query("BEGIN");
 
-  await query('UPDATE users SET balance = balance - $1 WHERE id = $2', [finalPrice, userId]);
+    // Atomically deduct balance, guarded by balance >= finalPrice
+    const deductResult = await client.query(
+      "UPDATE users SET balance = balance - $1 WHERE id = $2 AND balance >= $1 RETURNING id",
+      [finalPrice, userId],
+    );
+    if (!deductResult.rowCount) {
+      await client.query("ROLLBACK");
+      res.status(402).json({
+        success: false,
+        insufficientBalance: true,
+        message: "Saldo insuficiente",
+        required: finalPrice,
+        current: userBalance,
+      });
+      return;
+    }
 
-  if (couponId) {
-    await query('UPDATE coupons SET used_count = used_count + 1 WHERE id = $1', [couponId]).catch(() => {});
+    const orderResult = await client.query<{ id: string }>(
+      `INSERT INTO orders (user_id, service_id, link, quantity, price, original_price, coupon_id, status, email)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'processing', $8)
+       RETURNING id`,
+      [
+        userId,
+        serviceId,
+        normalizedLink,
+        qty,
+        finalPrice,
+        originalPrice,
+        couponId,
+        email,
+      ],
+    );
+    orderId = orderResult.rows[0].id;
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
   }
 
+  if (couponId) {
+    await query(
+      "UPDATE coupons SET used_count = used_count + 1 WHERE id = $1",
+      [couponId],
+    ).catch(() => {});
+  }
+
+  // Provider API call happens OUTSIDE the transaction — it cannot be rolled back.
   try {
     const providerResult = await sendOrderToProvider({
       providerId: service.provider_id,
@@ -209,22 +310,48 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
     });
     await query(
       `UPDATE orders SET provider_order_id = $1, updated_at = NOW() WHERE id = $2`,
-      [String(providerResult.orderId), orderId]
+      [String(providerResult.orderId), orderId],
     );
   } catch (provErr) {
-    logger.error('Provider error on balance checkout', { orderId, error: provErr });
-    await query(`UPDATE orders SET status = 'pending', notes = $1 WHERE id = $2`, [String(provErr), orderId]);
-    sendAdminProviderFailAlert(orderId, service.name, qty, normalizedLink, String(provErr)).catch(() => {});
+    logger.error("Provider error on balance checkout", {
+      orderId,
+      error: provErr,
+    });
+    await query(
+      `UPDATE orders SET status = 'pending', notes = $1 WHERE id = $2`,
+      [String(provErr), orderId],
+    );
+    sendAdminProviderFailAlert(
+      orderId,
+      service.name,
+      qty,
+      normalizedLink,
+      String(provErr),
+    ).catch(() => {});
   }
 
-  sendOrderConfirmation(email, req.user.name, orderId, service.name, qty, finalPrice).catch(() => {});
+  sendOrderConfirmation(
+    email,
+    req.user.name,
+    orderId,
+    service.name,
+    qty,
+    finalPrice,
+  ).catch(() => {});
 
   // Check referral milestone after successful order
   checkReferralMilestone(userId).catch((err) =>
-    logger.warn('Referral milestone check failed', { userId, error: String(err) })
+    logger.warn("Referral milestone check failed", {
+      userId,
+      error: String(err),
+    }),
   );
 
-  logger.info('Order paid with balance', { orderId, userId, amount: finalPrice });
+  logger.info("Order paid with balance", {
+    orderId,
+    userId,
+    amount: finalPrice,
+  });
   res.status(201).json({
     success: true,
     orderId,
@@ -240,9 +367,13 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
  */
 const checkReferralMilestone = async (userId: string): Promise<void> => {
   // Find pending referral where this user is the referred
-  const refResult = await query<{ id: string; referrer_id: string; reward_amount: number }>(
+  const refResult = await query<{
+    id: string;
+    referrer_id: string;
+    reward_amount: number;
+  }>(
     `SELECT id, referrer_id, reward_amount FROM referrals WHERE referred_id = $1 AND status = 'pending'`,
-    [userId]
+    [userId],
   );
   if (!refResult.rows.length) return;
 
@@ -252,15 +383,15 @@ const checkReferralMilestone = async (userId: string): Promise<void> => {
   const spentResult = await query<{ total: string }>(
     `SELECT COALESCE(SUM(price), 0) AS total FROM orders
      WHERE user_id = $1 AND status IN ('completed', 'processing', 'in_progress', 'partial')`,
-    [userId]
+    [userId],
   );
   const totalSpent = parseFloat(spentResult.rows[0].total);
 
   // Update tracking column
-  await query(
-    `UPDATE referrals SET referred_total_spent = $1 WHERE id = $2`,
-    [totalSpent, ref.id]
-  );
+  await query(`UPDATE referrals SET referred_total_spent = $1 WHERE id = $2`, [
+    totalSpent,
+    ref.id,
+  ]);
 
   // Check if threshold met
   if (totalSpent < env.REFERRAL_SPEND_THRESHOLD) return;
@@ -269,37 +400,48 @@ const checkReferralMilestone = async (userId: string): Promise<void> => {
   const referrerSpent = await query<{ total: string }>(
     `SELECT COALESCE(SUM(price), 0) AS total FROM orders
      WHERE user_id = $1 AND status IN ('completed', 'processing', 'in_progress', 'partial')`,
-    [ref.referrer_id]
+    [ref.referrer_id],
   );
   const referrerTotal = parseFloat(referrerSpent.rows[0].total);
 
   if (referrerTotal < env.REFERRAL_MIN_REFERRER_SPENT) {
-    logger.info('Referral milestone met but referrer has not spent enough', {
-      referralId: ref.id, referrerSpent: referrerTotal, required: env.REFERRAL_MIN_REFERRER_SPENT,
+    logger.info("Referral milestone met but referrer has not spent enough", {
+      referralId: ref.id,
+      referrerSpent: referrerTotal,
+      required: env.REFERRAL_MIN_REFERRER_SPENT,
     });
     return;
   }
 
   // Pay the reward
-  await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [ref.reward_amount, ref.referrer_id]);
+  await query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
+    ref.reward_amount,
+    ref.referrer_id,
+  ]);
   await query(
     `UPDATE referrals SET status = 'qualified', paid_at = NOW() WHERE id = $1`,
-    [ref.id]
+    [ref.id],
   );
 
-  logger.info('Referral reward paid!', {
-    referralId: ref.id, referrerId: ref.referrer_id, referredId: userId,
-    amount: ref.reward_amount, referredSpent: totalSpent,
+  logger.info("Referral reward paid!", {
+    referralId: ref.id,
+    referrerId: ref.referrer_id,
+    referredId: userId,
+    amount: ref.reward_amount,
+    referredSpent: totalSpent,
   });
 };
 
-export const handleWebhook = async (req: Request, res: Response): Promise<void> => {
+export const handleWebhook = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { type, data } = req.body;
-  logger.info('MercadoPago webhook received', { type, dataId: data?.id });
+  logger.info("MercadoPago webhook received", { type, dataId: data?.id });
 
   res.status(200).json({ received: true });
 
-  if (type !== 'payment' || !data?.id) return;
+  if (type !== "payment" || !data?.id) return;
 
   try {
     const mpPayment = await getPaymentDetails(String(data.id));
@@ -309,29 +451,35 @@ export const handleWebhook = async (req: Request, res: Response): Promise<void> 
     if (!externalRef) return;
 
     // ── Handle deposit top-ups ──
-    if (externalRef.startsWith('deposit_')) {
-      const depositId = externalRef.replace('deposit_', '');
-      if (mpStatus === 'approved') {
-        const depResult = await query<{ user_id: string; amount: number; status: string }>(
-          'SELECT user_id, amount, status FROM deposits WHERE id = $1',
-          [depositId]
-        );
-        if (depResult.rows.length && depResult.rows[0].status === 'pending') {
+    if (externalRef.startsWith("deposit_")) {
+      const depositId = externalRef.replace("deposit_", "");
+      if (mpStatus === "approved") {
+        const depResult = await query<{
+          user_id: string;
+          amount: number;
+          status: string;
+        }>("SELECT user_id, amount, status FROM deposits WHERE id = $1", [
+          depositId,
+        ]);
+        if (depResult.rows.length && depResult.rows[0].status === "pending") {
           const dep = depResult.rows[0];
           await query(
             `UPDATE deposits SET status = 'approved', external_id = $1, updated_at = NOW() WHERE id = $2`,
-            [String(data.id), depositId]
+            [String(data.id), depositId],
           );
-          await query(
-            'UPDATE users SET balance = balance + $1 WHERE id = $2',
-            [dep.amount, dep.user_id]
-          );
-          logger.info('Deposit approved, balance credited', { depositId, amount: dep.amount });
+          await query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
+            dep.amount,
+            dep.user_id,
+          ]);
+          logger.info("Deposit approved, balance credited", {
+            depositId,
+            amount: dep.amount,
+          });
         }
-      } else if (['rejected', 'cancelled'].includes(mpStatus ?? '')) {
+      } else if (["rejected", "cancelled"].includes(mpStatus ?? "")) {
         await query(
           `UPDATE deposits SET status = 'rejected', external_id = $1, updated_at = NOW() WHERE id = $2`,
-          [String(data.id), depositId]
+          [String(data.id), depositId],
         );
       }
       return;
@@ -340,7 +488,7 @@ export const handleWebhook = async (req: Request, res: Response): Promise<void> 
     const orderId = externalRef;
     if (!orderId) return;
 
-    if (mpStatus === 'approved') {
+    if (mpStatus === "approved") {
       const orderResult = await query<{
         id: string;
         service_id: string;
@@ -362,17 +510,21 @@ export const handleWebhook = async (req: Request, res: Response): Promise<void> 
          LEFT JOIN services s ON o.service_id = s.id
          LEFT JOIN users u ON o.user_id = u.id
          WHERE o.id = $1`,
-        [orderId]
+        [orderId],
       );
 
-      if (!orderResult.rows.length || orderResult.rows[0].status !== 'awaiting_payment') return;
+      if (
+        !orderResult.rows.length ||
+        orderResult.rows[0].status !== "awaiting_payment"
+      )
+        return;
 
       const order = orderResult.rows[0];
 
       await query(
         `UPDATE payments SET external_id = $1, status = 'approved', updated_at = NOW()
          WHERE order_id = $2`,
-        [String(data.id), orderId]
+        [String(data.id), orderId],
       );
 
       try {
@@ -386,60 +538,69 @@ export const handleWebhook = async (req: Request, res: Response): Promise<void> 
         await query(
           `UPDATE orders SET status = 'processing', provider_order_id = $1, updated_at = NOW()
            WHERE id = $2`,
-          [String(providerResult.orderId), orderId]
+          [String(providerResult.orderId), orderId],
         );
 
         sendOrderConfirmation(
           order.email,
-          order.user_name ?? 'Customer',
+          order.user_name ?? "Customer",
           orderId,
           order.service_name,
           order.quantity,
-          order.price
+          order.price,
         ).catch(() => {});
 
         if (order.user_id) {
           checkReferralMilestone(order.user_id).catch((err: unknown) =>
-            logger.warn('Referral milestone check failed (webhook)', { userId: order.user_id, error: String(err) })
+            logger.warn("Referral milestone check failed (webhook)", {
+              userId: order.user_id,
+              error: String(err),
+            }),
           );
         }
 
-        logger.info('Order sent to provider after payment', { orderId });
+        logger.info("Order sent to provider after payment", { orderId });
       } catch (providerErr) {
-        logger.error('Failed to send order to provider', { orderId, error: providerErr });
+        logger.error("Failed to send order to provider", {
+          orderId,
+          error: providerErr,
+        });
         await query(
           `UPDATE orders SET status = 'pending', notes = $1, updated_at = NOW() WHERE id = $2`,
-          [`Provider error: ${String(providerErr)}`, orderId]
+          [`Provider error: ${String(providerErr)}`, orderId],
         );
         sendAdminProviderFailAlert(
           orderId,
           order.service_name,
           order.quantity,
           order.link,
-          String(providerErr)
+          String(providerErr),
         ).catch(() => {});
       }
-    } else if (['rejected', 'cancelled'].includes(mpStatus ?? '')) {
+    } else if (["rejected", "cancelled"].includes(mpStatus ?? "")) {
       await query(
         `UPDATE orders SET status = 'failed', updated_at = NOW() WHERE id = $1 AND status = 'awaiting_payment'`,
-        [orderId]
+        [orderId],
       );
       await query(
         `UPDATE payments SET external_id = $1, status = $2, updated_at = NOW() WHERE order_id = $3`,
-        [String(data.id), mpStatus, orderId]
+        [String(data.id), mpStatus, orderId],
       );
     }
   } catch (err) {
-    logger.error('Webhook processing error', { error: err });
+    logger.error("Webhook processing error", { error: err });
   }
 };
 
-export const verifyDeposit = async (req: AuthRequest, res: Response): Promise<void> => {
+export const verifyDeposit = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   const { paymentId } = req.body;
   const userId = req.user!.id;
 
   if (!paymentId) {
-    res.status(400).json({ success: false, message: 'paymentId is required' });
+    res.status(400).json({ success: false, message: "paymentId is required" });
     return;
   }
 
@@ -448,74 +609,95 @@ export const verifyDeposit = async (req: AuthRequest, res: Response): Promise<vo
     const externalRef = mpPayment.external_reference;
     const mpStatus = mpPayment.status;
 
-    if (!externalRef?.startsWith('deposit_') || mpStatus !== 'approved') {
-      res.status(400).json({ success: false, message: 'Payment not approved or not a deposit' });
+    if (!externalRef?.startsWith("deposit_") || mpStatus !== "approved") {
+      res
+        .status(400)
+        .json({
+          success: false,
+          message: "Payment not approved or not a deposit",
+        });
       return;
     }
 
-    const depositId = externalRef.replace('deposit_', '');
-    const depResult = await query<{ user_id: string; amount: number; status: string }>(
-      'SELECT user_id, amount, status FROM deposits WHERE id = $1',
-      [depositId]
-    );
+    const depositId = externalRef.replace("deposit_", "");
+    const depResult = await query<{
+      user_id: string;
+      amount: number;
+      status: string;
+    }>("SELECT user_id, amount, status FROM deposits WHERE id = $1", [
+      depositId,
+    ]);
 
     if (!depResult.rows.length) {
-      res.status(404).json({ success: false, message: 'Deposit not found' });
+      res.status(404).json({ success: false, message: "Deposit not found" });
       return;
     }
 
     const dep = depResult.rows[0];
 
     if (dep.user_id !== userId) {
-      res.status(403).json({ success: false, message: 'Forbidden' });
+      res.status(403).json({ success: false, message: "Forbidden" });
       return;
     }
 
     // Use SELECT FOR UPDATE inside a transaction to prevent double-credit race condition
     const client = await getClient();
     try {
-      await client.query('BEGIN');
-      const locked = await client.query<{ amount: number; user_id: string; status: string }>(
+      await client.query("BEGIN");
+      const locked = await client.query<{
+        amount: number;
+        user_id: string;
+        status: string;
+      }>(
         `SELECT amount, user_id, status FROM deposits WHERE id = $1 FOR UPDATE`,
-        [depositId]
+        [depositId],
       );
-      if (!locked.rows.length || locked.rows[0].status !== 'pending') {
-        await client.query('ROLLBACK');
+      if (!locked.rows.length || locked.rows[0].status !== "pending") {
+        await client.query("ROLLBACK");
         res.json({ success: true, alreadyProcessed: true, amount: dep.amount });
         return;
       }
       await client.query(
         `UPDATE deposits SET status = 'approved', external_id = $1, updated_at = NOW() WHERE id = $2`,
-        [String(paymentId), depositId]
+        [String(paymentId), depositId],
       );
       await client.query(
-        'UPDATE users SET balance = balance + $1 WHERE id = $2',
-        [locked.rows[0].amount, locked.rows[0].user_id]
+        "UPDATE users SET balance = balance + $1 WHERE id = $2",
+        [locked.rows[0].amount, locked.rows[0].user_id],
       );
-      await client.query('COMMIT');
-      logger.info('Deposit verified and credited via fallback', { depositId, amount: locked.rows[0].amount, userId });
+      await client.query("COMMIT");
+      logger.info("Deposit verified and credited via fallback", {
+        depositId,
+        amount: locked.rows[0].amount,
+        userId,
+      });
       res.json({ success: true, amount: locked.rows[0].amount });
     } catch (txErr) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw txErr;
     } finally {
       client.release();
     }
   } catch (err) {
-    logger.error('Error verifying deposit', { error: err });
-    res.status(500).json({ success: false, message: 'Error verifying payment' });
+    logger.error("Error verifying deposit", { error: err });
+    res
+      .status(500)
+      .json({ success: false, message: "Error verifying payment" });
   }
 };
 
-export const getPaymentStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getPaymentStatus = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   const { orderId } = req.params;
   const result = await query(
-    'SELECT status, external_id, amount, created_at FROM payments WHERE order_id = $1',
-    [orderId]
+    "SELECT status, external_id, amount, created_at FROM payments WHERE order_id = $1",
+    [orderId],
   );
 
   if (!result.rows.length) {
-    res.status(404).json({ success: false, message: 'Payment not found' });
+    res.status(404).json({ success: false, message: "Payment not found" });
     return;
   }
 

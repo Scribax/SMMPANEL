@@ -95,6 +95,15 @@ export default function DashboardPage() {
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const previousUnreadRef = useRef<number>(0);
 
+  const STATUS_TIMELINE = [
+    { key: "pending", label: "Recibido" },
+    { key: "processing", label: "Procesando" },
+    { key: "in_progress", label: "Entregando" },
+    { key: "completed", label: "Listo" },
+  ];
+  const TIMELINE_ORDER = STATUS_TIMELINE.map((s) => s.key);
+  const TERMINAL_STATUSES = ["cancelled", "failed", "refunded", "partial"];
+
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/login");
@@ -668,9 +677,28 @@ export default function DashboardPage() {
           {activeTab === "orders" && (
             <div>
               {loading ? (
-                <div className="glass-card p-8 text-center">
-                  <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-slate-400">Cargando pedidos...</p>
+                <div className="space-y-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="glass-card p-5 animate-pulse">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex-1 space-y-2.5">
+                          <div className="flex items-center gap-3">
+                            <div className="h-4 bg-white/10 rounded-lg w-44" />
+                            <div className="h-5 bg-white/10 rounded-full w-20" />
+                          </div>
+                          <div className="flex gap-3">
+                            <div className="h-3 bg-white/10 rounded w-36" />
+                            <div className="h-3 bg-white/10 rounded w-10" />
+                            <div className="h-3 bg-white/10 rounded w-14" />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="h-8 bg-white/10 rounded-xl w-8" />
+                          <div className="h-8 bg-white/10 rounded-xl w-20" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : orders.length === 0 ? (
                 <div className="glass-card p-12 text-center">
@@ -768,6 +796,58 @@ export default function DashboardPage() {
                                 width: `${Math.min(100, ((order.quantity - (order.remains ?? 0)) / order.quantity) * 100)}%`,
                               }}
                             />
+                          </div>
+                        </div>
+                      )}
+                      {/* Status Timeline — only for active/completed orders */}
+                      {!TERMINAL_STATUSES.includes(order.status) && (
+                        <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                          <div className="relative flex items-start">
+                            {/* background line */}
+                            <div className="pointer-events-none absolute left-[10%] right-[10%] top-[10px] h-px bg-white/10" />
+                            {/* progress line */}
+                            <div
+                              className="pointer-events-none absolute left-[10%] top-[10px] h-px bg-gradient-to-r from-primary-500 to-emerald-400 transition-all duration-500"
+                              style={{
+                                width: `calc(80% * ${Math.max(0, TIMELINE_ORDER.indexOf(order.status)) / (TIMELINE_ORDER.length - 1)})`,
+                              }}
+                            />
+                            {STATUS_TIMELINE.map((step, si) => {
+                              const stepIndex = TIMELINE_ORDER.indexOf(
+                                order.status,
+                              );
+                              const done = stepIndex > si;
+                              const active = stepIndex === si;
+                              return (
+                                <div
+                                  key={step.key}
+                                  className="relative z-10 flex w-1/4 flex-col items-center gap-1"
+                                >
+                                  <div
+                                    className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold transition-all ${
+                                      done
+                                        ? "bg-emerald-500 border-emerald-400 text-white"
+                                        : active
+                                          ? "bg-primary-500 border-primary-400 text-white shadow-md shadow-primary-500/40"
+                                          : "bg-dark-300 border-white/20 text-slate-600"
+                                    }`}
+                                  >
+                                    {done ? "✓" : si + 1}
+                                  </div>
+                                  <span
+                                    className={`text-[8px] sm:text-[9px] uppercase tracking-wide text-center leading-tight ${
+                                      active
+                                        ? "text-primary-300"
+                                        : done
+                                          ? "text-emerald-400"
+                                          : "text-slate-600"
+                                    }`}
+                                  >
+                                    {step.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )}

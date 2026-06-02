@@ -1,33 +1,40 @@
-import { Request, Response } from 'express';
-import { query } from '../config/database';
-import { encrypt } from '../services/encryptionService';
-import { logger } from '../utils/logger';
+import { Request, Response } from "express";
+import { query } from "../config/database";
+import { encrypt } from "../services/encryptionService";
+import { logger } from "../utils/logger";
+import { invalidateServicesCache } from "./serviceController";
 
 // ─── DASHBOARD STATS ─────────────────────────────────────────────────────────
 
-export const getDashboardStats = async (_req: Request, res: Response): Promise<void> => {
-  const [users, orders, revenue, todayRevenue, monthRevenue, recentOrders] = await Promise.all([
-    query<{ count: string }>('SELECT COUNT(*) FROM users WHERE role = $1', ['user']),
-    query<{ count: string }>('SELECT COUNT(*) FROM orders'),
-    query<{ total: string }>(
-      `SELECT COALESCE(SUM(price), 0) AS total FROM orders WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed')`
-    ),
-    query<{ total: string }>(
-      `SELECT COALESCE(SUM(price), 0) AS total FROM orders WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed') AND DATE(created_at) = CURRENT_DATE`
-    ),
-    query<{ total: string }>(
-      `SELECT COALESCE(SUM(price), 0) AS total FROM orders WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed') AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())`
-    ),
-    query(
-      `SELECT o.id, o.link, o.quantity, o.price, o.status, o.created_at,
+export const getDashboardStats = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  const [users, orders, revenue, todayRevenue, monthRevenue, recentOrders] =
+    await Promise.all([
+      query<{ count: string }>("SELECT COUNT(*) FROM users WHERE role = $1", [
+        "user",
+      ]),
+      query<{ count: string }>("SELECT COUNT(*) FROM orders"),
+      query<{ total: string }>(
+        `SELECT COALESCE(SUM(price), 0) AS total FROM orders WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed')`,
+      ),
+      query<{ total: string }>(
+        `SELECT COALESCE(SUM(price), 0) AS total FROM orders WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed') AND DATE(created_at) = CURRENT_DATE`,
+      ),
+      query<{ total: string }>(
+        `SELECT COALESCE(SUM(price), 0) AS total FROM orders WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed') AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())`,
+      ),
+      query(
+        `SELECT o.id, o.link, o.quantity, o.price, o.status, o.created_at,
               s.name AS service_name, s.platform,
               u.name AS user_name, u.email AS user_email
        FROM orders o
        LEFT JOIN services s ON o.service_id = s.id
        LEFT JOIN users u ON o.user_id = u.id
-       ORDER BY o.created_at DESC LIMIT 10`
-    ),
-  ]);
+       ORDER BY o.created_at DESC LIMIT 10`,
+      ),
+    ]);
 
   // Top 5 clientes por gasto total
   const topClientsResult = await query(
@@ -37,7 +44,7 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
      WHERE u.role = 'user'
      GROUP BY u.id, u.name, u.email
      ORDER BY total_spent DESC
-     LIMIT 5`
+     LIMIT 5`,
   );
 
   // Servicios más vendidos
@@ -48,15 +55,19 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
      WHERE s.is_active = true
      GROUP BY s.id, s.name
      ORDER BY order_count DESC
-     LIMIT 5`
+     LIMIT 5`,
   );
 
   // Pedidos por estado
   const ordersByStatusResult = await query(
-    `SELECT status, COUNT(*) as count FROM orders GROUP BY status`
+    `SELECT status, COUNT(*) as count FROM orders GROUP BY status`,
   );
 
-  const dailySales = await query<{ date: string; revenue: string; orders: string }>(
+  const dailySales = await query<{
+    date: string;
+    revenue: string;
+    orders: string;
+  }>(
     `SELECT DATE(created_at) AS date,
             COALESCE(SUM(price), 0) AS revenue,
             COUNT(*) AS orders
@@ -64,17 +75,17 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
      WHERE status NOT IN ('cancelled', 'awaiting_payment', 'failed')
        AND created_at >= NOW() - INTERVAL '30 days'
      GROUP BY DATE(created_at)
-     ORDER BY date ASC`
+     ORDER BY date ASC`,
   );
 
   res.json({
     success: true,
     stats: {
-      totalUsers: parseInt(users.rows[0]?.count ?? '0'),
-      totalOrders: parseInt(orders.rows[0]?.count ?? '0'),
-      totalRevenue: parseFloat(revenue.rows[0]?.total ?? '0'),
-      todayRevenue: parseFloat(todayRevenue.rows[0]?.total ?? '0'),
-      monthRevenue: parseFloat(monthRevenue.rows[0]?.total ?? '0'),
+      totalUsers: parseInt(users.rows[0]?.count ?? "0"),
+      totalOrders: parseInt(orders.rows[0]?.count ?? "0"),
+      totalRevenue: parseFloat(revenue.rows[0]?.total ?? "0"),
+      todayRevenue: parseFloat(todayRevenue.rows[0]?.total ?? "0"),
+      monthRevenue: parseFloat(monthRevenue.rows[0]?.total ?? "0"),
     },
     recentOrders: recentOrders.rows,
     dailySales: dailySales.rows,
@@ -82,47 +93,59 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
       name: row.name,
       email: row.email,
       totalSpent: parseFloat(row.total_spent),
-      orderCount: parseInt(row.order_count)
+      orderCount: parseInt(row.order_count),
     })),
     topServices: topServicesResult.rows.map((row: any) => ({
       name: row.name,
       orderCount: parseInt(row.order_count),
-      revenue: parseFloat(row.revenue)
+      revenue: parseFloat(row.revenue),
     })),
-    ordersByStatus: ordersByStatusResult.rows
+    ordersByStatus: ordersByStatusResult.rows,
   });
 };
 
 // ─── SERVICES MANAGEMENT ─────────────────────────────────────────────────────
 
-export const adminGetServices = async (_req: Request, res: Response): Promise<void> => {
+export const adminGetServices = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
   const result = await query(
     `SELECT s.*, p.name AS provider_name
      FROM services s
      LEFT JOIN providers p ON s.provider_id = p.id
-     ORDER BY s.sort_order ASC, s.platform ASC`
+     ORDER BY s.sort_order ASC, s.platform ASC`,
   );
   res.json({ success: true, services: result.rows });
 };
 
-export const adminCreateService = async (req: Request, res: Response): Promise<void> => {
+export const adminCreateService = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const b = req.body;
-  const providerId        = b.providerId        ?? b.provider_id         ?? null;
-  const providerServiceId = b.providerServiceId ?? b.provider_service_id ?? null;
-  const name              = b.name;
-  const category          = b.category;
-  const platform          = b.platform;
-  const description       = b.description       ?? null;
-  const pricePerUnit      = b.pricePerUnit      ?? b.price_per_unit;
-  const minQuantity       = b.minQuantity       ?? b.min_quantity        ?? 100;
-  const maxQuantity       = b.maxQuantity       ?? b.max_quantity        ?? 10000;
-  const deliverySpeed     = b.deliverySpeed     ?? b.delivery_speed      ?? null;
-  const sortOrder         = b.sortOrder         ?? b.sort_order          ?? 0;
+  const providerId = b.providerId ?? b.provider_id ?? null;
+  const providerServiceId =
+    b.providerServiceId ?? b.provider_service_id ?? null;
+  const name = b.name;
+  const category = b.category;
+  const platform = b.platform;
+  const description = b.description ?? null;
+  const pricePerUnit = b.pricePerUnit ?? b.price_per_unit;
+  const minQuantity = b.minQuantity ?? b.min_quantity ?? 100;
+  const maxQuantity = b.maxQuantity ?? b.max_quantity ?? 10000;
+  const deliverySpeed = b.deliverySpeed ?? b.delivery_speed ?? null;
+  const sortOrder = b.sortOrder ?? b.sort_order ?? 0;
 
   // If no provider explicitly set, use the first active provider
-  const resolvedProvider = providerId ?? (
-    await query('SELECT id FROM providers WHERE is_active = true ORDER BY created_at ASC LIMIT 1')
-  ).rows[0]?.id ?? null;
+  const resolvedProvider =
+    providerId ??
+    (
+      await query(
+        "SELECT id FROM providers WHERE is_active = true ORDER BY created_at ASC LIMIT 1",
+      )
+    ).rows[0]?.id ??
+    null;
 
   const result = await query(
     `INSERT INTO services
@@ -130,26 +153,42 @@ export const adminCreateService = async (req: Request, res: Response): Promise<v
         description, price_per_unit, min_quantity, max_quantity, delivery_speed, sort_order)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING *`,
-    [resolvedProvider, providerServiceId, name, category, platform,
-     description, pricePerUnit, minQuantity, maxQuantity, deliverySpeed, sortOrder]
+    [
+      resolvedProvider,
+      providerServiceId,
+      name,
+      category,
+      platform,
+      description,
+      pricePerUnit,
+      minQuantity,
+      maxQuantity,
+      deliverySpeed,
+      sortOrder,
+    ],
   );
+  invalidateServicesCache();
   res.status(201).json({ success: true, service: result.rows[0] });
 };
 
-export const adminUpdateService = async (req: Request, res: Response): Promise<void> => {
+export const adminUpdateService = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
   const b = req.body;
-  const name              = b.name              ?? null;
-  const category          = b.category          ?? null;
-  const platform          = b.platform          ?? null;
-  const description       = b.description       ?? null;
-  const pricePerUnit      = b.pricePerUnit      ?? b.price_per_unit      ?? null;
-  const minQuantity       = b.minQuantity       ?? b.min_quantity        ?? null;
-  const maxQuantity       = b.maxQuantity       ?? b.max_quantity        ?? null;
-  const deliverySpeed     = b.deliverySpeed     ?? b.delivery_speed      ?? null;
-  const isActive          = b.isActive          ?? b.is_active           ?? null;
-  const sortOrder         = b.sortOrder         ?? b.sort_order          ?? null;
-  const providerServiceId = b.providerServiceId ?? b.provider_service_id ?? null;
+  const name = b.name ?? null;
+  const category = b.category ?? null;
+  const platform = b.platform ?? null;
+  const description = b.description ?? null;
+  const pricePerUnit = b.pricePerUnit ?? b.price_per_unit ?? null;
+  const minQuantity = b.minQuantity ?? b.min_quantity ?? null;
+  const maxQuantity = b.maxQuantity ?? b.max_quantity ?? null;
+  const deliverySpeed = b.deliverySpeed ?? b.delivery_speed ?? null;
+  const isActive = b.isActive ?? b.is_active ?? null;
+  const sortOrder = b.sortOrder ?? b.sort_order ?? null;
+  const providerServiceId =
+    b.providerServiceId ?? b.provider_service_id ?? null;
 
   const result = await query(
     `UPDATE services SET
@@ -167,49 +206,80 @@ export const adminUpdateService = async (req: Request, res: Response): Promise<v
        updated_at = NOW()
      WHERE id = $12
      RETURNING *`,
-    [name, category, platform, description, pricePerUnit,
-     minQuantity, maxQuantity, deliverySpeed, isActive, sortOrder, providerServiceId, id]
+    [
+      name,
+      category,
+      platform,
+      description,
+      pricePerUnit,
+      minQuantity,
+      maxQuantity,
+      deliverySpeed,
+      isActive,
+      sortOrder,
+      providerServiceId,
+      id,
+    ],
   );
 
   if (!result.rows.length) {
-    res.status(404).json({ success: false, message: 'Service not found' });
+    res.status(404).json({ success: false, message: "Service not found" });
     return;
   }
+  invalidateServicesCache();
   res.json({ success: true, service: result.rows[0] });
 };
 
-export const adminDeleteService = async (req: Request, res: Response): Promise<void> => {
+export const adminDeleteService = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
-  await query('UPDATE services SET is_active = false WHERE id = $1', [id]);
-  res.json({ success: true, message: 'Service deactivated' });
+  await query("UPDATE services SET is_active = false WHERE id = $1", [id]);
+  invalidateServicesCache();
+  res.json({ success: true, message: "Service deactivated" });
 };
 
 // ─── PROVIDERS MANAGEMENT ────────────────────────────────────────────────────
 
-export const adminGetProviders = async (_req: Request, res: Response): Promise<void> => {
+export const adminGetProviders = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
   const result = await query(
-    'SELECT id, name, api_url, is_active, created_at FROM providers ORDER BY created_at DESC'
+    "SELECT id, name, api_url, is_active, created_at FROM providers ORDER BY created_at DESC",
   );
   res.json({ success: true, providers: result.rows });
 };
 
-export const adminCreateProvider = async (req: Request, res: Response): Promise<void> => {
+export const adminCreateProvider = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { name, apiUrl, apiKey } = req.body;
 
   if (!name || !apiUrl || !apiKey) {
-    res.status(400).json({ success: false, message: 'name, apiUrl, and apiKey are required' });
+    res
+      .status(400)
+      .json({
+        success: false,
+        message: "name, apiUrl, and apiKey are required",
+      });
     return;
   }
 
   const encryptedKey = encrypt(apiKey);
   const result = await query(
-    'INSERT INTO providers (name, api_url, api_key_enc) VALUES ($1, $2, $3) RETURNING id, name, api_url, is_active, created_at',
-    [name, apiUrl, encryptedKey]
+    "INSERT INTO providers (name, api_url, api_key_enc) VALUES ($1, $2, $3) RETURNING id, name, api_url, is_active, created_at",
+    [name, apiUrl, encryptedKey],
   );
   res.status(201).json({ success: true, provider: result.rows[0] });
 };
 
-export const adminUpdateProvider = async (req: Request, res: Response): Promise<void> => {
+export const adminUpdateProvider = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
   const { name, apiUrl, apiKey, isActive } = req.body;
 
@@ -223,20 +293,23 @@ export const adminUpdateProvider = async (req: Request, res: Response): Promise<
        updated_at = NOW()
      WHERE id = $5
      RETURNING id, name, api_url, is_active`,
-    [name, apiUrl, encryptedKey, isActive, id]
+    [name, apiUrl, encryptedKey, isActive, id],
   );
 
   if (!result.rows.length) {
-    res.status(404).json({ success: false, message: 'Provider not found' });
+    res.status(404).json({ success: false, message: "Provider not found" });
     return;
   }
   res.json({ success: true, provider: result.rows[0] });
 };
 
-export const adminGetProviderBalance = async (req: Request, res: Response): Promise<void> => {
+export const adminGetProviderBalance = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
   try {
-    const { getProviderBalance } = await import('../services/providerService');
+    const { getProviderBalance } = await import("../services/providerService");
     const balance = await getProviderBalance(id);
     res.json({ success: true, balance });
   } catch (err) {
@@ -244,11 +317,15 @@ export const adminGetProviderBalance = async (req: Request, res: Response): Prom
   }
 };
 
-export const adminSyncProviderServices = async (req: Request, res: Response): Promise<void> => {
+export const adminSyncProviderServices = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
   try {
-    const { getProviderServices } = await import('../services/providerService');
+    const { getProviderServices } = await import("../services/providerService");
     const services = await getProviderServices(id);
+    invalidateServicesCache();
     res.json({ success: true, count: services.length, services });
   } catch (err) {
     res.status(400).json({ success: false, message: String(err) });
@@ -257,15 +334,29 @@ export const adminSyncProviderServices = async (req: Request, res: Response): Pr
 
 // ─── ORDERS MANAGEMENT ───────────────────────────────────────────────────────
 
-export const adminGetOrders = async (req: Request, res: Response): Promise<void> => {
-  const page = parseInt(String(req.query.page ?? '1'), 10);
-  const limit = parseInt(String(req.query.limit ?? '20'), 10);
+export const adminGetOrders = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const page = parseInt(String(req.query.page ?? "1"), 10);
+  const limit = parseInt(String(req.query.limit ?? "20"), 10);
   const offset = (page - 1) * limit;
   const status = req.query.status as string | undefined;
 
-  const validStatuses = ['pending', 'processing', 'in_progress', 'completed', 'partial', 'failed', 'refunded', 'cancelled', 'awaiting_payment'];
-  const safeStatus = status && validStatuses.includes(status) ? status : undefined;
-  const whereClause = safeStatus ? 'WHERE o.status = $3' : '';
+  const validStatuses = [
+    "pending",
+    "processing",
+    "in_progress",
+    "completed",
+    "partial",
+    "failed",
+    "refunded",
+    "cancelled",
+    "awaiting_payment",
+  ];
+  const safeStatus =
+    status && validStatuses.includes(status) ? status : undefined;
+  const whereClause = safeStatus ? "WHERE o.status = $3" : "";
   const params = safeStatus ? [limit, offset, safeStatus] : [limit, offset];
 
   const [orders, count] = await Promise.all([
@@ -280,145 +371,206 @@ export const adminGetOrders = async (req: Request, res: Response): Promise<void>
        ${whereClause}
        ORDER BY o.created_at DESC
        LIMIT $1 OFFSET $2`,
-      params
+      params,
     ),
     query<{ count: string }>(
-      `SELECT COUNT(*) FROM orders ${status ? 'WHERE status = $1' : ''}`,
-      status ? [status] : []
+      `SELECT COUNT(*) FROM orders ${status ? "WHERE status = $1" : ""}`,
+      status ? [status] : [],
     ),
   ]);
 
   res.json({
     success: true,
     orders: orders.rows,
-    total: parseInt(count.rows[0]?.count ?? '0'),
+    total: parseInt(count.rows[0]?.count ?? "0"),
     page,
     limit,
   });
 };
 
-export const adminUpdateOrderStatus = async (req: Request, res: Response): Promise<void> => {
+export const adminUpdateOrderStatus = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
   const { status } = req.body;
 
-  const validStatuses = ['pending', 'processing', 'in_progress', 'completed', 'partial', 'failed', 'refunded', 'cancelled'];
+  const validStatuses = [
+    "pending",
+    "processing",
+    "in_progress",
+    "completed",
+    "partial",
+    "failed",
+    "refunded",
+    "cancelled",
+  ];
   if (!validStatuses.includes(status)) {
-    res.status(400).json({ success: false, message: 'Invalid status' });
+    res.status(400).json({ success: false, message: "Invalid status" });
     return;
   }
 
-  const existing = await query<{ id: string; user_id: string; price: number; status: string }>(
-    'SELECT id, user_id, price, status FROM orders WHERE id = $1',
-    [id]
-  );
+  const existing = await query<{
+    id: string;
+    user_id: string;
+    price: number;
+    status: string;
+  }>("SELECT id, user_id, price, status FROM orders WHERE id = $1", [id]);
   if (!existing.rows.length) {
-    res.status(404).json({ success: false, message: 'Order not found' });
+    res.status(404).json({ success: false, message: "Order not found" });
     return;
   }
 
   const prev = existing.rows[0];
   // Devolver saldo si se marca como refunded/cancelled/failed y no estaba ya en ese estado
-  const refundStatuses = ['refunded', 'cancelled', 'failed'];
+  const refundStatuses = ["refunded", "cancelled", "failed"];
   const wasAlreadyRefunded = refundStatuses.includes(prev.status);
-  if (refundStatuses.includes(status) && !wasAlreadyRefunded && prev.user_id && prev.price > 0) {
-    await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [prev.price, prev.user_id]);
-    logger.info('Balance refunded via status update', { orderId: id, amount: prev.price, newStatus: status });
+  if (
+    refundStatuses.includes(status) &&
+    !wasAlreadyRefunded &&
+    prev.user_id &&
+    prev.price > 0
+  ) {
+    await query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
+      prev.price,
+      prev.user_id,
+    ]);
+    logger.info("Balance refunded via status update", {
+      orderId: id,
+      amount: prev.price,
+      newStatus: status,
+    });
   }
 
   const result = await query(
-    'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, status',
-    [status, id]
+    "UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, status",
+    [status, id],
   );
   res.json({ success: true, order: result.rows[0] });
 };
 
-import { cancelOrderFromProvider } from '../services/providerService';
+import { cancelOrderFromProvider } from "../services/providerService";
 
-export const adminRefundOrder = async (req: Request, res: Response): Promise<void> => {
+export const adminRefundOrder = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
 
   const order = await query<{
-    id: string; user_id: string; price: number; status: string;
-    provider_id: string; provider_order_id: string;
+    id: string;
+    user_id: string;
+    price: number;
+    status: string;
+    provider_id: string;
+    provider_order_id: string;
   }>(
     `SELECT o.id, o.user_id, o.price, o.status, s.provider_id, o.provider_order_id
      FROM orders o
      LEFT JOIN services s ON o.service_id = s.id
      WHERE o.id = $1`,
-    [id]
+    [id],
   );
 
   if (!order.rows.length) {
-    res.status(404).json({ success: false, message: 'Order not found' });
+    res.status(404).json({ success: false, message: "Order not found" });
     return;
   }
 
   const o = order.rows[0];
-  if (o.status === 'refunded') {
-    res.status(400).json({ success: false, message: 'Order already refunded' });
+  if (o.status === "refunded") {
+    res.status(400).json({ success: false, message: "Order already refunded" });
     return;
   }
 
   // Si tiene provider_order_id, intentamos cancelar en el proveedor primero
   if (o.provider_order_id && o.provider_id) {
-    logger.info('Attempting to cancel order on provider before refund', { orderId: id, providerOrderId: o.provider_order_id });
-    const cancelResult = await cancelOrderFromProvider(o.provider_id, o.provider_order_id);
-    
+    logger.info("Attempting to cancel order on provider before refund", {
+      orderId: id,
+      providerOrderId: o.provider_order_id,
+    });
+    const cancelResult = await cancelOrderFromProvider(
+      o.provider_id,
+      o.provider_order_id,
+    );
+
     if (!cancelResult.success) {
-      logger.warn('Failed to cancel order on provider, but proceeding with refund', { orderId: id, error: cancelResult.message });
+      logger.warn(
+        "Failed to cancel order on provider, but proceeding with refund",
+        { orderId: id, error: cancelResult.message },
+      );
       // Continuamos igual porque el pedido podría ya estar cancelado o parcial
     } else {
-      logger.info('Order cancelled on provider successfully', { orderId: id });
+      logger.info("Order cancelled on provider successfully", { orderId: id });
     }
   }
 
   // Reembolsar al cliente
   if (o.user_id) {
-    await query('UPDATE users SET balance = balance + $1 WHERE id = $2', [o.price, o.user_id]);
+    await query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
+      o.price,
+      o.user_id,
+    ]);
   }
 
   await query(
     `UPDATE orders SET status = 'refunded', updated_at = NOW() WHERE id = $1`,
-    [id]
+    [id],
   );
   await query(
     `UPDATE payments SET status = 'refunded', updated_at = NOW() WHERE order_id = $1`,
-    [id]
+    [id],
   );
 
-  logger.info('Order refunded by admin', { orderId: id, amount: o.price });
-  res.json({ success: true, message: 'Order refunded and cancelled on provider. Credit added to user balance.' });
+  logger.info("Order refunded by admin", { orderId: id, amount: o.price });
+  res.json({
+    success: true,
+    message:
+      "Order refunded and cancelled on provider. Credit added to user balance.",
+  });
 };
 
-export const adminRetryOrder = async (req: Request, res: Response): Promise<void> => {
+export const adminRetryOrder = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
 
   const orderResult = await query<{
-    id: string; link: string; quantity: number; status: string;
-    provider_id: string; provider_service_id: number;
+    id: string;
+    link: string;
+    quantity: number;
+    status: string;
+    provider_id: string;
+    provider_service_id: number;
   }>(
     `SELECT o.id, o.link, o.quantity, o.status,
             s.provider_id, s.provider_service_id
      FROM orders o
      JOIN services s ON o.service_id = s.id
      WHERE o.id = $1`,
-    [id]
+    [id],
   );
 
   if (!orderResult.rows.length) {
-    res.status(404).json({ success: false, message: 'Order not found' });
+    res.status(404).json({ success: false, message: "Order not found" });
     return;
   }
 
   const order = orderResult.rows[0];
 
   if (!order.provider_id || !order.provider_service_id) {
-    res.status(400).json({ success: false, message: 'No provider configured for this service' });
+    res
+      .status(400)
+      .json({
+        success: false,
+        message: "No provider configured for this service",
+      });
     return;
   }
 
   try {
-    const { sendOrderToProvider } = await import('../services/providerService');
+    const { sendOrderToProvider } = await import("../services/providerService");
     const providerResult = await sendOrderToProvider({
       providerId: order.provider_id,
       serviceId: order.provider_service_id,
@@ -428,22 +580,34 @@ export const adminRetryOrder = async (req: Request, res: Response): Promise<void
 
     await query(
       `UPDATE orders SET provider_order_id = $1, status = 'processing', updated_at = NOW() WHERE id = $2`,
-      [String(providerResult.orderId), id]
+      [String(providerResult.orderId), id],
     );
 
-    logger.info('Order retried by admin', { orderId: id, providerOrderId: providerResult.orderId });
-    res.json({ success: true, message: 'Pedido reenviado al proveedor', providerOrderId: providerResult.orderId });
+    logger.info("Order retried by admin", {
+      orderId: id,
+      providerOrderId: providerResult.orderId,
+    });
+    res.json({
+      success: true,
+      message: "Pedido reenviado al proveedor",
+      providerOrderId: providerResult.orderId,
+    });
   } catch (err) {
-    logger.error('Retry order failed', { orderId: id, error: err });
-    res.status(400).json({ success: false, message: `Error del proveedor: ${String(err)}` });
+    logger.error("Retry order failed", { orderId: id, error: err });
+    res
+      .status(400)
+      .json({ success: false, message: `Error del proveedor: ${String(err)}` });
   }
 };
 
 // ─── USERS MANAGEMENT ────────────────────────────────────────────────────────
 
-export const adminGetUsers = async (req: Request, res: Response): Promise<void> => {
-  const page = parseInt(String(req.query.page ?? '1'), 10);
-  const limit = parseInt(String(req.query.limit ?? '20'), 10);
+export const adminGetUsers = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const page = parseInt(String(req.query.page ?? "1"), 10);
+  const limit = parseInt(String(req.query.limit ?? "20"), 10);
   const offset = (page - 1) * limit;
 
   const [users, count] = await Promise.all([
@@ -453,46 +617,70 @@ export const adminGetUsers = async (req: Request, res: Response): Promise<void> 
        FROM users
        ORDER BY created_at DESC
        LIMIT $1 OFFSET $2`,
-      [limit, offset]
+      [limit, offset],
     ),
-    query<{ count: string }>('SELECT COUNT(*) FROM users'),
+    query<{ count: string }>("SELECT COUNT(*) FROM users"),
   ]);
 
   res.json({
     success: true,
     users: users.rows,
-    total: parseInt(count.rows[0]?.count ?? '0'),
+    total: parseInt(count.rows[0]?.count ?? "0"),
     page,
     limit,
   });
 };
 
-export const adminToggleUser = async (req: Request, res: Response): Promise<void> => {
+export const adminToggleUser = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
   const result = await query(
-    'UPDATE users SET is_active = NOT is_active WHERE id = $1 RETURNING id, is_active',
-    [id]
+    "UPDATE users SET is_active = NOT is_active WHERE id = $1 RETURNING id, is_active",
+    [id],
   );
   if (!result.rows.length) {
-    res.status(404).json({ success: false, message: 'User not found' });
+    res.status(404).json({ success: false, message: "User not found" });
     return;
   }
   const u = result.rows[0] as { id: string; is_active: boolean };
-  res.json({ success: true, message: u.is_active ? 'User activated' : 'User deactivated' });
+  res.json({
+    success: true,
+    message: u.is_active ? "User activated" : "User deactivated",
+  });
 };
 
 // ─── COUPONS MANAGEMENT ──────────────────────────────────────────────────────
 
-export const adminGetCoupons = async (_req: Request, res: Response): Promise<void> => {
-  const result = await query('SELECT * FROM coupons ORDER BY created_at DESC');
+export const adminGetCoupons = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  const result = await query("SELECT * FROM coupons ORDER BY created_at DESC");
   res.json({ success: true, coupons: result.rows });
 };
 
-export const adminCreateCoupon = async (req: Request, res: Response): Promise<void> => {
-  const { code, discountType, discountValue, minOrderValue, maxUses, expiresAt } = req.body;
+export const adminCreateCoupon = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const {
+    code,
+    discountType,
+    discountValue,
+    minOrderValue,
+    maxUses,
+    expiresAt,
+  } = req.body;
 
   if (!code || !discountType || discountValue === undefined) {
-    res.status(400).json({ success: false, message: 'code, discountType, and discountValue are required' });
+    res
+      .status(400)
+      .json({
+        success: false,
+        message: "code, discountType, and discountValue are required",
+      });
     return;
   }
 
@@ -500,12 +688,22 @@ export const adminCreateCoupon = async (req: Request, res: Response): Promise<vo
     `INSERT INTO coupons (code, discount_type, discount_value, min_order_value, max_uses, expires_at)
      VALUES (UPPER($1), $2, $3, $4, $5, $6)
      RETURNING *`,
-    [code, discountType, discountValue, minOrderValue || 0, maxUses || null, expiresAt || null]
+    [
+      code,
+      discountType,
+      discountValue,
+      minOrderValue || 0,
+      maxUses || null,
+      expiresAt || null,
+    ],
   );
   res.status(201).json({ success: true, coupon: result.rows[0] });
 };
 
-export const adminUpdateCoupon = async (req: Request, res: Response): Promise<void> => {
+export const adminUpdateCoupon = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
   const { isActive, discountValue, maxUses, expiresAt } = req.body;
 
@@ -516,7 +714,7 @@ export const adminUpdateCoupon = async (req: Request, res: Response): Promise<vo
        max_uses = COALESCE($3, max_uses),
        expires_at = COALESCE($4, expires_at)
      WHERE id = $5`,
-    [isActive, discountValue, maxUses, expiresAt, id]
+    [isActive, discountValue, maxUses, expiresAt, id],
   );
-  res.json({ success: true, message: 'Coupon updated' });
+  res.json({ success: true, message: "Coupon updated" });
 };

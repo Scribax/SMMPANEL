@@ -1,5 +1,13 @@
-import { Request, Response } from 'express';
-import { query } from '../config/database';
+import { Request, Response } from "express";
+import { query } from "../config/database";
+
+// ─── In-memory services cache ────────────────────────────────────────────────
+let servicesCache: { data: unknown; expiresAt: number } | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+export const invalidateServicesCache = (): void => {
+  servicesCache = null;
+};
 
 interface ServiceRow {
   id: string;
@@ -17,36 +25,52 @@ interface ServiceRow {
   provider_service_id: number;
 }
 
-export const getAllServices = async (_req: Request, res: Response): Promise<void> => {
+export const getAllServices = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  if (servicesCache && Date.now() < servicesCache.expiresAt) {
+    res.json(servicesCache.data);
+    return;
+  }
+
   const result = await query<ServiceRow>(
     `SELECT id, name, category, platform, description,
             price_per_unit, min_quantity, max_quantity,
             delivery_speed, is_active, sort_order
      FROM services
      WHERE is_active = true
-     ORDER BY sort_order ASC, platform ASC, category ASC`
+     ORDER BY sort_order ASC, platform ASC, category ASC`,
   );
-  res.json({ success: true, services: result.rows });
+  const responseData = { success: true, services: result.rows };
+  servicesCache = { data: responseData, expiresAt: Date.now() + CACHE_TTL };
+  res.json(responseData);
 };
 
-export const getServiceById = async (req: Request, res: Response): Promise<void> => {
+export const getServiceById = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { id } = req.params;
   const result = await query<ServiceRow>(
     `SELECT id, name, category, platform, description,
             price_per_unit, min_quantity, max_quantity,
             delivery_speed, is_active, sort_order
      FROM services WHERE id = $1 AND is_active = true`,
-    [id]
+    [id],
   );
 
   if (!result.rows.length) {
-    res.status(404).json({ success: false, message: 'Service not found' });
+    res.status(404).json({ success: false, message: "Service not found" });
     return;
   }
   res.json({ success: true, service: result.rows[0] });
 };
 
-export const getServicesByPlatform = async (req: Request, res: Response): Promise<void> => {
+export const getServicesByPlatform = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { platform } = req.params;
   const result = await query<ServiceRow>(
     `SELECT id, name, category, platform, description,
@@ -55,26 +79,31 @@ export const getServicesByPlatform = async (req: Request, res: Response): Promis
      FROM services
      WHERE is_active = true AND platform = $1
      ORDER BY sort_order ASC, category ASC`,
-    [platform.toLowerCase()]
+    [platform.toLowerCase()],
   );
   res.json({ success: true, services: result.rows });
 };
 
-export const calculatePrice = async (req: Request, res: Response): Promise<void> => {
+export const calculatePrice = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { serviceId, quantity } = req.body;
 
   if (!serviceId || !quantity) {
-    res.status(400).json({ success: false, message: 'serviceId and quantity are required' });
+    res
+      .status(400)
+      .json({ success: false, message: "serviceId and quantity are required" });
     return;
   }
 
   const result = await query<ServiceRow>(
-    'SELECT price_per_unit, min_quantity, max_quantity FROM services WHERE id = $1 AND is_active = true',
-    [serviceId]
+    "SELECT price_per_unit, min_quantity, max_quantity FROM services WHERE id = $1 AND is_active = true",
+    [serviceId],
   );
 
   if (!result.rows.length) {
-    res.status(404).json({ success: false, message: 'Service not found' });
+    res.status(404).json({ success: false, message: "Service not found" });
     return;
   }
 

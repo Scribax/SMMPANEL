@@ -247,6 +247,8 @@ function OrderContent() {
         setServices(all);
         // if coming from ?service=id, pre-select everything
         const preselect = searchParams.get("service");
+        const preplatform = searchParams.get("platform");
+        const precategory = searchParams.get("category");
         if (preselect) {
           const svc = all.find((s) => s.id === preselect);
           if (svc) {
@@ -254,6 +256,9 @@ function OrderContent() {
             setCategory(svc.category);
             setSelectedId(svc.id);
           }
+        } else if (preplatform) {
+          setPlatform(preplatform);
+          if (precategory) setCategory(precategory);
         }
       })
       .catch(() => {});
@@ -519,9 +524,22 @@ function OrderContent() {
                     presets optimizados.
                   </p>
                   {services.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500">
-                      <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                      Cargando servicios...
+                    <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      {[...Array(3)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 animate-pulse"
+                        >
+                          <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 bg-white/10 rounded-full" />
+                            <div className="h-5 bg-white/10 rounded w-24" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="h-3 bg-white/10 rounded w-20" />
+                            <div className="h-6 bg-white/10 rounded-full w-24" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -760,48 +778,57 @@ function OrderContent() {
                     Paquetes recomendados
                   </h3>
                   <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {getPresets(selected).map((qty) => {
-                      const price = parseFloat(
-                        (selected.price_per_unit * qty).toFixed(2),
-                      );
-                      const isActive = quantity === qty;
-                      return (
-                        <button
-                          key={qty}
-                          onClick={() => {
-                            setQuantity(qty);
-                            setTimeout(() => {
-                              window.scrollTo({ top: 0, behavior: "smooth" });
-                            }, 150);
-                          }}
-                          className={`rounded-3xl border p-4 text-center transition-all hover:-translate-y-1 ${
-                            isActive
-                              ? "border-primary-400 bg-primary-500/20 shadow-lg shadow-primary-500/30"
-                              : "border-white/12 bg-white/6 hover:border-primary-400/60 hover:bg-primary-500/10"
-                          }`}
-                        >
-                          <div
-                            className={`text-2xl font-black ${isActive ? "text-primary-100" : "text-white"}`}
+                    {(() => {
+                      const popularPresets = getPresets(selected);
+                      const popularIdx = Math.floor(popularPresets.length / 2);
+                      return popularPresets.map((qty, presetIdx) => {
+                        const price = parseFloat(
+                          (selected.price_per_unit * qty).toFixed(2),
+                        );
+                        const isActive = quantity === qty;
+                        return (
+                          <button
+                            key={qty}
+                            onClick={() => {
+                              setQuantity(qty);
+                              setTimeout(() => {
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                              }, 150);
+                            }}
+                            className={`rounded-3xl border p-4 text-center transition-all hover:-translate-y-1 ${
+                              isActive
+                                ? "border-primary-400 bg-primary-500/20 shadow-lg shadow-primary-500/30"
+                                : "border-white/12 bg-white/6 hover:border-primary-400/60 hover:bg-primary-500/10"
+                            }`}
                           >
-                            {formatNumber(qty)}
-                          </div>
-                          <div className="mt-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">
-                            {CATEGORY_LABELS[selected.category]?.label ??
-                              selected.category}
-                          </div>
-                          <div
-                            className={`mt-2 text-sm font-bold ${isActive ? "text-primary-200" : "text-slate-300"}`}
-                          >
-                            {formatCurrency(price)}
-                          </div>
-                          {isActive && (
-                            <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
-                              Seleccionado
+                            <div
+                              className={`text-2xl font-black ${isActive ? "text-primary-100" : "text-white"}`}
+                            >
+                              {formatNumber(qty)}
                             </div>
-                          )}
-                        </button>
-                      );
-                    })}
+                            <div className="mt-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">
+                              {CATEGORY_LABELS[selected.category]?.label ??
+                                selected.category}
+                            </div>
+                            <div
+                              className={`mt-2 text-sm font-bold ${isActive ? "text-primary-200" : "text-slate-300"}`}
+                            >
+                              {formatCurrency(price)}
+                            </div>
+                            {presetIdx === popularIdx && !isActive && (
+                              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
+                                ⭐ Más popular
+                              </div>
+                            )}
+                            {isActive && (
+                              <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                                Seleccionado
+                              </div>
+                            )}
+                          </button>
+                        );
+                      });
+                    })()}
                   </div>
                   <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr),320px]">
                     <div className="rounded-3xl border border-white/10 bg-white/6 p-6">

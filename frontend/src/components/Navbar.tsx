@@ -1,18 +1,26 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, LogOut, LayoutDashboard, ShieldCheck, Wallet } from 'lucide-react';
-import { getStoredUser, clearAuth, isAuthenticated } from '@/lib/auth';
-import { User as UserType } from '@/types';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Menu,
+  X,
+  LogOut,
+  LayoutDashboard,
+  ShieldCheck,
+  Wallet,
+} from "lucide-react";
+import { getStoredUser, clearAuth, isAuthenticated } from "@/lib/auth";
+import { User as UserType } from "@/types";
+import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
-  { href: '/', label: 'Inicio' },
-  { href: '/order', label: 'Pedir ahora' },
+  { href: "/", label: "Inicio" },
+  { href: "/precios", label: "Precios" },
+  { href: "/order", label: "Pedir ahora" },
 ];
 
 export default function Navbar() {
@@ -25,8 +33,8 @@ export default function Navbar() {
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
@@ -37,7 +45,7 @@ export default function Navbar() {
     clearAuth();
     setUser(null);
     setDropdownOpen(false);
-    router.push('/');
+    router.push("/");
   };
 
   return (
@@ -46,8 +54,10 @@ export default function Navbar() {
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        scrolled ? 'bg-dark-300/90 backdrop-blur-xl border-b border-white/[0.06] shadow-xl' : 'bg-transparent'
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        scrolled
+          ? "bg-dark-300/90 backdrop-blur-xl border-b border-white/[0.06] shadow-xl"
+          : "bg-transparent",
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,8 +81,10 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  'text-sm font-medium transition-colors duration-200',
-                  pathname === link.href ? 'text-primary-400' : 'text-slate-400 hover:text-white'
+                  "text-sm font-medium transition-colors duration-200",
+                  pathname === link.href
+                    ? "text-primary-400"
+                    : "text-slate-400 hover:text-white",
                 )}
               >
                 {link.label}
@@ -88,8 +100,8 @@ export default function Navbar() {
                   href="/dashboard"
                   className="flex items-center gap-1.5 glass-card px-3 py-1.5 text-xs font-semibold text-green-400 border-green-500/20 hover:border-green-500/40 transition-all"
                 >
-                  <Wallet className="w-3.5 h-3.5" />
-                  ${parseFloat(String(user.balance ?? 0)).toFixed(2)}
+                  <Wallet className="w-3.5 h-3.5" />$
+                  {parseFloat(String(user.balance ?? 0)).toFixed(2)}
                 </Link>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -98,7 +110,9 @@ export default function Navbar() {
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-xs font-bold">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-sm text-slate-300">{user.name.split(' ')[0]}</span>
+                  <span className="text-sm text-slate-300">
+                    {user.name.split(" ")[0]}
+                  </span>
                 </button>
                 <AnimatePresence>
                   {dropdownOpen && (
@@ -116,7 +130,7 @@ export default function Navbar() {
                       >
                         <LayoutDashboard className="w-4 h-4" /> Mi Panel
                       </Link>
-                      {user.role === 'admin' && (
+                      {user.role === "admin" && (
                         <Link
                           href="/admin"
                           onClick={() => setDropdownOpen(false)}
@@ -140,7 +154,10 @@ export default function Navbar() {
                 <Link href="/login" className="btn-secondary text-sm py-2 px-4">
                   Ingresar
                 </Link>
-                <Link href="/register" className="btn-primary text-sm py-2 px-4">
+                <Link
+                  href="/register"
+                  className="btn-primary text-sm py-2 px-4"
+                >
                   Empezar
                 </Link>
               </>
@@ -162,7 +179,7 @@ export default function Navbar() {
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
             className="md:hidden border-t border-white/[0.06] bg-dark-300/95 backdrop-blur-xl"
@@ -174,10 +191,10 @@ export default function Navbar() {
                   href={link.href}
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    'block py-2.5 px-4 rounded-xl text-sm font-medium transition-colors',
+                    "block py-2.5 px-4 rounded-xl text-sm font-medium transition-colors",
                     pathname === link.href
-                      ? 'bg-primary-500/10 text-primary-400'
-                      : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                      ? "bg-primary-500/10 text-primary-400"
+                      : "text-slate-400 hover:text-white hover:bg-white/[0.04]",
                   )}
                 >
                   {link.label}

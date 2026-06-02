@@ -79,6 +79,75 @@ const HOW_IT_WORKS = [
   },
 ];
 
+const TESTIMONIALS = [
+  {
+    name: "Lucía M.",
+    location: "Buenos Aires",
+    platform: "instagram",
+    handle: "@luciamua",
+    result: "+10.000 seguidores en 48hs",
+    text: "No podía creer lo rápido que llegaron. Mi cuenta explotó en alcance y las colaboraciones empezaron a lloverme. 100% recomendado.",
+    rating: 5,
+    avatar: "L",
+    gradient: "from-pink-500 to-rose-500",
+  },
+  {
+    name: "Matías R.",
+    location: "Córdoba",
+    platform: "tiktok",
+    handle: "@matirr",
+    result: "+50.000 vistas por video",
+    text: "Compré vistas para 3 videos y el algoritmo de TikTok los empezó a pushear solo. Vale cada peso, mis videos llegaron a miles de personas.",
+    rating: 5,
+    avatar: "M",
+    gradient: "from-slate-500 to-slate-700",
+  },
+  {
+    name: "Valentina S.",
+    location: "Rosario",
+    platform: "instagram",
+    handle: "@vale_fitness",
+    result: "+5.000 seguidores en 1 semana",
+    text: "Buscaba crecer mi marca personal y con FollowArg lo logré en una semana. El soporte siempre atento, el proceso es muy simple.",
+    rating: 5,
+    avatar: "V",
+    gradient: "from-violet-500 to-purple-600",
+  },
+  {
+    name: "Santiago P.",
+    location: "Mendoza",
+    platform: "youtube",
+    handle: "@santimusic_ar",
+    result: "+100.000 vistas en 1 semana",
+    text: "Mis videos ahora salen en sugeridos. El impulso inicial que necesitaba para que el algoritmo me tome en cuenta. Resultados reales.",
+    rating: 5,
+    avatar: "S",
+    gradient: "from-red-600 to-rose-600",
+  },
+  {
+    name: "Camila T.",
+    location: "Buenos Aires",
+    platform: "instagram",
+    handle: "@cami.foto",
+    result: "+3.000 likes, 2 clientes nuevos",
+    text: "Pedí likes para mi portfolio y mis fotos empezaron a aparecer en Explorar. Conseguí dos clientes nuevos esa misma semana.",
+    rating: 5,
+    avatar: "C",
+    gradient: "from-pink-500 to-fuchsia-600",
+  },
+  {
+    name: "Facundo L.",
+    location: "Buenos Aires",
+    platform: "tiktok",
+    handle: "@facugames_ar",
+    result: "+200.000 vistas totales",
+    text: "Confiaba poco al principio pero los resultados llegaron en horas. Ahora tengo marcas que me contactan. FollowArg cambió mi canal.",
+    rating: 5,
+    avatar: "F",
+    gradient: "from-cyan-500 to-blue-600",
+  },
+];
+
 function AnimatedCounter({
   target,
   suffix = "",
@@ -411,6 +480,85 @@ export default function HomePage() {
                     <ChevronRight className="w-6 h-6 text-primary-500/40" />
                   </div>
                 )}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── TESTIMONIOS ─────────────────────────────────────────────────────── */}
+      <section className="py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="section-title">
+              Lo que dicen nuestros{" "}
+              <span className="gradient-text">clientes</span>
+            </h2>
+            <p className="section-subtitle mx-auto">
+              Más de 1.200.000 pedidos entregados. Esto es lo que dicen quienes
+              ya crecieron con nosotros.
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {TESTIMONIALS.map((t, i) => (
+              <motion.div
+                key={t.handle}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.07 }}
+                className="glass-card-hover p-6 flex flex-col gap-4"
+              >
+                {/* Stars */}
+                <div className="flex gap-0.5">
+                  {[...Array(t.rating)].map((_, si) => (
+                    <span key={si} className="text-amber-400 text-sm">
+                      ★
+                    </span>
+                  ))}
+                </div>
+
+                {/* Quote */}
+                <p className="text-slate-300 text-sm leading-relaxed flex-1">
+                  &ldquo;{t.text}&rdquo;
+                </p>
+
+                {/* Result badge */}
+                <div className="inline-flex self-start items-center gap-1.5 bg-primary-500/15 border border-primary-500/25 text-primary-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                  ✅ {t.result}
+                </div>
+
+                {/* Author */}
+                <div className="flex items-center gap-3 pt-2 border-t border-white/[0.06]">
+                  <div
+                    className={`w-9 h-9 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}
+                  >
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <div className="text-white text-sm font-semibold">
+                      {t.name}
+                    </div>
+                    <div className="text-slate-500 text-xs">
+                      {t.handle} · {t.location}
+                    </div>
+                  </div>
+                  <div className="ml-auto text-lg" title={t.platform}>
+                    {t.platform === "instagram"
+                      ? "📸"
+                      : t.platform === "tiktok"
+                        ? "🎵"
+                        : "▶️"}
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
