@@ -94,6 +94,7 @@ function OrderContent() {
   );
   const [quantity, setQuantity] = useState(0);
   const [quantityConfirmed, setQuantityConfirmed] = useState(false);
+  const [quantityInput, setQuantityInput] = useState("");
   const [link, setLink] = useState("");
   const [email, setEmail] = useState("");
   const [couponCode, setCouponCode] = useState("");
@@ -797,6 +798,7 @@ function OrderContent() {
                             key={qty}
                             onClick={() => {
                               setQuantity(qty);
+                              setQuantityInput(String(qty));
                               setTimeout(() => {
                                 window.scrollTo({ top: 0, behavior: "smooth" });
                               }, 150);
@@ -844,20 +846,38 @@ function OrderContent() {
                       </div>
                       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
                         <input
-                          type="number"
-                          min={selected.min_quantity}
-                          max={selected.max_quantity}
-                          step={1}
-                          value={quantity || selected.min_quantity}
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={
+                            quantityInput !== ""
+                              ? quantityInput
+                              : String(quantity || selected.min_quantity)
+                          }
                           onChange={(e) => {
-                            const raw = Number(e.target.value);
-                            if (Number.isNaN(raw)) return;
-                            const clamped = Math.min(
-                              selected.max_quantity,
-                              Math.max(selected.min_quantity, raw),
-                            );
-                            setQuantity(clamped);
+                            const val = e.target.value.replace(/[^0-9]/g, "");
+                            setQuantityInput(val);
+                            const num = parseInt(val, 10);
+                            if (!isNaN(num) && val !== "") {
+                              setQuantity(Math.min(selected.max_quantity, num));
+                            }
                             setQuantityConfirmed(false);
+                          }}
+                          onBlur={() => {
+                            const num = parseInt(quantityInput, 10);
+                            if (
+                              isNaN(num) ||
+                              quantityInput === "" ||
+                              num < selected.min_quantity
+                            ) {
+                              setQuantity(selected.min_quantity);
+                              setQuantityInput(String(selected.min_quantity));
+                            } else if (num > selected.max_quantity) {
+                              setQuantity(selected.max_quantity);
+                              setQuantityInput(String(selected.max_quantity));
+                            } else {
+                              setQuantityInput(String(num));
+                            }
                           }}
                           className="input-field flex-1 text-lg"
                         />
@@ -865,6 +885,7 @@ function OrderContent() {
                           <button
                             onClick={() => {
                               setQuantity(selected.min_quantity);
+                              setQuantityInput(String(selected.min_quantity));
                               setQuantityConfirmed(false);
                             }}
                             className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition-colors hover:border-primary-400 hover:text-primary-200"
@@ -874,6 +895,7 @@ function OrderContent() {
                           <button
                             onClick={() => {
                               setQuantity(selected.max_quantity);
+                              setQuantityInput(String(selected.max_quantity));
                               setQuantityConfirmed(false);
                             }}
                             className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition-colors hover:border-primary-400 hover:text-primary-200"
@@ -907,8 +929,13 @@ function OrderContent() {
                   <div className="mt-6">
                     <button
                       onClick={() => {
-                        const confirmedQty = quantity || selected.min_quantity;
+                        const raw = parseInt(quantityInput, 10);
+                        const confirmedQty =
+                          !isNaN(raw) && raw >= selected.min_quantity
+                            ? Math.min(selected.max_quantity, raw)
+                            : quantity || selected.min_quantity;
                         setQuantity(confirmedQty);
+                        setQuantityInput(String(confirmedQty));
                         setQuantityConfirmed(true);
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
