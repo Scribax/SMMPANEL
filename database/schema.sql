@@ -172,14 +172,20 @@ $$;
 
 -- ─── SEED: Default Admin ─────────────────────────────────────────────────────
 -- Password is "Admin@123456" (bcrypt hash) — change after first login
-INSERT INTO users (email, password_hash, name, role, email_verified)
+INSERT INTO users (email, password_hash, name, role, referral_code, email_verified)
 VALUES (
   'admin@boostins.com',
   '$2a$12$VEIG6sLLroI2Ga5VejIImOobq81NY.C3tYbTiqX2STAYuya8TX096',
   'Admin',
   'admin',
+  'ADMIN1',
   true
 ) ON CONFLICT (email) DO NOTHING;
+
+-- Auto-generate referral_code for any users created without one
+UPDATE users
+SET referral_code = UPPER(SUBSTRING(REPLACE(gen_random_uuid()::text, '-', ''), 1, 6))
+WHERE referral_code IS NULL;
 
 -- ─── SEED: Sample Services ──────────────────────────────────────────────────
 INSERT INTO providers (id, name, api_url, api_key_enc) VALUES
