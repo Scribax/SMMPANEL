@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Tag, AlertCircle, Loader2, CheckCircle2, ChevronRight, AtSign, Link2, Wallet, PlusCircle, X } from 'lucide-react';
+import { Tag, AlertCircle, Loader2, CheckCircle2, ChevronRight, AtSign, Link2, Wallet, PlusCircle, X, Rocket, ShieldCheck, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -312,6 +312,7 @@ function OrderContent() {
 
   // ── Step indicator ──────────────────────────────────────────────────────────
   const STEPS = ['Plataforma', 'Servicio', 'Paquete', 'Datos', 'Pagar'];
+  const progress = Math.min(100, Math.max(0, ((step - 1) / (STEPS.length - 1)) * 100));
 
   return (
     <div className="min-h-screen bg-dark-300">
@@ -320,30 +321,75 @@ function OrderContent() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Header */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-            <h1 className="text-4xl font-black text-white mb-3">
-              Hacer un <span className="gradient-text">Pedido</span>
-            </h1>
-            <p className="text-slate-400">Elegí el servicio, la cantidad y pagá con MercadoPago.</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative mb-12 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-primary-500/30 via-primary-500/5 to-sky-500/10 px-8 py-12 shadow-[0_40px_80px_-40px_rgba(99,102,241,0.7)]"
+          >
+            <div className="absolute -top-32 -right-24 h-64 w-64 rounded-full bg-primary-500/30 blur-3xl" />
+            <div className="absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-sky-400/30 blur-3xl" />
+            <div className="relative z-10 flex flex-col gap-10 md:flex-row md:items-center md:justify-between">
+              <div className="text-left max-w-xl">
+                <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">
+                  <Sparkles className="h-3 w-3" /> flujo guiado
+                </p>
+                <h1 className="text-4xl font-black text-white sm:text-5xl">
+                  Potenciá tu cuenta en <span className="text-primary-200">5 pasos</span>
+                </h1>
+                <p className="mt-4 text-sm leading-relaxed text-slate-200/80">
+                  Elegí plataforma, paquetizá tu pedido y pagá seguro con MercadoPago. Te guiamos paso a paso y monitoreamos la entrega en vivo.
+                </p>
+              </div>
+              <div className="grid gap-3 text-left sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/15 bg-white/8 p-4 backdrop-blur">
+                  <div className="flex items-center gap-3 text-sm font-semibold text-white">
+                    <ShieldCheck className="h-4 w-4 text-emerald-400" /> Garantía de reposición
+                  </div>
+                  <p className="mt-2 text-xs text-slate-300">Servicios curados con refill automático y monitoreo 24/7.</p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/8 p-4 backdrop-blur">
+                  <div className="flex items-center gap-3 text-sm font-semibold text-white">
+                    <Rocket className="h-4 w-4 text-sky-400" /> Entrega ultrarrápida
+                  </div>
+                  <p className="mt-2 text-xs text-slate-300">Pedidos procesados en minutos con seguimiento desde tu dashboard.</p>
+                </div>
+              </div>
+            </div>
           </motion.div>
 
           {/* Progress steps */}
-          <div className="flex items-center justify-center gap-1 mb-10 flex-wrap">
+          <div className="relative mx-auto mb-16 max-w-3xl px-4">
+            <div className="relative h-2 rounded-full bg-white/10">
+              <div
+                className="absolute inset-y-0 left-0 h-full rounded-full bg-gradient-to-r from-primary-500 via-fuchsia-500 to-sky-400 transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
             {STEPS.map((s, i) => {
               const n = i + 1;
               const done = step > n;
               const active = step === n;
+              const position = (i / (STEPS.length - 1)) * 100;
               return (
-                <div key={s} className="flex items-center gap-1">
-                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                    done   ? 'bg-green-500/20 text-green-400' :
-                    active ? 'bg-primary-500/20 text-primary-400 ring-1 ring-primary-500/40' :
-                             'text-slate-600'
-                  }`}>
-                    {done ? <CheckCircle2 className="w-3.5 h-3.5" /> : <span className="w-4 text-center">{n}</span>}
-                    {s}
+                <div
+                  key={s}
+                  className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2"
+                  style={{ left: `${position}%`, top: '50%' }}
+                >
+                  <div
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition-all duration-300 ${
+                      done
+                        ? 'border-emerald-400 bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                        : active
+                          ? 'border-primary-400 bg-primary-500 text-white shadow-lg shadow-primary-500/40'
+                          : 'border-white/15 bg-dark-200 text-slate-500'
+                    }`}
+                  >
+                    {done ? <CheckCircle2 className="h-4 w-4" /> : n}
                   </div>
-                  {i < STEPS.length - 1 && <ChevronRight className="w-3 h-3 text-slate-700" />}
+                  <span className={`whitespace-nowrap text-[10px] uppercase tracking-[0.2em] ${active ? 'text-primary-200' : 'text-slate-500'}`}>
+                    {s}
+                  </span>
                 </div>
               );
             })}
@@ -354,22 +400,31 @@ function OrderContent() {
             {/* ── STEP 1: Platform ─────────────────────────────────────────── */}
             {step === 1 && (
               <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <div className="glass-card p-8">
-                  <h2 className="text-white font-bold text-xl mb-6 text-center">¿En qué plataforma?</h2>
+                <div className="glass-card p-10">
+                  <h2 className="text-white font-bold text-2xl text-center">¿En qué plataforma?</h2>
+                  <p className="mt-2 text-center text-sm text-slate-400">Seleccioná dónde querés crecer. Cada plataforma tiene presets optimizados.</p>
                   {services.length === 0 ? (
                     <div className="text-center py-8 text-slate-500"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Cargando servicios...</div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
                       {PLATFORMS.filter((p) => availablePlatforms.includes(p.id)).map((p) => (
                         <button
                           key={p.id}
                           onClick={() => { setPlatform(p.id); setCategory(''); setSelectedId(''); }}
-                          className="group relative overflow-hidden rounded-2xl p-6 text-center transition-all hover:scale-105 active:scale-95 border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10"
+                          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/8 via-dark-300 to-dark-200/80 p-6 text-left shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-400/80 hover:shadow-primary-500/30"
                         >
-                          <div className="text-5xl mb-3">{p.emoji}</div>
-                          <div className="text-white font-bold text-lg">{p.label}</div>
-                          <div className="text-slate-400 text-xs mt-1">
-                            {services.filter((s) => s.platform === p.id).length} servicios
+                          <div className={`absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br ${p.gradient} mix-blend-screen`} />
+                          <div className="relative z-10 flex h-full flex-col justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-4xl drop-shadow-[0_6px_24px_rgba(0,0,0,0.35)]">{p.emoji}</span>
+                              <span className="text-lg font-semibold text-white">{p.label}</span>
+                            </div>
+                            <div className="mt-6 flex items-center justify-between text-xs text-slate-400">
+                              <span>{services.filter((s) => s.platform === p.id).length} servicios</span>
+                              <span className="inline-flex items-center gap-1 rounded-full border border-white/20 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-white/70">
+                                Explorar <ChevronRight className="h-3 w-3" />
+                              </span>
+                            </div>
                           </div>
                         </button>
                       ))}
@@ -382,12 +437,13 @@ function OrderContent() {
             {/* ── STEP 2: Category ─────────────────────────────────────────── */}
             {step === 2 && (
               <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <div className="glass-card p-8">
-                  <button onClick={() => setPlatform('')} className="text-slate-400 hover:text-white text-sm mb-6 flex items-center gap-1 transition-colors">
+                <div className="glass-card p-10">
+                  <button onClick={() => setPlatform('')} className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white">
                     ← Volver
                   </button>
-                  <h2 className="text-white font-bold text-xl mb-6 text-center">¿Qué tipo de servicio?</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <h2 className="text-white text-center text-2xl font-bold">¿Qué tipo de servicio?</h2>
+                  <p className="mt-2 text-center text-sm text-slate-400">Elegí el objetivo de tu campaña para ver servicios compatibles.</p>
+                  <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
                     {categories.map((cat) => {
                       const meta = CATEGORY_LABELS[cat] ?? { label: cat, emoji: '⚡' };
                       const count = services.filter((s) => s.platform === platform && s.category === cat).length;
@@ -395,11 +451,11 @@ function OrderContent() {
                         <button
                           key={cat}
                           onClick={() => { setCategory(cat); setSelectedId(''); }}
-                          className="rounded-2xl p-6 text-center transition-all hover:scale-105 active:scale-95 border border-white/10 hover:border-primary-500/40 bg-white/5 hover:bg-primary-500/10"
+                          className="rounded-3xl border border-white/10 bg-white/6 p-6 text-left shadow-md shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-400/60 hover:bg-primary-500/10"
                         >
-                          <div className="text-4xl mb-3">{meta.emoji}</div>
-                          <div className="text-white font-bold">{meta.label}</div>
-                          <div className="text-slate-400 text-xs mt-1">{count} opción{count !== 1 ? 'es' : ''}</div>
+                          <div className="text-3xl">{meta.emoji}</div>
+                          <div className="mt-3 text-lg font-semibold text-white">{meta.label}</div>
+                          <div className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">{count} opción{count !== 1 ? 'es' : ''}</div>
                         </button>
                       );
                     })}
@@ -411,12 +467,13 @@ function OrderContent() {
             {/* ── STEP 3: Service variant ──────────────────────────────────── */}
             {step === 3 && (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <div className="glass-card p-8">
-                  <button onClick={() => setCategory('')} className="text-slate-400 hover:text-white text-sm mb-6 flex items-center gap-1 transition-colors">
+                <div className="glass-card p-10">
+                  <button onClick={() => setCategory('')} className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white">
                     ← Volver
                   </button>
-                  <h2 className="text-white font-bold text-xl mb-6 text-center">Elegí el tipo</h2>
-                  <div className="space-y-3">
+                  <h2 className="text-white text-center text-2xl font-bold">Elegí el tipo</h2>
+                  <p className="mt-2 text-center text-sm text-slate-400">Compará velocidad, reposición y precio mínimo antes de continuar.</p>
+                  <div className="mt-8 space-y-3">
                     {filteredServices.map((svc) => {
                       const minPrice = parseFloat((svc.price_per_unit * svc.min_quantity).toFixed(2));
                       const isBasic = svc.name.toLowerCase().includes('básico') || svc.name.toLowerCase().includes('basic');
@@ -424,32 +481,37 @@ function OrderContent() {
                         <button
                           key={svc.id}
                           onClick={() => setSelectedId(svc.id)}
-                          className={`w-full text-left rounded-2xl p-5 border transition-all flex items-center justify-between group ${isBasic ? 'border-amber-500/30 hover:border-amber-500/60 bg-amber-500/5 hover:bg-amber-500/10' : 'border-white/10 hover:border-primary-500/40 bg-white/5 hover:bg-primary-500/10'}`}
+                          className={`group flex w-full items-start justify-between gap-6 rounded-3xl border p-6 text-left transition-all hover:-translate-y-1 hover:shadow-xl ${
+                            isBasic
+                              ? 'border-amber-400/40 bg-amber-500/10 hover:border-amber-400/70 hover:bg-amber-500/20'
+                              : 'border-white/12 bg-white/6 hover:border-primary-400/60 hover:bg-primary-500/10'
+                          }`}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <div className="text-white font-semibold">{svc.name}</div>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span className="text-sm font-semibold text-white md:text-base">{svc.name}</span>
                               {isBasic && (
-                                <div className="flex items-center gap-1 text-amber-400 text-xs bg-amber-500/10 px-2 py-0.5 rounded-full">
-                                  <AlertCircle className="w-3 h-3" />
-                                  <span>Puede caerse</span>
-                                </div>
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-200">
+                                  <AlertCircle className="h-3 w-3" /> Básico
+                                </span>
                               )}
                             </div>
                             {svc.description && (
-                              <div className="text-slate-400 text-xs mt-1 mb-1.5">{svc.description}</div>
+                              <p className="mt-2 text-xs leading-relaxed text-slate-300 md:text-sm">{svc.description}</p>
                             )}
-                            <div className="text-slate-500 text-xs flex items-center gap-3">
+                            <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] uppercase tracking-[0.2em] text-slate-500">
                               <span>⚡ {svc.delivery_speed}</span>
                               <span>📦 {formatNumber(svc.min_quantity)}–{formatNumber(svc.max_quantity)}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 ml-4 shrink-0">
+                          <div className="flex shrink-0 items-center gap-4">
                             <div className="text-right">
-                              <div className="text-xs text-slate-500">desde</div>
-                              <div className="text-primary-400 font-bold text-sm">{formatCurrency(minPrice)}</div>
+                              <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">desde</div>
+                              <div className="text-sm font-bold text-primary-300 md:text-base">{formatCurrency(minPrice)}</div>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-primary-400 transition-colors" />
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/8 text-slate-400 transition-colors group-hover:border-primary-400 group-hover:text-primary-200">
+                              <ChevronRight className="h-4 w-4" />
+                            </div>
                           </div>
                         </button>
                       );
@@ -462,13 +524,29 @@ function OrderContent() {
             {/* ── STEP 4: Quantity packages ────────────────────────────────── */}
             {step === 4 && selected && (
               <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <div className="glass-card p-8">
-                  <button onClick={() => setSelectedId('')} className="text-slate-400 hover:text-white text-sm mb-6 flex items-center gap-1 transition-colors">
+                <div className="glass-card p-10">
+                  <button onClick={() => setSelectedId('')} className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white">
                     ← Volver
                   </button>
-                  <h2 className="text-white font-bold text-xl mb-2 text-center">Elegí el paquete</h2>
-                  <p className="text-slate-400 text-sm text-center mb-8">{selected.name}</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="rounded-3xl border border-white/10 bg-white/6 p-6 md:flex md:items-center md:justify-between md:gap-10">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">Elegí el paquete ideal</h2>
+                      <p className="mt-2 text-sm text-slate-300">{selected.name}</p>
+                      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-slate-500">
+                        <span>⚡ {selected.delivery_speed}</span>
+                        <span>📦 {formatNumber(selected.min_quantity)}–{formatNumber(selected.max_quantity)}</span>
+                      </div>
+                    </div>
+                    <div className="mt-6 md:mt-0">
+                      <div className="rounded-2xl border border-primary-500/30 bg-primary-500/10 px-5 py-4 text-right">
+                        <p className="text-[11px] uppercase tracking-[0.3em] text-primary-200/80">precio actual</p>
+                        <p className="text-2xl font-black text-primary-200">{formatCurrency(basePrice || selected.price_per_unit * selected.min_quantity)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">Paquetes recomendados</h3>
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {getPresets(selected).map((qty) => {
                       const price = parseFloat((selected.price_per_unit * qty).toFixed(2));
                       const isActive = quantity === qty;
@@ -481,33 +559,37 @@ function OrderContent() {
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }, 150);
                           }}
-                          className={`rounded-2xl p-4 text-center border transition-all hover:scale-105 active:scale-95 ${
+                          className={`rounded-3xl border p-4 text-center transition-all hover:-translate-y-1 ${
                             isActive
-                              ? 'border-primary-500 bg-primary-500/20 ring-1 ring-primary-500/40'
-                              : 'border-white/10 bg-white/5 hover:border-primary-500/40 hover:bg-primary-500/10'
+                              ? 'border-primary-400 bg-primary-500/20 shadow-lg shadow-primary-500/30'
+                              : 'border-white/12 bg-white/6 hover:border-primary-400/60 hover:bg-primary-500/10'
                           }`}
                         >
-                          <div className={`text-2xl font-black mb-1 ${isActive ? 'text-primary-400' : 'text-white'}`}>
+                          <div className={`text-2xl font-black ${isActive ? 'text-primary-100' : 'text-white'}`}>
                             {formatNumber(qty)}
                           </div>
-                          <div className="text-slate-400 text-xs capitalize mb-2">{CATEGORY_LABELS[selected.category]?.label ?? selected.category}</div>
-                          <div className={`text-sm font-bold ${isActive ? 'text-primary-300' : 'text-slate-300'}`}>
+                          <div className="mt-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">
+                            {CATEGORY_LABELS[selected.category]?.label ?? selected.category}
+                          </div>
+                          <div className={`mt-2 text-sm font-bold ${isActive ? 'text-primary-200' : 'text-slate-300'}`}>
                             {formatCurrency(price)}
                           </div>
+                          {isActive && (
+                            <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                              Seleccionado
+                            </div>
+                          )}
                         </button>
                       );
                     })}
                   </div>
-                  <div className="mt-8">
-                    <h3 className="text-slate-300 text-sm font-semibold mb-3 flex items-center gap-2">
-                      Ajustar cantidad manualmente
-                    </h3>
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                      <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+                  <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr),320px]">
+                    <div className="rounded-3xl border border-white/10 bg-white/6 p-6">
+                      <div className="flex items-center justify-between text-xs text-slate-400">
                         <span>Mín: {formatNumber(selected.min_quantity)}</span>
                         <span>Máx: {formatNumber(selected.max_quantity)}</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
                         <input
                           type="number"
                           min={selected.min_quantity}
@@ -517,34 +599,37 @@ function OrderContent() {
                           onChange={(e) => {
                             const raw = Number(e.target.value);
                             if (Number.isNaN(raw)) return;
-                            const clamped = Math.min(Math.max(raw, selected.min_quantity), selected.max_quantity);
+                            const clamped = Math.min(selected.max_quantity, Math.max(selected.min_quantity, raw));
                             setQuantity(clamped);
+                            setQuantityConfirmed(false);
                           }}
-                          className="input-field flex-1"
+                          className="input-field flex-1 text-lg"
                         />
-                      </div>
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="text-2xl font-black text-white">
-                          {formatNumber(quantity || selected.min_quantity)}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { setQuantity(selected.min_quantity); setQuantityConfirmed(false); }}
+                            className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition-colors hover:border-primary-400 hover:text-primary-200"
+                          >
+                            Mín
+                          </button>
+                          <button
+                            onClick={() => { setQuantity(selected.max_quantity); setQuantityConfirmed(false); }}
+                            className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition-colors hover:border-primary-400 hover:text-primary-200"
+                          >
+                            Máx
+                          </button>
                         </div>
-                        <div className="text-sm text-slate-300">
-                          {formatCurrency((quantity || selected.min_quantity) * selected.price_per_unit)}
-                        </div>
                       </div>
-                      <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-500">
-                        <button
-                          onClick={() => setQuantity(selected.min_quantity)}
-                          className="py-2 px-3 rounded-xl border border-white/10 hover:border-primary-400 hover:text-primary-300 transition"
-                        >
-                          Min ({formatNumber(selected.min_quantity)})
-                        </button>
-                        <button
-                          onClick={() => setQuantity(selected.max_quantity)}
-                          className="py-2 px-3 rounded-xl border border-white/10 hover:border-primary-400 hover:text-primary-300 transition"
-                        >
-                          Máx ({formatNumber(selected.max_quantity)})
-                        </button>
-                      </div>
+                    </div>
+                    <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-primary-500/10 p-6 text-sm text-slate-200">
+                      <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-200">
+                        <ShieldCheck className="h-4 w-4" /> Consejos rápidos
+                      </h4>
+                      <ul className="mt-3 space-y-2 text-xs leading-relaxed text-slate-200/80">
+                        <li>Elegí un paquete proporcional al alcance real de tu contenido para evitar drops.</li>
+                        <li>¿Campaña escalonada? Ajustá manualmente para repartir en varias publicaciones.</li>
+                        <li>Podés confirmar y volver a editar antes de pagar en el siguiente paso.</li>
+                      </ul>
                     </div>
                   </div>
 
