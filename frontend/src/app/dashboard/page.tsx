@@ -999,6 +999,12 @@ export default function DashboardPage() {
                 >
                   <ExternalLink className="w-4 h-4" /> Copiar link de referido
                 </button>
+                <Link
+                  href="/dashboard/referidos"
+                  className="btn-primary w-full text-sm flex items-center justify-center gap-2 mb-5"
+                >
+                  <Gift className="w-4 h-4" /> Ver panel completo de referidos
+                </Link>
 
                 {/* Referral stats */}
                 {referralSummary && (

@@ -116,6 +116,10 @@ function OrderContent() {
       ? parseFloat((selected.price_per_unit * quantity).toFixed(2))
       : 0;
   const finalPrice = Math.max(basePrice - couponDiscount, 0.01);
+  const CASHBACK_PERCENT = 5; // 5% cashback acreditado automáticamente
+  const cashbackAmount = parseFloat(
+    (finalPrice * (CASHBACK_PERCENT / 100)).toFixed(2),
+  );
   const isFollowers = selected?.category === "followers";
   const linkPlaceholder = isFollowers
     ? `@tunombredeusuario`
@@ -384,7 +388,9 @@ function OrderContent() {
         email: email.trim(),
         couponCode: couponApplied ? couponCode : undefined,
       });
-      toast.success("¡Pedido creado! Saldo descontado correctamente.");
+      toast.success(
+        `¡Pedido creado! +${formatCurrency(cashbackAmount)} de cashback acreditado 💰`,
+      );
       window.location.href = "/dashboard";
     } catch (err: unknown) {
       const errData = (
@@ -1128,6 +1134,15 @@ function OrderContent() {
                             {formatCurrency(finalPrice)}
                           </div>
                         </div>
+                      </div>
+                      {/* Cashback */}
+                      <div className="flex justify-between items-center text-xs pt-1">
+                        <span className="text-emerald-400 flex items-center gap-1">
+                          💰 Cashback ({CASHBACK_PERCENT}%)
+                        </span>
+                        <span className="text-emerald-400 font-semibold">
+                          +{formatCurrency(cashbackAmount)}
+                        </span>
                       </div>
                       {loggedIn && (
                         <div

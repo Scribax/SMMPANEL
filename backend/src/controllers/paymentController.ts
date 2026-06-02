@@ -89,12 +89,10 @@ export const createDeposit = async (
       cause: JSON.stringify(mpError?.cause ?? err),
       status: mpError?.status,
     });
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error al procesar el pago con MercadoPago",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error al procesar el pago con MercadoPago",
+    });
   }
 };
 
@@ -117,12 +115,10 @@ export const createCheckout = async (
   const { serviceId, quantity, link, email, couponCode } = req.body;
 
   if (!serviceId || !quantity || !link || !email) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "serviceId, quantity, link and email are required",
-      });
+    res.status(400).json({
+      success: false,
+      message: "serviceId, quantity, link and email are required",
+    });
     return;
   }
 
@@ -218,12 +214,10 @@ export const createCheckout = async (
 
   // ── Balance-only checkout ──
   if (!userId || !req.user) {
-    res
-      .status(401)
-      .json({
-        success: false,
-        message: "Debés iniciar sesión para hacer un pedido",
-      });
+    res.status(401).json({
+      success: false,
+      message: "Debés iniciar sesión para hacer un pedido",
+    });
     return;
   }
 
@@ -347,10 +341,24 @@ export const createCheckout = async (
     }),
   );
 
+  // Credit cashback to user balance
+  const cashbackAmount = parseFloat(
+    (finalPrice * (env.CASHBACK_PERCENT / 100)).toFixed(2),
+  );
+  if (cashbackAmount > 0) {
+    await query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
+      cashbackAmount,
+      userId,
+    ]).catch((err) =>
+      logger.warn("Cashback credit failed", { orderId, error: String(err) }),
+    );
+  }
+
   logger.info("Order paid with balance", {
     orderId,
     userId,
     amount: finalPrice,
+    cashback: cashbackAmount,
   });
   res.status(201).json({
     success: true,
@@ -358,6 +366,10 @@ export const createCheckout = async (
     paidWithBalance: true,
     price: finalPrice,
     originalPrice,
+    cashback:
+      cashbackAmount > 0
+        ? { amount: cashbackAmount, percent: env.CASHBACK_PERCENT }
+        : null,
   });
 };
 
@@ -610,12 +622,10 @@ export const verifyDeposit = async (
     const mpStatus = mpPayment.status;
 
     if (!externalRef?.startsWith("deposit_") || mpStatus !== "approved") {
-      res
-        .status(400)
-        .json({
-          success: false,
-          message: "Payment not approved or not a deposit",
-        });
+      res.status(400).json({
+        success: false,
+        message: "Payment not approved or not a deposit",
+      });
       return;
     }
 
