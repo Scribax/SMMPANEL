@@ -71,9 +71,14 @@ function validateLinkForService(link: string, service: Service): { valid: boolea
   // Servicios de POSTS/REELS/LIKES/VIEWS - NO funcionan con historias
   if (service.category === "likes" || service.category === "views" || service.category === "comments") {
     if (lowerLink.includes("/stories/") || lowerLink.includes("instagram.com/stories/")) {
+      const suggestion = service.category === "likes" 
+        ? "Usá el servicio 'Story Stickers' para darle like a historias"
+        : service.category === "views" 
+          ? "Usá el servicio 'Story Views' para ver historias"
+          : "Mirá los servicios que dicen 'Story' en el nombre";
       return {
         valid: false,
-        message: "⚠️ Este servicio NO funciona con historias. Usá el servicio 'Story Views' o 'Story Stickers' para historias."
+        message: `❌ Este servicio NO funciona con historias de Instagram. ${suggestion}`
       };
     }
     // Validar que sea un link válido de Instagram
@@ -1106,19 +1111,29 @@ function OrderContent() {
                     {/* Warning based on service type */}
                     {selected?.platform === "instagram" &&
                       selected?.category === "views" && (
-                        <p className="text-xs text-amber-400 mt-2 flex items-center gap-1">
-                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                          ⚠️ SOLO para VIDEOS/REELS (instagram.com/reel/...). NO
-                          funciona con fotos.
-                        </p>
+                        <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                          <p className="text-xs text-amber-400 flex items-start gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>
+                              <strong>SOLO para VIDEOS/REELS</strong> (instagram.com/reel/...).<br/>
+                              ❌ NO funciona con fotos ni historias.<br/>
+                              💡 Para historias usá el servicio <strong>"Story Views"</strong>
+                            </span>
+                          </p>
+                        </div>
                       )}
                     {selected?.platform === "instagram" &&
                       selected?.category === "likes" && (
-                        <p className="text-xs text-blue-400 mt-2 flex items-center gap-1">
-                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                          Para FOTOS: instagram.com/p/... | Para REELS:
-                          instagram.com/reel/...
-                        </p>
+                        <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                          <p className="text-xs text-blue-400 flex items-start gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>
+                              <strong>✓ Funciona con:</strong> FOTOS (instagram.com/p/...) y REELS (instagram.com/reel/...)<br/>
+                              <strong>❌ NO funciona con:</strong> Historias<br/>
+                              💡 Para historias usá <strong>"Story Stickers"</strong>
+                            </span>
+                          </p>
+                        </div>
                       )}
 
                     <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
