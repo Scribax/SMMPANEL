@@ -1109,8 +1109,10 @@ function OrderContent() {
                     )}
 
                     {/* Warning based on service type */}
+                    {/* Mensaje para servicios de VISTAS normales (no historias) */}
                     {selected?.platform === "instagram" &&
-                      selected?.category === "views" && (
+                      selected?.category === "views" &&
+                      !selected?.name?.toLowerCase().includes("story") && (
                         <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                           <p className="text-xs text-amber-400 flex items-start gap-1.5">
                             <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
@@ -1122,8 +1124,24 @@ function OrderContent() {
                           </p>
                         </div>
                       )}
+
+                    {/* Mensaje POSITIVO para servicios de HISTORIAS */}
                     {selected?.platform === "instagram" &&
-                      selected?.category === "likes" && (
+                      selected?.name?.toLowerCase().includes("story") && (
+                        <div className="mt-2 p-2 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                          <p className="text-xs text-purple-400 flex items-start gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>
+                              <strong>✓ Servicio correcto para historias</strong><br/>
+                              Poné el link de tu historia (instagram.com/stories/...)<br/>
+                              💡 Recordá que las historias duran solo 24 horas
+                            </span>
+                          </p>
+                        </div>
+                      )}
+                    {selected?.platform === "instagram" &&
+                      selected?.category === "likes" &&
+                      !selected?.name?.toLowerCase().includes("story") && (
                         <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                           <p className="text-xs text-blue-400 flex items-start gap-1.5">
                             <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
