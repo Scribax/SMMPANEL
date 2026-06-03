@@ -402,8 +402,8 @@ function OrderContent() {
     if (selected?.platform === "instagram") {
       const lowerLink = linkVal.toLowerCase();
 
-      // VIEWS = solo para videos/reels (NO fotos)
-      if (selected.category === "views") {
+      // VIEWS normales = solo para videos/reels (NO fotos, NO historias)
+      if (selected.category === "views" && !selected.name?.toLowerCase().includes("story")) {
         if (
           !lowerLink.includes("/reel/") &&
           !lowerLink.includes("/tv/") &&
@@ -416,8 +416,8 @@ function OrderContent() {
         }
       }
 
-      // LIKES = para posts y reels (fotos Y videos)
-      if (selected.category === "likes") {
+      // LIKES normales = para posts y reels (NO historias)
+      if (selected.category === "likes" && !selected.name?.toLowerCase().includes("story")) {
         if (
           !lowerLink.includes("/p/") &&
           !lowerLink.includes("/reel/") &&
@@ -425,6 +425,16 @@ function OrderContent() {
         ) {
           toast.error(
             "⚠️ El link debe ser de un POST o REEL. Ejemplo: instagram.com/p/... o instagram.com/reel/...",
+          );
+          return;
+        }
+      }
+
+      // STORY servicios = solo para historias
+      if (selected.name?.toLowerCase().includes("story")) {
+        if (!lowerLink.includes("/stories/")) {
+          toast.error(
+            "⚠️ Este servicio es SOLO para HISTORIAS de Instagram. El link debe contener /stories/",
           );
           return;
         }
