@@ -34,6 +34,7 @@ const QUANTITY_PRESETS: Record<string, number[]> = {
   views: [100, 250, 500, 1000, 2500, 5000, 10000, 50000, 100000],
   comments: [10, 25, 50, 100, 250, 500],
   boost: [1000],
+  reactions: [50, 100, 250, 500, 1000, 2500, 5000],
 };
 const DEFAULT_PRESETS = [100, 250, 500, 1000, 2500, 5000];
 
@@ -67,6 +68,25 @@ function validateLinkForService(link: string, service: Service): { valid: boolea
       return {
         valid: false,
         message: "⚠️ Ingresá el link de invitación de tu servidor Discord (discord.gg/tuservidor)",
+      };
+    }
+    return { valid: true };
+  }
+
+  // Servicios de TELEGRAM REACTIONS — necesitan link del post (t.me/canal/PostID)
+  if (service.platform === "telegram" && service.category === "reactions") {
+    if (!lowerLink.includes("t.me/") && !lowerLink.includes("telegram.me/")) {
+      return {
+        valid: false,
+        message: "⚠️ Ingresá el link del post de Telegram (t.me/tucanal/123)",
+      };
+    }
+    // Verificar que tenga un número de post al final (t.me/canal/123)
+    const hasPostId = /t\.me\/[^/]+\/\d+/.test(lowerLink);
+    if (!hasPostId) {
+      return {
+        valid: false,
+        message: "⚠️ El link debe incluir el ID del post: t.me/tucanal/123",
       };
     }
     return { valid: true };
@@ -133,6 +153,56 @@ interface PlatformDef {
   gradient: string;
 }
 
+const TelegramIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-9 h-9" aria-hidden="true">
+    <defs>
+      <linearGradient id="tg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#2AABEE" />
+        <stop offset="100%" stopColor="#229ED9" />
+      </linearGradient>
+    </defs>
+    <rect width="24" height="24" rx="6" fill="url(#tg-grad)" />
+    <path
+      d="M5.5 11.8 17 7l-2.2 10.5-3.5-2.8-1.7 1.6V13l6-5.7-7.5 4.3L5.5 11.8z"
+      fill="white"
+    />
+  </svg>
+);
+
+const InstagramIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-9 h-9" fill="none" aria-hidden="true">
+    <defs>
+      <radialGradient id="ig-grad" cx="30%" cy="107%" r="130%">
+        <stop offset="0%" stopColor="#ffd600" />
+        <stop offset="30%" stopColor="#ff6a00" />
+        <stop offset="60%" stopColor="#ee0979" />
+        <stop offset="90%" stopColor="#c92bb7" />
+        <stop offset="100%" stopColor="#7b2ff7" />
+      </radialGradient>
+    </defs>
+    <rect width="24" height="24" rx="6" fill="url(#ig-grad)" />
+    <rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="white" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="4.2" fill="none" stroke="white" strokeWidth="1.5" />
+    <circle cx="17.5" cy="6.5" r="1.1" fill="white" />
+  </svg>
+);
+
+const TikTokIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-9 h-9" fill="white" aria-hidden="true">
+    <rect width="24" height="24" rx="6" fill="#010101" />
+    <path d="M19.32 6.78a4.84 4.84 0 0 1-2.99-1.04 4.84 4.84 0 0 1-1.7-3.24h-2.98v13.3a2.3 2.3 0 0 1-2.3 2.05 2.3 2.3 0 0 1-2.3-2.3 2.3 2.3 0 0 1 2.3-2.3c.23 0 .44.04.65.1V10.3a5.3 5.3 0 0 0-.65-.04 5.3 5.3 0 0 0-5.3 5.3 5.3 5.3 0 0 0 5.3 5.3 5.3 5.3 0 0 0 5.3-5.3V9.97a7.77 7.77 0 0 0 4.67 1.54V8.53a4.85 4.85 0 0 1-2-.75z" fill="white" />
+    <path d="M16.33 9.97V9.2a4.84 4.84 0 0 1-2-.75v.01a7.77 7.77 0 0 0 2 1.51z" fill="#69C9D0" opacity="0.8" />
+  </svg>
+);
+
+const YouTubeIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-9 h-9" fill="white" aria-hidden="true">
+    <rect width="24" height="24" rx="6" fill="#FF0000" />
+    <path d="M21.8 8.4s-.2-1.4-.8-2c-.8-.8-1.6-.8-2-.9C16.8 5.3 12 5.3 12 5.3s-4.8 0-7 .2c-.4.1-1.2.1-2 .9-.6.6-.8 2-.8 2S2 10 2 11.6v1.5c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.8 2.3.9C6.8 19.4 12 19.4 12 19.4s4.8 0 7-.2c.4-.1 1.2-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.5C22 10 21.8 8.4 21.8 8.4z" fill="#FF0000" />
+    <polygon points="9.8,15.1 9.8,9.1 15.8,12.1" fill="white" />
+  </svg>
+);
+
 const DiscordIcon = () => (
   <svg
     viewBox="0 0 127.14 96.36"
@@ -149,18 +219,21 @@ const PLATFORMS: PlatformDef[] = [
     id: "instagram",
     label: "Instagram",
     emoji: "📸",
+    customIcon: <InstagramIcon />,
     gradient: "from-pink-500 to-purple-600",
   },
   {
     id: "tiktok",
     label: "TikTok",
     emoji: "🎵",
+    customIcon: <TikTokIcon />,
     gradient: "from-slate-600 to-slate-800",
   },
   {
     id: "youtube",
     label: "YouTube",
     emoji: "▶️",
+    customIcon: <YouTubeIcon />,
     gradient: "from-red-600 to-red-700",
   },
   {
@@ -170,6 +243,13 @@ const PLATFORMS: PlatformDef[] = [
     customIcon: <DiscordIcon />,
     gradient: "from-indigo-500 to-purple-700",
   },
+  {
+    id: "telegram",
+    label: "Telegram",
+    emoji: "✈️",
+    customIcon: <TelegramIcon />,
+    gradient: "from-sky-400 to-blue-600",
+  },
 ];
 
 const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
@@ -178,6 +258,7 @@ const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
   views: { label: "Vistas", emoji: "👁️" },
   comments: { label: "Comentarios", emoji: "💬" },
   boost: { label: "Server Boost", emoji: "🚀" },
+  reactions: { label: "Reacciones", emoji: "🎉" },
 };
 
 function OrderContent() {
@@ -222,8 +303,11 @@ function OrderContent() {
   );
   const isFollowers = selected?.category === "followers";
   const isDiscordBoost = selected?.platform === "discord" && selected?.category === "boost";
+  const isTelegramReactions = selected?.platform === "telegram" && selected?.category === "reactions";
   const linkPlaceholder = isDiscordBoost
     ? "https://discord.gg/tuservidor"
+    : isTelegramReactions
+    ? "https://t.me/tucanal/123"
     : isFollowers
     ? `@tunombredeusuario`
     : `https://${platform}.com/p/...`;
@@ -455,6 +539,16 @@ function OrderContent() {
         );
         return;
       }
+    } else if (selected?.platform === "telegram" && selected?.category === "reactions") {
+      const lowerLink = linkVal.toLowerCase();
+      if (!lowerLink.includes("t.me/") && !lowerLink.includes("telegram.me/")) {
+        toast.error("⚠️ Ingresá el link del post de Telegram (t.me/tucanal/123)");
+        return;
+      }
+      if (!/t\.me\/[^/]+\/\d+/.test(lowerLink)) {
+        toast.error("⚠️ El link debe incluir el ID del post: t.me/tucanal/123");
+        return;
+      }
     } else if (selected?.platform === "instagram") {
       const lowerLink = linkVal.toLowerCase();
 
@@ -508,7 +602,7 @@ function OrderContent() {
         );
         return;
       }
-    } else if (!isDiscordBoost) {
+    } else if (!isDiscordBoost && !isTelegramReactions) {
       if (!linkVal.startsWith("http")) {
         toast.error(
           "Ingresá el link completo del post, ej: https://www.instagram.com/p/...",
@@ -1157,6 +1251,8 @@ function OrderContent() {
                       )}
                       {isDiscordBoost
                         ? "Link de invitación de tu servidor Discord"
+                        : isTelegramReactions
+                        ? "Link del post de Telegram"
                         : isFollowers
                         ? "Tu usuario de " +
                           platform.charAt(0).toUpperCase() +
@@ -1202,6 +1298,20 @@ function OrderContent() {
                             <strong>✓ Servicio de Discord Server Boost</strong><br/>
                             Ingresá tu link de invitación: <strong>discord.gg/tuservidor</strong><br/>
                             💡 Tu servidor debe ser accesible con el link
+                          </span>
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Mensaje para TELEGRAM REACTIONS */}
+                    {isTelegramReactions && (
+                      <div className="mt-2 p-2 bg-sky-500/10 border border-sky-500/30 rounded-lg">
+                        <p className="text-xs text-sky-300 flex items-start gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>
+                            <strong>✓ Reacciones para posts de Telegram</strong><br/>
+                            Formato del link: <strong>t.me/tucanal/123</strong><br/>
+                            💡 El canal debe ser público y el post accesible
                           </span>
                         </p>
                       </div>
@@ -1256,12 +1366,14 @@ function OrderContent() {
                       <AlertCircle className="w-3.5 h-3.5" />
                       {isDiscordBoost
                         ? "Tu servidor debe ser accesible con el link de invitación"
+                        : isTelegramReactions
+                        ? "El canal y el post deben ser públicos"
                         : isFollowers
                         ? "Tu cuenta debe estar en público"
                         : "Asegurate que el post sea público"}
                     </p>
 
-                    {!isFollowers && !isDiscordBoost && (
+                    {!isFollowers && !isDiscordBoost && !isTelegramReactions && (
                       <div className="mt-4">
                         {linkPreviewLoading && (
                           <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-slate-400 flex items-center gap-3">

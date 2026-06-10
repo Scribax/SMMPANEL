@@ -11,8 +11,8 @@ export interface User {
 export interface Service {
   id: string;
   name: string;
-  category: 'followers' | 'likes' | 'views' | 'comments' | 'boost';
-  platform: 'instagram' | 'tiktok' | 'youtube' | 'discord';
+  category: 'followers' | 'likes' | 'views' | 'comments' | 'boost' | 'reactions';
+  platform: 'instagram' | 'tiktok' | 'youtube' | 'discord' | 'telegram';
   description: string;
   price_per_unit: number;
   min_quantity: number;
