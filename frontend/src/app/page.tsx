@@ -81,70 +81,37 @@ const HOW_IT_WORKS = [
 
 const TESTIMONIALS = [
   {
-    name: "Lucía M.",
+    name: "Pablo D.",
     location: "Buenos Aires",
     platform: "instagram",
-    handle: "@luciamua",
-    result: "+10.000 seguidores en 48hs",
-    text: "No podía creer lo rápido que llegaron. Mi cuenta explotó en alcance y las colaboraciones empezaron a lloverme. 100% recomendado.",
+    handle: "@pablodigitalpro",
+    result: "+10.000 seguidores en 2 semanas",
+    text: "El servicio es excelente, ojalá sigan por mucho tiempo. Compro los de 365 días porque quiero llegar a 100K para trabajar con marcas. Ya tengo una marca propia y por eso lo uso jeje. 100% recomendado.",
     rating: 5,
-    avatar: "L",
+    avatar: "P",
+    gradient: "from-blue-500 to-indigo-600",
+  },
+  {
+    name: "Romina G.",
+    location: "Rosario",
+    platform: "instagram",
+    handle: "@romi.estilo",
+    result: "+3.500 seguidores en 10 días",
+    text: "Al principio dudé bastante, pero una amiga me recomendó y me animé. Los seguidores llegaron rápido y el soporte me respondió cuando tuve una duda. Lo volvería a usar sin pensarlo.",
+    rating: 5,
+    avatar: "R",
     gradient: "from-pink-500 to-rose-500",
   },
   {
-    name: "Matías R.",
+    name: "Nico V.",
     location: "Córdoba",
     platform: "tiktok",
-    handle: "@matirr",
-    result: "+50.000 vistas por video",
-    text: "Compré vistas para 3 videos y el algoritmo de TikTok los empezó a pushear solo. Vale cada peso, mis videos llegaron a miles de personas.",
+    handle: "@nicovid_ok",
+    result: "+20.000 vistas en 3 videos",
+    text: "Compré vistas para unos videos que tenía parados y empezaron a moverse solos después. No sé si es el algoritmo o qué, pero funcionó. Precio muy accesible para lo que da.",
     rating: 5,
-    avatar: "M",
+    avatar: "N",
     gradient: "from-slate-500 to-slate-700",
-  },
-  {
-    name: "Valentina S.",
-    location: "Rosario",
-    platform: "instagram",
-    handle: "@vale_fitness",
-    result: "+5.000 seguidores en 1 semana",
-    text: "Buscaba crecer mi marca personal y con FollowArg lo logré en una semana. El soporte siempre atento, el proceso es muy simple.",
-    rating: 5,
-    avatar: "V",
-    gradient: "from-violet-500 to-purple-600",
-  },
-  {
-    name: "Santiago P.",
-    location: "Mendoza",
-    platform: "youtube",
-    handle: "@santimusic_ar",
-    result: "+100.000 vistas en 1 semana",
-    text: "Mis videos ahora salen en sugeridos. El impulso inicial que necesitaba para que el algoritmo me tome en cuenta. Resultados reales.",
-    rating: 5,
-    avatar: "S",
-    gradient: "from-red-600 to-rose-600",
-  },
-  {
-    name: "Camila T.",
-    location: "Buenos Aires",
-    platform: "instagram",
-    handle: "@cami.foto",
-    result: "+3.000 likes, 2 clientes nuevos",
-    text: "Pedí likes para mi portfolio y mis fotos empezaron a aparecer en Explorar. Conseguí dos clientes nuevos esa misma semana.",
-    rating: 5,
-    avatar: "C",
-    gradient: "from-pink-500 to-fuchsia-600",
-  },
-  {
-    name: "Facundo L.",
-    location: "Buenos Aires",
-    platform: "tiktok",
-    handle: "@facugames_ar",
-    result: "+200.000 vistas totales",
-    text: "Confiaba poco al principio pero los resultados llegaron en horas. Ahora tengo marcas que me contactan. FollowArg cambió mi canal.",
-    rating: 5,
-    avatar: "F",
-    gradient: "from-cyan-500 to-blue-600",
   },
 ];
 
@@ -219,7 +186,7 @@ export default function HomePage() {
           >
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-sm text-primary-300 font-medium">
-              +1.200.000 pedidos entregados
+              Entrega rápida · Pagos seguros · Soporte disponible
             </span>
           </motion.div>
 
@@ -501,8 +468,7 @@ export default function HomePage() {
               <span className="gradient-text">clientes</span>
             </h2>
             <p className="section-subtitle mx-auto">
-              Más de 1.200.000 pedidos entregados. Esto es lo que dicen quienes
-              ya crecieron con nosotros.
+              Clientes reales que ya están creciendo con nosotros.
             </p>
           </motion.div>
 
