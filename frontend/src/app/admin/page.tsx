@@ -840,6 +840,8 @@ export default function AdminPage() {
                       <option value="instagram">Instagram</option>
                       <option value="tiktok">TikTok</option>
                       <option value="youtube">YouTube</option>
+                      <option value="discord">Discord</option>
+                      <option value="telegram">Telegram</option>
                     </select>
                   </div>
                   <div>
@@ -860,6 +862,8 @@ export default function AdminPage() {
                       <option value="likes">Likes</option>
                       <option value="views">Vistas</option>
                       <option value="comments">Comentarios</option>
+                      <option value="boost">Server Boost</option>
+                      <option value="reactions">Reacciones</option>
                     </select>
                   </div>
                   <div>
@@ -989,12 +993,24 @@ export default function AdminPage() {
                   emoji: "▶️",
                   color: "from-red-600/20 to-red-700/20 border-red-500/30",
                 },
+                discord: {
+                  label: "Discord",
+                  emoji: "🎮",
+                  color: "from-indigo-500/20 to-purple-700/20 border-indigo-500/30",
+                },
+                telegram: {
+                  label: "Telegram",
+                  emoji: "✈️",
+                  color: "from-sky-400/20 to-blue-600/20 border-sky-500/30",
+                },
               };
               const CAT_META: Record<string, string> = {
                 followers: "👥 Seguidores",
                 likes: "❤️ Likes",
                 views: "👁️ Vistas",
                 comments: "💬 Comentarios",
+                boost: "🚀 Server Boost",
+                reactions: "🎉 Reacciones",
               };
               const platforms = [...new Set(services.map((s) => s.platform))];
               return platforms.map((platform) => {
