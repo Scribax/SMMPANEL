@@ -33,6 +33,7 @@ const QUANTITY_PRESETS: Record<string, number[]> = {
   likes: [50, 100, 250, 500, 1000, 2500, 5000],
   views: [100, 250, 500, 1000, 2500, 5000, 10000, 50000, 100000],
   comments: [10, 25, 50, 100, 250, 500],
+  boost: [1000],
 };
 const DEFAULT_PRESETS = [100, 250, 500, 1000, 2500, 5000];
 
@@ -56,7 +57,21 @@ interface LinkPreview {
 // ── Validación de links según servicio ────────────────────────────────────────
 function validateLinkForService(link: string, service: Service): { valid: boolean; message?: string } {
   const lowerLink = link.toLowerCase().trim();
-  
+
+  // Servicios de DISCORD BOOST — necesitan un link de invitación al servidor
+  if (service.platform === "discord" && service.category === "boost") {
+    if (
+      !lowerLink.includes("discord.gg/") &&
+      !lowerLink.includes("discord.com/invite/")
+    ) {
+      return {
+        valid: false,
+        message: "⚠️ Ingresá el link de invitación de tu servidor Discord (discord.gg/tuservidor)",
+      };
+    }
+    return { valid: true };
+  }
+
   // Servicios de STORIES solo funcionan con historias
   if (service.name.toLowerCase().includes("story")) {
     if (!lowerLink.includes("/stories/") && !lowerLink.includes("instagram.com/stories/")) {
@@ -110,7 +125,26 @@ function validateLinkForService(link: string, service: Service): { valid: boolea
 }
 
 // ── Platform / category meta ─────────────────────────────────────────────────
-const PLATFORMS = [
+interface PlatformDef {
+  id: string;
+  label: string;
+  emoji: string;
+  customIcon?: React.ReactNode;
+  gradient: string;
+}
+
+const DiscordIcon = () => (
+  <svg
+    viewBox="0 0 127.14 96.36"
+    className="w-9 h-9 drop-shadow-[0_6px_24px_rgba(88,101,242,0.6)]"
+    fill="white"
+    aria-hidden="true"
+  >
+    <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
+  </svg>
+);
+
+const PLATFORMS: PlatformDef[] = [
   {
     id: "instagram",
     label: "Instagram",
@@ -129,6 +163,13 @@ const PLATFORMS = [
     emoji: "▶️",
     gradient: "from-red-600 to-red-700",
   },
+  {
+    id: "discord",
+    label: "Discord",
+    emoji: "🎮",
+    customIcon: <DiscordIcon />,
+    gradient: "from-indigo-500 to-purple-700",
+  },
 ];
 
 const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
@@ -136,6 +177,7 @@ const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
   likes: { label: "Likes", emoji: "❤️" },
   views: { label: "Vistas", emoji: "👁️" },
   comments: { label: "Comentarios", emoji: "💬" },
+  boost: { label: "Server Boost", emoji: "🚀" },
 };
 
 function OrderContent() {
@@ -179,7 +221,10 @@ function OrderContent() {
     (finalPrice * (CASHBACK_PERCENT / 100)).toFixed(2),
   );
   const isFollowers = selected?.category === "followers";
-  const linkPlaceholder = isFollowers
+  const isDiscordBoost = selected?.platform === "discord" && selected?.category === "boost";
+  const linkPlaceholder = isDiscordBoost
+    ? "https://discord.gg/tuservidor"
+    : isFollowers
     ? `@tunombredeusuario`
     : `https://${platform}.com/p/...`;
 
@@ -399,7 +444,18 @@ function OrderContent() {
     const linkVal = link.trim();
 
     // Validación de link según el tipo de servicio
-    if (selected?.platform === "instagram") {
+    if (selected?.platform === "discord" && selected?.category === "boost") {
+      const lowerLink = linkVal.toLowerCase();
+      if (
+        !lowerLink.includes("discord.gg/") &&
+        !lowerLink.includes("discord.com/invite/")
+      ) {
+        toast.error(
+          "⚠️ Ingresá el link de invitación de tu servidor Discord (discord.gg/tuservidor)",
+        );
+        return;
+      }
+    } else if (selected?.platform === "instagram") {
       const lowerLink = linkVal.toLowerCase();
 
       // VIEWS normales = solo para videos/reels (NO fotos, NO historias)
@@ -452,7 +508,7 @@ function OrderContent() {
         );
         return;
       }
-    } else {
+    } else if (!isDiscordBoost) {
       if (!linkVal.startsWith("http")) {
         toast.error(
           "Ingresá el link completo del post, ej: https://www.instagram.com/p/...",
@@ -654,7 +710,7 @@ function OrderContent() {
                           <div className="relative z-10 flex h-full flex-col justify-between">
                             <div className="flex items-center gap-3">
                               <span className="text-4xl drop-shadow-[0_6px_24px_rgba(0,0,0,0.35)]">
-                                {p.emoji}
+                                {p.customIcon ?? p.emoji}
                               </span>
                               <span className="text-lg font-semibold text-white">
                                 {p.label}
@@ -1083,7 +1139,9 @@ function OrderContent() {
                       ) : (
                         <Link2 className="w-4 h-4 text-primary-400" />
                       )}
-                      {isFollowers
+                      {isDiscordBoost
+                        ? "Link de invitación de tu servidor Discord"
+                        : isFollowers
                         ? "Tu usuario de " +
                           platform.charAt(0).toUpperCase() +
                           platform.slice(1)
@@ -1119,6 +1177,20 @@ function OrderContent() {
                     )}
 
                     {/* Warning based on service type */}
+                    {/* Mensaje para DISCORD BOOST */}
+                    {isDiscordBoost && (
+                      <div className="mt-2 p-2 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
+                        <p className="text-xs text-indigo-300 flex items-start gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>
+                            <strong>✓ Servicio de Discord Server Boost</strong><br/>
+                            Ingresá tu link de invitación: <strong>discord.gg/tuservidor</strong><br/>
+                            💡 Tu servidor debe ser accesible con el link
+                          </span>
+                        </p>
+                      </div>
+                    )}
+
                     {/* Mensaje para servicios de VISTAS normales (no historias) */}
                     {selected?.platform === "instagram" &&
                       selected?.category === "views" &&
@@ -1166,12 +1238,14 @@ function OrderContent() {
 
                     <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
                       <AlertCircle className="w-3.5 h-3.5" />
-                      {isFollowers
+                      {isDiscordBoost
+                        ? "Tu servidor debe ser accesible con el link de invitación"
+                        : isFollowers
                         ? "Tu cuenta debe estar en público"
                         : "Asegurate que el post sea público"}
                     </p>
 
-                    {!isFollowers && (
+                    {!isFollowers && !isDiscordBoost && (
                       <div className="mt-4">
                         {linkPreviewLoading && (
                           <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-slate-400 flex items-center gap-3">
