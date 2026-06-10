@@ -29,6 +29,18 @@ const PLATFORMS = [
     emoji: "▶️",
     gradient: "from-red-600 to-red-700",
   },
+  {
+    id: "discord",
+    label: "Discord",
+    emoji: "🎮",
+    gradient: "from-indigo-500 to-purple-700",
+  },
+  {
+    id: "telegram",
+    label: "Telegram",
+    emoji: "✈️",
+    gradient: "from-sky-400 to-blue-600",
+  },
 ];
 
 const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
@@ -36,6 +48,8 @@ const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
   likes: { label: "Likes", emoji: "❤️" },
   views: { label: "Vistas", emoji: "👁️" },
   comments: { label: "Comentarios", emoji: "💬" },
+  boost: { label: "Server Boost", emoji: "🚀" },
+  reactions: { label: "Reacciones", emoji: "🎉" },
 };
 
 const SAMPLE_QTYS = [100, 500, 1000, 5000, 10000];
