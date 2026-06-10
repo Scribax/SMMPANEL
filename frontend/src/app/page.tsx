@@ -24,7 +24,7 @@ import { formatCurrency, formatNumber } from "@/lib/utils";
 
 const STATS = [
   { label: "Entrega promedio", value: "< 1hr", icon: Zap },
-  { label: "Plataformas", value: "3", icon: Users },
+  { label: "Plataformas", value: "5", icon: Users },
   { label: "Uptime del sistema", value: "99.9%", icon: Shield },
   { label: "Soporte disponible", value: "7 días", icon: Clock },
 ];
