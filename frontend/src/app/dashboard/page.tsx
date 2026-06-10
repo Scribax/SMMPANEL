@@ -770,22 +770,27 @@ export default function DashboardPage() {
                             </button>
                           )}
                           {["completed", "partial"].includes(order.status) && (
-                            <button
-                              onClick={() => handleRefill(order.id)}
-                              className="flex items-center gap-1.5 px-3 py-2 glass-card hover:border-primary-500/30 text-slate-300 text-xs font-medium transition-all"
-                            >
-                              <RefreshCw className="w-3.5 h-3.5" /> Recargar
-                            </button>
+                            <div className="relative group">
+                              <button
+                                onClick={() => handleRefill(order.id)}
+                                className="flex items-center gap-1.5 px-3 py-2 glass-card hover:border-primary-500/30 text-slate-300 text-xs font-medium transition-all"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" /> Recargar
+                              </button>
+                              <div className="absolute bottom-full right-0 mb-2 w-56 bg-dark-100 border border-white/10 rounded-xl px-3 py-2 text-[11px] text-slate-300 leading-relaxed shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                                ¿Bajaron tus seguidores? Las plataformas eliminan cuentas inactivas periódicamente. Solicitá una reposición gratuita incluida en tu compra.
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>
                       {order.start_count !== null && order.remains !== null && (
                         <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                          <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
-                            <span>
-                              Inicio: {order.start_count?.toLocaleString()}
+                          <div className="flex items-center justify-between text-xs mb-1.5">
+                            <span className="text-slate-400 flex items-center gap-1">
+                              📊 <span>Comenzaste con <span className="text-white font-semibold">{order.start_count?.toLocaleString()}</span></span>
                             </span>
-                            <span>
+                            <span className="text-slate-500">
                               Restante: {order.remains?.toLocaleString()}
                             </span>
                           </div>
@@ -849,6 +854,15 @@ export default function DashboardPage() {
                               );
                             })}
                           </div>
+                        </div>
+                      )}
+                      {/* Info banner for completed orders */}
+                      {order.status === "completed" && (
+                        <div className="mt-3 flex items-start gap-2 bg-blue-500/[0.07] border border-blue-500/20 rounded-xl px-3 py-2.5 text-[11px] text-blue-300 leading-relaxed">
+                          <span className="text-base leading-none mt-0.5">ℹ️</span>
+                          <span>
+                            Las plataformas eliminan cuentas inactivas periódicamente, lo que puede reducir el conteo. Si notás una baja, podés solicitar una <strong className="text-blue-200">recarga gratuita</strong> con el botón de arriba.
+                          </span>
                         </div>
                       )}
                     </motion.div>
