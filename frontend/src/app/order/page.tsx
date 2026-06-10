@@ -957,6 +957,10 @@ function OrderContent() {
                           (selected.price_per_unit * qty).toFixed(2),
                         );
                         const isActive = quantity === qty;
+                        // Para boost de Discord, extraer "x2", "x4", etc. del nombre
+                        const boostLabel = selected.category === "boost"
+                          ? selected.name.match(/x\d+/i)?.[0] ?? "Paquete"
+                          : null;
                         return (
                           <button
                             key={qty}
@@ -976,7 +980,7 @@ function OrderContent() {
                             <div
                               className={`text-2xl font-black ${isActive ? "text-primary-100" : "text-white"}`}
                             >
-                              {formatNumber(qty)}
+                              {boostLabel ?? formatNumber(qty)}
                             </div>
                             <div className="mt-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">
                               {CATEGORY_LABELS[selected.category]?.label ??
@@ -1003,6 +1007,7 @@ function OrderContent() {
                     })()}
                   </div>
                   <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr),320px]">
+                    {selected.category !== "boost" ? (
                     <div className="rounded-3xl border border-white/10 bg-white/6 p-6">
                       <div className="flex items-center justify-between text-xs text-slate-400">
                         <span>Mín: {formatNumber(selected.min_quantity)}</span>
@@ -1069,18 +1074,29 @@ function OrderContent() {
                         </div>
                       </div>
                     </div>
+                    ) : (
+                    <div className="rounded-3xl border border-indigo-500/20 bg-indigo-500/8 p-6 flex items-center gap-4">
+                      <span className="text-3xl">🚀</span>
+                      <div>
+                        <p className="text-sm font-semibold text-white">{selected.name}</p>
+                        <p className="text-xs text-slate-400 mt-1">Paquete fijo · entrega única · {selected.delivery_speed}</p>
+                      </div>
+                    </div>
+                    )}
                     <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-primary-500/10 p-6 text-sm text-slate-200">
                       <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-200">
                         <ShieldCheck className="h-4 w-4" /> Consejos rápidos
                       </h4>
                       <ul className="mt-3 space-y-2 text-xs leading-relaxed text-slate-200/80">
                         <li>
-                          Elegí un paquete proporcional al alcance real de tu
-                          contenido para evitar drops.
+                          {selected.category === "boost"
+                            ? "Necesitás un link de invitación permanente y verificación en Ninguna o Baja."
+                            : "Elegí un paquete proporcional al alcance real de tu contenido para evitar drops."}
                         </li>
                         <li>
-                          ¿Campaña escalonada? Ajustá manualmente para repartir
-                          en varias publicaciones.
+                          {selected.category === "boost"
+                            ? "Desactivá bots anti-raid durante el proceso. Podés reactivarlos luego."
+                            : "¿Campaña escalonada? Ajustá manualmente para repartir en varias publicaciones."}
                         </li>
                         <li>
                           Podés confirmar y volver a editar antes de pagar en el
@@ -1357,8 +1373,9 @@ function OrderContent() {
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-400">Cantidad</span>
                         <span className="text-white font-semibold">
-                          {formatNumber(quantity)}{" "}
-                          {CATEGORY_LABELS[selected.category]?.label ?? ""}
+                          {selected.category === "boost"
+                            ? (selected.name.match(/x\d+/i)?.[0] ?? "Paquete") + " · 1 entrega"
+                            : `${formatNumber(quantity)} ${CATEGORY_LABELS[selected.category]?.label ?? ""}`}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
@@ -1478,7 +1495,9 @@ function OrderContent() {
               <div>
                 <div className="text-xs text-slate-400">{selected?.name}</div>
                 <div className="text-white font-bold">
-                  {formatNumber(quantity)} ·{" "}
+                  {selected?.category === "boost"
+                    ? selected.name.match(/x\d+/i)?.[0] ?? "Paquete"
+                    : formatNumber(quantity)}{" "}·{" "}
                   <span className="text-primary-400">
                     {formatCurrency(finalPrice)}
                   </span>
