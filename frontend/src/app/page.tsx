@@ -207,7 +207,7 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-base sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Seguidores, likes y vistas reales para Instagram, TikTok y YouTube.
+            Seguidores, likes, vistas y más para Instagram, TikTok, YouTube, Discord y Telegram.
             Entrega rápida, pagos seguros y soporte disponible.
           </motion.p>
 
@@ -595,8 +595,8 @@ export default function HomePage() {
                 ¿Listo para <span className="gradient-text">crecer</span>?
               </h2>
               <p className="text-slate-400 text-sm sm:text-lg mb-8 max-w-xl mx-auto">
-                Seguidores, likes y vistas reales para Instagram, TikTok y
-                YouTube. Pagás con MercadoPago, entrega instantánea.
+                Seguidores, likes, vistas y más para Instagram, TikTok, YouTube, Discord y Telegram.
+                Pagás con MercadoPago, entrega instantánea.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
