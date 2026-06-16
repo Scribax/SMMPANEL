@@ -172,7 +172,7 @@ export default function HomePage() {
       {/* ─── HERO ─────────────────────────────────────────────────────────── */}
       <section className="relative min-h-[88vh] sm:min-h-screen flex items-center justify-center overflow-hidden pt-20 sm:pt-16">
         {/* Background elements */}
-        <div className="absolute inset-0 bg-grid opacity-40" />
+        <div className="absolute inset-0 bg-grid opacity-30 sm:opacity-40" />
         <div className="hidden sm:block absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-3xl" />
         <div className="hidden md:block absolute top-1/2 left-1/4 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-3xl" />
         <div className="hidden lg:block absolute top-1/3 right-1/4 w-[250px] h-[250px] bg-primary-600/8 rounded-full blur-3xl" />

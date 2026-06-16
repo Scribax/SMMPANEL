@@ -4,9 +4,9 @@ import { Instagram, Twitter, Youtube } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/[0.06] bg-dark-300/50 mt-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+    <footer className="border-t border-white/[0.06] bg-dark-300/50 mt-16 sm:mt-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 sm:gap-10">
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <Image src="/logo.jpeg" alt="FollowArg" width={32} height={32} className="rounded-lg" />
@@ -60,7 +60,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/[0.06] mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="border-t border-white/[0.06] mt-10 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-slate-500 text-sm">
             © {new Date().getFullYear()} FollowArg. Todos los derechos reservados.
           </p>

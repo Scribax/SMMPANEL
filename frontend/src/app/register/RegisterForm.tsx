@@ -40,9 +40,9 @@ function RegisterContent() {
     setForm((f) => ({ ...f, [field]: e.target.value }));
 
   return (
-    <div className="min-h-screen bg-dark-300 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-dark-300 flex items-center justify-center px-4 py-10">
       <div className="absolute inset-0 bg-grid opacity-30" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-500/8 rounded-full blur-3xl" />
+      <div className="hidden sm:block absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-500/8 rounded-full blur-3xl" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -50,15 +50,15 @@ function RegisterContent() {
         className="relative z-10 w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
+          <Link href="/" className="inline-flex items-center gap-2 mb-5 sm:mb-6">
             <Image src="/logo.jpeg" alt="FollowArg" width={40} height={40} className="rounded-xl shadow-lg shadow-primary-500/30" />
-            <span className="text-2xl font-bold gradient-text">FollowArg</span>
+            <span className="text-xl sm:text-2xl font-bold gradient-text">FollowArg</span>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-black text-white">Creá tu cuenta</h1>
           <p className="text-slate-400 mt-2">Empezá a crecer en redes sociales hoy mismo</p>
         </div>
 
-        <div className="glass-card p-6 sm:p-8">
+        <div className="glass-card p-5 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Nombre completo</label>

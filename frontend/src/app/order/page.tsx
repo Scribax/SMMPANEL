@@ -657,7 +657,7 @@ function OrderContent() {
   return (
     <div className="min-h-screen bg-dark-300">
       <Navbar />
-      <div className="pt-24 pb-16">
+      <div className="pt-20 sm:pt-24 pb-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <motion.div
@@ -1242,7 +1242,7 @@ function OrderContent() {
                   </button>
 
                   {/* Username / Link */}
-                  <div className="glass-card p-6">
+                  <div className="glass-card p-5 sm:p-6">
                     <label className="block text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
                       {isFollowers ? (
                         <AtSign className="w-4 h-4 text-primary-400" />
@@ -1415,7 +1415,7 @@ function OrderContent() {
                   </div>
 
                   {/* Email */}
-                  <div className="glass-card p-6">
+                  <div className="glass-card p-5 sm:p-6">
                     <label className="block text-sm font-semibold text-slate-300 mb-3">
                       📧 Email para seguimiento del pedido
                     </label>
@@ -1429,7 +1429,7 @@ function OrderContent() {
                   </div>
 
                   {/* Coupon */}
-                  <div className="glass-card p-6">
+                  <div className="glass-card p-5 sm:p-6">
                     <label className="block text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
                       <Tag className="w-4 h-4 text-primary-400" /> Cupón de
                       descuento{" "}
@@ -1437,7 +1437,7 @@ function OrderContent() {
                         (opcional)
                       </span>
                     </label>
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <input
                         type="text"
                         value={couponCode}
@@ -1447,13 +1447,13 @@ function OrderContent() {
                           setCouponDiscount(0);
                         }}
                         placeholder="BOOST20"
-                        className="input-field flex-1 uppercase tracking-widest"
+                        className="input-field flex-1 uppercase tracking-widest min-w-0"
                         disabled={couponApplied}
                       />
                       <button
                         onClick={handleApplyCoupon}
                         disabled={!couponCode || validating || couponApplied}
-                        className={`px-4 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap ${
+                        className={`w-full sm:w-auto px-4 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap ${
                           couponApplied
                             ? "bg-green-500/20 text-green-400 border border-green-500/30"
                             : "bg-primary-500/20 text-primary-400 border border-primary-500/30 hover:bg-primary-500/30"
@@ -1471,18 +1471,18 @@ function OrderContent() {
                   </div>
 
                   {/* Order summary + pay */}
-                  <div className="glass-card p-6">
+                  <div className="glass-card p-5 sm:p-6">
                     <h3 className="text-white font-bold text-lg mb-4">
                       Resumen del pedido
                     </h3>
                     <div className="space-y-3 mb-5">
-                      <div className="flex justify-between text-sm">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
                         <span className="text-slate-400">Servicio</span>
                         <span className="text-white text-right max-w-[200px] text-xs leading-snug">
                           {selected.name}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
                         <span className="text-slate-400">Cantidad</span>
                         <span className="text-white font-semibold">
                           {selected.category === "boost"
@@ -1490,14 +1490,14 @@ function OrderContent() {
                             : `${formatNumber(quantity)} ${CATEGORY_LABELS[selected.category]?.label ?? ""}`}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
                         <span className="text-slate-400">Entrega</span>
                         <span className="text-white">
                           ⚡ {selected.delivery_speed}
                         </span>
                       </div>
                       {couponApplied && (
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
                           <span className="text-green-400">
                             Descuento ({couponCode})
                           </span>
@@ -1506,7 +1506,7 @@ function OrderContent() {
                           </span>
                         </div>
                       )}
-                      <div className="border-t border-white/[0.08] pt-3 flex justify-between items-center">
+                      <div className="border-t border-white/[0.08] pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                         <span className="text-white font-bold text-lg">
                           Total
                         </span>
@@ -1516,13 +1516,13 @@ function OrderContent() {
                               {formatCurrency(basePrice)}
                             </div>
                           )}
-                          <div className="text-primary-400 font-black text-3xl">
+                          <div className="text-primary-400 font-black text-2xl sm:text-3xl">
                             {formatCurrency(finalPrice)}
                           </div>
                         </div>
                       </div>
                       {/* Cashback */}
-                      <div className="flex justify-between items-center text-xs pt-1">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs pt-1">
                         <span className="text-emerald-400 flex items-center gap-1">
                           💰 Cashback ({CASHBACK_PERCENT}%)
                         </span>
@@ -1642,14 +1642,14 @@ function OrderContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm md:backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={() => setShowFundsModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card p-8 max-w-sm w-full text-center"
+              className="glass-card p-6 sm:p-8 max-w-sm w-full text-center rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -1658,10 +1658,10 @@ function OrderContent() {
               >
                 <X className="w-5 h-5" />
               </button>
-              <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-5">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-5">
                 <Wallet className="w-8 h-8 text-amber-400" />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">
+              <h2 className="text-lg sm:text-xl font-bold text-white mb-2">
                 Saldo insuficiente
               </h2>
               <p className="text-slate-400 text-sm mb-1">
