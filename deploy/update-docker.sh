@@ -39,10 +39,10 @@ git checkout "$BRANCH" >/dev/null 2>&1 || true
 git reset --hard "$REMOTE/$BRANCH"
 
 echo "=== [2/4] Construyendo y recreando servicios Docker ==="
-docker compose up -d --build --force-recreate --remove-orphans
+docker compose -f docker-compose.yml up -d --build --force-recreate --remove-orphans
 
 echo "=== [3/4] Verificando estado de contenedores ==="
-docker compose ps
+docker compose -f docker-compose.yml ps
 
 echo "=== [4/4] Estado final ==="
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
