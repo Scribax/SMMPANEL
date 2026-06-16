@@ -41,3 +41,4 @@ nginx/ssl/
 # Misc
 coverage/
 .turbo/
+.dual-graph/

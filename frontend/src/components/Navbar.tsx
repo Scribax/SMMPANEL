@@ -61,17 +61,19 @@ export default function Navbar() {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group min-w-0">
             <Image
               src="/logo.jpeg"
               alt="FollowArg"
-              width={36}
-              height={36}
-              className="rounded-lg shadow-lg shadow-primary-500/30 group-hover:shadow-primary-500/50 transition-shadow"
+              width={32}
+              height={32}
+              className="rounded-lg shadow-lg shadow-primary-500/30 group-hover:shadow-primary-500/50 transition-shadow shrink-0 sm:w-9 sm:h-9"
             />
-            <span className="text-xl font-bold gradient-text">FollowArg</span>
+            <span className="text-lg sm:text-xl font-bold gradient-text truncate">
+              FollowArg
+            </span>
           </Link>
 
           {/* Desktop Nav */}
@@ -223,7 +225,7 @@ export default function Navbar() {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden text-slate-400 hover:text-white transition-colors"
+            className="md:hidden text-slate-400 hover:text-white transition-colors p-2 -mr-2"
             onClick={() => setIsOpen(!isOpen)}
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -239,9 +241,9 @@ export default function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-white/[0.06] bg-dark-300/95 backdrop-blur-xl"
+            className="md:hidden border-t border-white/[0.06] bg-dark-300/95 backdrop-blur-xl max-h-[calc(100vh-4rem)] overflow-y-auto"
           >
-            <div className="px-4 py-4 space-y-2">
+            <div className="px-4 py-4 space-y-2 pb-[env(safe-area-inset-bottom)]">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
@@ -260,16 +262,47 @@ export default function Navbar() {
               <div className="pt-2 border-t border-white/[0.06] space-y-2">
                 {user ? (
                   <>
+                    <div className="glass-card p-3 border-white/[0.06]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-white truncate">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-slate-400 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                     <Link
                       href="/dashboard"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-2 py-2.5 px-4 text-sm text-slate-300 hover:text-white"
+                      className="flex items-center gap-2 py-3 px-4 text-sm text-slate-300 hover:text-white rounded-xl hover:bg-white/[0.04]"
                     >
                       <LayoutDashboard className="w-4 h-4" /> Mi Panel
                     </Link>
+                    <Link
+                      href="/order"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-2 py-3 px-4 text-sm text-slate-300 hover:text-white rounded-xl hover:bg-white/[0.04]"
+                    >
+                      <Wallet className="w-4 h-4" /> Nuevo Pedido
+                    </Link>
+                    {user.role === "admin" && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-2 py-3 px-4 text-sm text-primary-400 hover:text-primary-300 rounded-xl hover:bg-white/[0.04]"
+                      >
+                        <ShieldCheck className="w-4 h-4" /> Panel Admin
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-2 py-2.5 px-4 text-sm text-red-400 w-full"
+                      className="flex items-center gap-2 py-3 px-4 text-sm text-red-400 w-full rounded-xl hover:bg-red-500/10"
                     >
                       <LogOut className="w-4 h-4" /> Cerrar sesión
                     </button>

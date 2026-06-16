@@ -541,7 +541,7 @@ export default function DashboardPage() {
       <div className="pt-24 pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 sm:mb-6 gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-white">
                 Dashboard
@@ -550,10 +550,10 @@ export default function DashboardPage() {
                 Bienvenido, {user?.name?.split(" ")[0]} 👋
               </p>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="grid grid-cols-1 sm:flex items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => setSidebarOpen((prev) => !prev)}
-                className="relative flex items-center gap-2 text-sm text-slate-400 hover:text-white transition"
+                className="relative flex items-center justify-center gap-2 text-sm text-slate-400 hover:text-white transition glass-card px-4 py-3 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 sm:shadow-none"
               >
                 <MessageCircle className="w-4 h-4" />
                 Tickets
@@ -565,13 +565,13 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setShowDepositModal(true)}
-                className="btn-secondary flex items-center gap-2"
+                className="btn-secondary flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <PlusCircle className="w-4 h-4" /> Agregar saldo
               </button>
               <Link
                 href="/order"
-                className="btn-primary flex items-center gap-2"
+                className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <Zap className="w-4 h-4" /> Nuevo pedido
               </Link>
@@ -579,11 +579,11 @@ export default function DashboardPage() {
           </div>
 
           {/* Balance Hero Card */}
-          <div className="glass-card p-6 mb-6 border-primary-500/20 bg-gradient-to-r from-primary-500/10 to-purple-500/10">
-            <div className="flex items-center justify-between">
+          <div className="glass-card p-5 sm:p-6 mb-6 border-primary-500/20 bg-gradient-to-r from-primary-500/10 to-purple-500/10">
+            <div className="flex items-start sm:items-center justify-between gap-4">
               <div>
                 <p className="text-slate-400 text-sm mb-1">Saldo disponible</p>
-                <p className="text-4xl font-black text-white">
+                <p className="text-3xl sm:text-4xl font-black text-white">
                   {formatCurrency(user?.balance ?? 0)}
                 </p>
                 <p className="text-slate-500 text-xs mt-1">
@@ -594,18 +594,18 @@ export default function DashboardPage() {
                 <Wallet className="w-6 h-6 sm:w-8 sm:h-8 text-primary-400" />
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-3">
+            <div className="mt-4 pt-4 border-t border-white/[0.06] flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => {
                   setShowDepositModal(true);
                 }}
-                className="btn-primary text-sm py-2 px-4 flex items-center gap-2"
+                className="btn-primary text-sm py-2.5 px-4 flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <PlusCircle className="w-4 h-4" /> Agregar saldo
               </button>
               <button
                 onClick={refreshBalance}
-                className="btn-secondary text-sm py-2 px-4 flex items-center gap-2"
+                className="btn-secondary text-sm py-2.5 px-4 flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Actualizar
               </button>
@@ -613,7 +613,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             {[
               {
                 label: "Total pedidos",
@@ -651,7 +651,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-none pb-1">
+          <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
             {(
               [
                 ["orders", "Mis pedidos"],
@@ -679,7 +679,7 @@ export default function DashboardPage() {
               {loading ? (
                 <div className="space-y-3">
                   {[...Array(4)].map((_, i) => (
-                    <div key={i} className="glass-card p-5 animate-pulse">
+                    <div key={i} className="glass-card p-4 sm:p-5 animate-pulse">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex-1 space-y-2.5">
                           <div className="flex items-center gap-3">
@@ -724,11 +724,11 @@ export default function DashboardPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
-                      className="glass-card p-5"
+                      className="glass-card p-4 sm:p-5"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
                             <span className="text-white font-semibold truncate">
                               {order.service_name}
                             </span>
@@ -738,8 +738,8 @@ export default function DashboardPage() {
                               {STATUS_LABELS[order.status]}
                             </span>
                           </div>
-                          <div className="flex flex-wrap gap-4 text-sm text-slate-400">
-                            <span className="flex items-center gap-1 truncate max-w-[200px]">
+                          <div className="flex flex-wrap gap-3 sm:gap-4 text-sm text-slate-400">
+                            <span className="flex items-center gap-1 truncate max-w-full sm:max-w-[200px]">
                               🔗 <span className="truncate">{order.link}</span>
                             </span>
                             <span>📦 {order.quantity.toLocaleString()}</span>
@@ -751,7 +751,7 @@ export default function DashboardPage() {
                             {formatDate(order.created_at)}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 flex-shrink-0 self-start sm:self-auto">
                           <button
                             onClick={() => copyToClipboard(order.id)}
                             className="p-2 glass-card hover:border-primary-500/30 transition-all"
@@ -777,7 +777,7 @@ export default function DashboardPage() {
                               >
                                 <RefreshCw className="w-3.5 h-3.5" /> Recargar
                               </button>
-                              <div className="absolute bottom-full right-0 mb-2 w-56 bg-dark-100 border border-white/10 rounded-xl px-3 py-2 text-[11px] text-slate-300 leading-relaxed shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                              <div className="hidden sm:block absolute bottom-full right-0 mb-2 w-56 bg-dark-100 border border-white/10 rounded-xl px-3 py-2 text-[11px] text-slate-300 leading-relaxed shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
                                 ¿Bajaron tus seguidores? Las plataformas eliminan cuentas inactivas periódicamente. Solicitá una reposición gratuita incluida en tu compra.
                               </div>
                             </div>
@@ -951,8 +951,8 @@ export default function DashboardPage() {
 
           {/* Account Tab */}
           {activeTab === "account" && user && (
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="glass-card p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="glass-card p-5 sm:p-6">
                 <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
                   <User className="w-5 h-5 text-primary-400" /> Perfil
                 </h3>
@@ -978,7 +978,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="glass-card p-6">
+              <div className="glass-card p-5 sm:p-6">
                 <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
                   <Gift className="w-5 h-5 text-primary-400" /> Programa de
                   referidos
@@ -1022,7 +1022,7 @@ export default function DashboardPage() {
 
                 {/* Referral stats */}
                 {referralSummary && (
-                  <div className="grid grid-cols-3 gap-3 mb-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
                     <div className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                       <div className="text-lg font-bold text-white">
                         {referralSummary.total}
@@ -1106,12 +1106,12 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              <div className="glass-card p-6 md:col-span-2">
+              <div className="glass-card p-5 sm:p-6 md:col-span-2">
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                   <Lock className="w-5 h-5 text-primary-400" /> Cambiar
                   contraseña
                 </h3>
-                <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   <input
                     type={pwForm.show ? "text" : "password"}
                     placeholder="Contraseña actual"
@@ -1152,7 +1152,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="glass-card p-6 md:col-span-2">
+              <div className="glass-card p-5 sm:p-6 md:col-span-2">
                 <h3 className="text-white font-semibold mb-4">
                   Acciones de cuenta
                 </h3>

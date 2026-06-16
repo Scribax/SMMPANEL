@@ -477,9 +477,9 @@ export default function AdminPage() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 md:ml-56 p-4 sm:p-6 md:p-8">
+      <main className="flex-1 md:ml-56 p-4 sm:p-6 md:p-8 pb-24 sm:pb-8">
         {/* Mobile nav – visible only when sidebar is hidden */}
-        <div className="md:hidden flex gap-1.5 overflow-x-auto scrollbar-none pb-3 mb-4 border-b border-white/[0.06]">
+        <div className="md:hidden flex gap-1.5 overflow-x-auto scrollbar-none pb-3 mb-4 border-b border-white/[0.06] -mx-4 px-4">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -521,7 +521,7 @@ export default function AdminPage() {
             <h1 className="text-xl sm:text-2xl font-black text-white mb-6">
               Dashboard Overview
             </h1>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {[
                 {
                   label: "Total Revenue",
@@ -569,7 +569,7 @@ export default function AdminPage() {
             </div>
             {/* Alert Dashboard - Orders requiring attention */}
             {stats.ordersByStatus && (
-              <div className="glass-card p-6 mb-6 border-amber-500/20">
+              <div className="glass-card p-5 sm:p-6 mb-6 border-amber-500/20">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-white font-semibold flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
@@ -633,7 +633,7 @@ export default function AdminPage() {
             )}
 
             {stats.ordersByStatus && (
-              <div className="glass-card p-6">
+              <div className="glass-card p-5 sm:p-6">
                 <h3 className="text-white font-semibold mb-4">
                   Orders by Status
                 </h3>
@@ -660,12 +660,12 @@ export default function AdminPage() {
         {/* Orders Tab */}
         {tab === "orders" && !loading && (
           <div>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
               <h1 className="text-2xl font-black text-white">Orders</h1>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => setShowCreateOrder(true)}
-                  className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
+                  className="btn-primary flex items-center justify-center gap-2 px-4 py-2.5 text-sm w-full sm:w-auto"
                 >
                   <Plus className="w-4 h-4" /> Crear Pedido
                 </button>
@@ -675,7 +675,7 @@ export default function AdminPage() {
                     setStatusFilter(e.target.value);
                     loadOrders(1, e.target.value);
                   }}
-                  className="input-field w-auto text-sm"
+                  className="input-field w-full sm:w-auto text-sm"
                 >
                 <option value="">All Statuses</option>
                 {Object.entries(STATUS_LABELS).map(([v, l]) => (
@@ -706,8 +706,8 @@ export default function AdminPage() {
                     <div className="text-white text-sm font-medium">
                       {order.service_name}
                     </div>
-                    <div className="text-slate-400 text-xs flex gap-3 mt-1">
-                      <span>🔗 {order.link}</span>
+                    <div className="text-slate-400 text-xs flex flex-col sm:flex-row gap-1 sm:gap-3 mt-1">
+                      <span className="break-all">🔗 {order.link}</span>
                       <span>📦 {order.quantity?.toLocaleString()}</span>
                       <span className="text-primary-400">
                         {formatCurrency(order.price)}
@@ -1410,13 +1410,13 @@ export default function AdminPage() {
 
         {/* Order Details Modal */}
         {showOrderModal && selectedOrder && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="glass-card max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              className="glass-card w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl"
             >
-              <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/[0.06]">
                 <h3 className="text-white font-bold text-lg">
                   Detalles del Pedido
                 </h3>
@@ -1428,7 +1428,7 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400 text-sm">ID Pedido</span>
                   <code className="text-xs text-slate-300 font-mono bg-dark-200 px-2 py-1 rounded">
@@ -1464,7 +1464,7 @@ export default function AdminPage() {
                   </a>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-dark-200/50 p-4 rounded-xl text-center">
                     <div className="text-slate-400 text-xs mb-1">Cantidad</div>
                     <div className="text-white font-bold text-xl">
@@ -1501,7 +1501,7 @@ export default function AdminPage() {
                   </span>
                 </div>
 
-                <div className="flex gap-2 pt-4 border-t border-white/[0.06]">
+                <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-white/[0.06]">
                   {(selectedOrder.status === "partial" ||
                     selectedOrder.status === "failed" ||
                     selectedOrder.status === "cancelled") && (
@@ -1532,13 +1532,13 @@ export default function AdminPage() {
 
         {/* Create Order Modal */}
         {showCreateOrder && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="glass-card max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              className="glass-card w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl"
             >
-              <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/[0.06]">
                 <h3 className="text-white font-bold text-lg">
                   Crear Pedido Manual
                 </h3>
@@ -1550,7 +1550,7 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="p-5 sm:p-6 space-y-4">
                 <div>
                   <label className="text-slate-400 text-sm mb-1 block">ID de Usuario</label>
                   <input
@@ -1600,7 +1600,7 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <div className="flex gap-2 pt-4">
+                <div className="flex flex-col sm:flex-row gap-2 pt-4">
                   <button
                     onClick={() => setShowCreateOrder(false)}
                     className="flex-1 btn-secondary"
@@ -1627,13 +1627,13 @@ export default function AdminPage() {
 
         {/* User Detail Modal */}
         {showUserDetail && selectedUser && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="glass-card max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              className="glass-card w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl"
             >
-              <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/[0.06]">
                 <h3 className="text-white font-bold text-lg">
                   Detalle de Usuario
                 </h3>
@@ -1645,7 +1645,7 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-5 sm:p-6 space-y-6">
                 {/* User Info */}
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
@@ -1659,7 +1659,7 @@ export default function AdminPage() {
 
                 {/* Stats */}
                 {userStats && (
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-dark-200/50 p-4 rounded-xl text-center">
                       <div className="text-slate-400 text-xs mb-1">Saldo</div>
                       <div className="text-primary-400 font-bold text-xl">
@@ -1684,7 +1684,7 @@ export default function AdminPage() {
                 {/* Balance Adjustment */}
                 <div className="border-t border-white/[0.06] pt-4">
                   <h4 className="text-white font-medium mb-3">Ajustar Saldo</h4>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <input
                       type="number"
                       value={balanceAdjustment}

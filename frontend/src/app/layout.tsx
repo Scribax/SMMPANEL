@@ -42,14 +42,14 @@ export default function RootLayout({
           href="https://wa.me/5492604221790?text=Hola%20FollowArg!%20Necesito%20ayuda%20con..."
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-6 right-6 z-30 flex items-center gap-3 rounded-full bg-gradient-to-br from-emerald-500 via-emerald-400 to-lime-400 px-4 py-2.5 shadow-lg shadow-emerald-500/40 text-sm font-semibold text-white hover:scale-105 transition-transform duration-200 group"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex items-center gap-2 sm:gap-3 rounded-full bg-gradient-to-br from-emerald-500 via-emerald-400 to-lime-400 px-3 sm:px-4 py-2 sm:py-2.5 shadow-lg shadow-emerald-500/40 text-sm font-semibold text-white hover:scale-105 transition-transform duration-200 group"
         >
           <span className="sr-only">Escribinos por WhatsApp</span>
-          <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-black/10">
+          <span className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/10">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 256 256"
-              className="w-5 h-5 transition-transform group-hover:scale-110"
+              className="w-4.5 h-4.5 sm:w-5 sm:h-5 transition-transform group-hover:scale-110"
               aria-hidden="true"
             >
               <path

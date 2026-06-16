@@ -170,22 +170,22 @@ export default function HomePage() {
       <Navbar />
 
       {/* ─── HERO ─────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+      <section className="relative min-h-[88vh] sm:min-h-screen flex items-center justify-center overflow-hidden pt-20 sm:pt-16">
         {/* Background elements */}
         <div className="absolute inset-0 bg-grid opacity-40" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 right-1/4 w-[250px] h-[250px] bg-primary-600/8 rounded-full blur-3xl" />
+        <div className="hidden sm:block absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-3xl" />
+        <div className="hidden md:block absolute top-1/2 left-1/4 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="hidden lg:block absolute top-1/3 right-1/4 w-[250px] h-[250px] bg-primary-600/8 rounded-full blur-3xl" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 glass-card px-4 py-2 mb-8 border-primary-500/30"
+            className="inline-flex flex-wrap items-center justify-center gap-2 glass-card px-3 py-2 mb-6 sm:mb-8 border-primary-500/30 text-center"
           >
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-sm text-primary-300 font-medium">
+            <span className="text-xs sm:text-sm text-primary-300 font-medium leading-tight">
               Entrega rápida · Pagos seguros · Soporte disponible
             </span>
           </motion.div>
@@ -194,7 +194,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-6"
+            className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-5 sm:mb-6 max-w-4xl mx-auto"
           >
             Impulsá tu <span className="text-gradient">Presencia Digital</span>
             <br />
@@ -205,7 +205,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-base sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed"
+            className="text-sm sm:text-xl text-slate-400 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-1 sm:px-0"
           >
             Seguidores, likes, vistas y más para Instagram, TikTok, YouTube, Discord y Telegram.
             Entrega rápida, pagos seguros y soporte disponible.
@@ -215,18 +215,18 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 w-full max-w-md sm:max-w-none mx-auto"
           >
             <Link
               href="/order"
-              className="btn-primary text-base px-8 py-4 flex items-center gap-2"
+              className="btn-primary text-base px-8 py-4 flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Zap className="w-5 h-5" />
               Empezar ahora
             </Link>
             <Link
               href="/order"
-              className="btn-secondary text-base px-8 py-4 flex items-center gap-2"
+              className="btn-secondary text-base px-8 py-4 flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               Ver servicios <ChevronRight className="w-4 h-4" />
             </Link>
@@ -236,7 +236,7 @@ export default function HomePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="mt-16 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-6"
+            className="mt-12 sm:mt-16 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 px-2"
           >
             {[
               "⚡ Entrega instantánea",
@@ -246,7 +246,7 @@ export default function HomePage() {
             ].map((item) => (
               <div
                 key={item}
-                className="flex items-center gap-2 text-slate-400 text-sm"
+                className="flex items-center gap-2 text-slate-400 text-xs sm:text-sm"
               >
                 <span>{item}</span>
               </div>
@@ -256,9 +256,9 @@ export default function HomePage() {
       </section>
 
       {/* ─── STATS ─────────────────────────────────────────────────────────── */}
-      <section className="py-20 border-y border-white/[0.06]">
+      <section className="py-16 sm:py-20 border-y border-white/[0.06]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
             {STATS.map((stat, i) => (
               <motion.div
                 key={stat.label}
@@ -268,10 +268,10 @@ export default function HomePage() {
                 transition={{ delay: i * 0.1 }}
                 className="text-center"
               >
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 border border-primary-500/20 mb-4">
+                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary-500/10 border border-primary-500/20 mb-3 sm:mb-4">
                   <stat.icon className="w-6 h-6 text-primary-400" />
                 </div>
-                <div className="text-3xl font-black text-white mb-1">
+                <div className="text-2xl sm:text-3xl font-black text-white mb-1">
                   {stat.value}
                 </div>
                 <div className="text-slate-500 text-sm">{stat.label}</div>
@@ -282,7 +282,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── SERVICES PREVIEW ──────────────────────────────────────────────── */}
-      <section className="py-24">
+      <section className="py-20 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             variants={fadeUp}
@@ -300,7 +300,7 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-10 sm:mb-12">
             {(featuredServices.length
               ? featuredServices
               : ([
@@ -350,29 +350,29 @@ export default function HomePage() {
                 platformColors[service.platform ?? "instagram"] ??
                 platformColors.instagram;
               return (
-                <motion.div
+              <motion.div
                   key={service.id}
                   variants={fadeUp}
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="glass-card-hover p-6 group cursor-pointer"
+                  className="glass-card-hover p-5 sm:p-6 group cursor-pointer"
                 >
                   <div
-                    className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} mb-4 shadow-lg`}
+                    className={`inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${gradient} mb-4 shadow-lg`}
                   >
                     <Icon className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-white font-semibold text-lg mb-2">
+                  <h3 className="text-white font-semibold text-base sm:text-lg mb-2">
                     {service.name}
                   </h3>
-                  <p className="text-slate-400 text-sm mb-4">
+                  <p className="text-slate-400 text-xs sm:text-sm mb-4">
                     {service.description}
                   </p>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-primary-400 font-bold text-xl">
+                      <span className="text-primary-400 font-bold text-lg sm:text-xl">
                         {formatCurrency(
                           (service.price_per_unit ?? 0) *
                             (service.min_quantity ?? 100),
@@ -403,7 +403,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── HOW IT WORKS ──────────────────────────────────────────────────── */}
-      <section className="py-24 border-y border-white/[0.06]">
+      <section className="py-20 sm:py-24 border-y border-white/[0.06]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             variants={fadeUp}
@@ -420,7 +420,7 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
             {HOW_IT_WORKS.map((step, i) => (
               <motion.div
                 key={step.step}
@@ -431,14 +431,14 @@ export default function HomePage() {
                 transition={{ delay: i * 0.15 }}
                 className="relative"
               >
-                <div className="glass-card p-6 h-full hover:border-primary-500/30 transition-all">
-                  <div className="text-5xl font-black text-primary-500/20 mb-4">
+                <div className="glass-card p-5 sm:p-6 h-full hover:border-primary-500/30 transition-all">
+                  <div className="text-4xl sm:text-5xl font-black text-primary-500/20 mb-4">
                     {step.step}
                   </div>
-                  <h3 className="text-white font-semibold mb-3">
+                  <h3 className="text-white font-semibold mb-2 sm:mb-3">
                     {step.title}
                   </h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
+                  <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
                     {step.desc}
                   </p>
                 </div>
@@ -454,7 +454,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── TESTIMONIOS ─────────────────────────────────────────────────────── */}
-      <section className="py-24">
+      <section className="py-20 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             variants={fadeUp}
@@ -472,7 +472,7 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {TESTIMONIALS.map((t, i) => (
               <motion.div
                 key={t.handle}
@@ -481,7 +481,7 @@ export default function HomePage() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.07 }}
-                className="glass-card-hover p-6 flex flex-col gap-4"
+                className="glass-card-hover p-5 sm:p-6 flex flex-col gap-4"
               >
                 {/* Stars */}
                 <div className="flex gap-0.5">
@@ -493,12 +493,12 @@ export default function HomePage() {
                 </div>
 
                 {/* Quote */}
-                <p className="text-slate-300 text-sm leading-relaxed flex-1">
+                  <p className="text-slate-300 text-xs sm:text-sm leading-relaxed flex-1">
                   &ldquo;{t.text}&rdquo;
                 </p>
 
                 {/* Result badge */}
-                <div className="inline-flex self-start items-center gap-1.5 bg-primary-500/15 border border-primary-500/25 text-primary-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                <div className="inline-flex self-start items-center gap-1.5 bg-primary-500/15 border border-primary-500/25 text-primary-300 text-[11px] sm:text-xs font-semibold px-3 py-1.5 rounded-full">
                   ✅ {t.result}
                 </div>
 
@@ -532,7 +532,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── FAQ ───────────────────────────────────────────────────────────── */}
-      <section className="py-24">
+      <section className="py-20 sm:py-24">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             variants={fadeUp}
@@ -549,7 +549,7 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {FAQS.map((faq, i) => (
               <motion.div
                 key={i}
@@ -558,17 +558,17 @@ export default function HomePage() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.07 }}
-                className="glass-card p-6 hover:border-primary-500/20 transition-all"
+                className="glass-card p-5 sm:p-6 hover:border-primary-500/20 transition-all"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary-500/20 border border-primary-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary-500/20 border border-primary-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-primary-400 text-xs font-bold">
                       ?
                     </span>
                   </div>
                   <div>
-                    <div className="text-white font-semibold mb-2">{faq.q}</div>
-                    <div className="text-slate-400 text-sm leading-relaxed">
+                    <div className="text-white font-semibold mb-2 text-sm sm:text-base">{faq.q}</div>
+                    <div className="text-slate-400 text-xs sm:text-sm leading-relaxed">
                       {faq.a}
                     </div>
                   </div>
@@ -580,39 +580,39 @@ export default function HomePage() {
       </section>
 
       {/* ─── CTA ───────────────────────────────────────────────────────────── */}
-      <section className="py-24">
+      <section className="py-20 sm:py-24">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             variants={fadeUp}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="glass-card p-6 sm:p-12 border-primary-500/20 relative overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-radial-glow" />
-            <div className="relative z-10">
-              <h2 className="text-4xl font-black text-white mb-4">
+              className="glass-card p-5 sm:p-12 border-primary-500/20 relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-radial-glow" />
+              <div className="relative z-10">
+              <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
                 ¿Listo para <span className="gradient-text">crecer</span>?
               </h2>
-              <p className="text-slate-400 text-sm sm:text-lg mb-8 max-w-xl mx-auto">
+              <p className="text-slate-400 text-xs sm:text-lg mb-7 sm:mb-8 max-w-xl mx-auto">
                 Seguidores, likes, vistas y más para Instagram, TikTok, YouTube, Discord y Telegram.
                 Pagás con MercadoPago, entrega instantánea.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                 <Link
                   href="/order"
-                  className="btn-primary text-lg px-10 py-4 flex items-center gap-2 justify-center"
+                  className="btn-primary text-base sm:text-lg px-10 py-4 flex items-center gap-2 justify-center"
                 >
                   <Zap className="w-5 h-5" /> Empezar ahora
                 </Link>
                 <Link
                   href="/register"
-                  className="btn-secondary text-lg px-10 py-4 flex items-center gap-2 justify-center"
+                  className="btn-secondary text-base sm:text-lg px-10 py-4 flex items-center gap-2 justify-center"
                 >
                   Crear cuenta gratis <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-6 mt-8">
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-6 mt-7 sm:mt-8">
                 {[
                   "Sin suscripción",
                   "Entrega instantánea",
@@ -620,7 +620,7 @@ export default function HomePage() {
                 ].map((f) => (
                   <div
                     key={f}
-                    className="flex items-center gap-1.5 text-slate-400 text-sm"
+                    className="flex items-center gap-1.5 text-slate-400 text-xs sm:text-sm"
                   >
                     <CheckCircle className="w-4 h-4 text-primary-400" />
                     {f}

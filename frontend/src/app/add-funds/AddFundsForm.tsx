@@ -73,14 +73,14 @@ function AddFundsContent() {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6 mb-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5 sm:p-6 mb-4">
             <h2 className="text-white font-bold mb-4">¿Cuánto querés cargar?</h2>
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
               {PRESETS.map((p) => (
                 <button
                   key={p}
                   onClick={() => { setAmount(p); setCustom(''); }}
-                  className={`rounded-xl p-3 text-center border transition-all text-sm font-bold ${
+                  className={`rounded-xl p-3.5 sm:p-3 text-center border transition-all text-sm font-bold min-h-12 ${
                     amount === p && !custom
                       ? 'border-primary-500 bg-primary-500/20 text-primary-400 ring-1 ring-primary-500/40'
                       : 'border-white/10 bg-white/5 text-white hover:border-primary-500/40 hover:bg-primary-500/10'
@@ -99,7 +99,7 @@ function AddFundsContent() {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card p-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card p-5 sm:p-6">
             <div className="flex justify-between items-center mb-2 text-sm">
               <span className="text-slate-400">Vas a acreditar</span>
               <span className="text-white font-bold text-lg">{displayAmount ? `$${displayAmount.toLocaleString()} ARS` : '—'}</span>

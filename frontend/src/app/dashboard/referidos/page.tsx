@@ -159,9 +159,9 @@ export default function ReferidosPage() {
             >
               <ArrowLeft className="w-4 h-4" /> Volver al dashboard
             </Link>
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-black text-white">
+                <h1 className="text-2xl sm:text-3xl font-black text-white">
                   Programa de <span className="gradient-text">Referidos</span>
                 </h1>
                 <p className="text-slate-400 mt-2 text-sm">
@@ -189,7 +189,7 @@ export default function ReferidosPage() {
           </motion.div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             {STATS.map((s, i) => (
               <motion.div
                 key={s.label}
@@ -216,7 +216,7 @@ export default function ReferidosPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
-            className="glass-card p-6 mb-5 border-primary-500/20 relative overflow-hidden"
+            className="glass-card p-5 sm:p-6 mb-5 border-primary-500/20 relative overflow-hidden"
           >
             <div className="absolute -top-16 -right-16 w-40 h-40 bg-primary-500/10 rounded-full blur-2xl" />
             <div className="relative z-10">
@@ -232,15 +232,15 @@ export default function ReferidosPage() {
                 </div>
                 <button
                   onClick={copyLink}
-                  className="btn-secondary flex items-center justify-center gap-2 text-sm py-2.5 px-5 whitespace-nowrap"
+                  className="btn-secondary flex items-center justify-center gap-2 text-sm py-2.5 px-5 whitespace-nowrap w-full sm:w-auto"
                 >
                   <Copy className="w-4 h-4" /> Copiar link
                 </button>
               </div>
 
               {/* Code + actions */}
-              <div className="flex flex-wrap gap-2 items-center">
-                <div className="flex items-center gap-2 glass-card px-3 py-2 border-primary-500/25">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 items-stretch sm:items-center">
+                <div className="flex items-center gap-2 glass-card px-3 py-2 border-primary-500/25 w-full sm:w-auto">
                   <span className="text-slate-500 text-xs">Código:</span>
                   <code className="text-primary-400 font-mono font-bold tracking-widest text-sm">
                     {user?.referral_code}
@@ -254,7 +254,7 @@ export default function ReferidosPage() {
                 </div>
                 <button
                   onClick={shareWhatsApp}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 text-sm font-semibold transition-all"
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 text-sm font-semibold transition-all w-full sm:w-auto"
                 >
                   <svg
                     className="w-4 h-4"
@@ -278,7 +278,7 @@ export default function ReferidosPage() {
                       copyLink();
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl glass-card text-slate-400 hover:text-white text-sm font-semibold transition-all"
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl glass-card text-slate-400 hover:text-white text-sm font-semibold transition-all w-full sm:w-auto"
                 >
                   <Share2 className="w-4 h-4" /> Compartir
                 </button>
@@ -296,7 +296,7 @@ export default function ReferidosPage() {
             <h2 className="text-white font-bold mb-4 flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary-400" /> ¿Cómo funciona?
             </h2>
-            <div className="grid sm:grid-cols-3 gap-4">
+            <div className="grid gap-4 sm:grid-cols-3">
               {[
                 {
                   n: "1",
@@ -449,7 +449,7 @@ export default function ReferidosPage() {
                 {referrals.some(
                   (r) => r.status === "qualified" || r.status === "paid",
                 ) && (
-                  <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between text-sm">
+                  <div className="mt-4 pt-4 border-t border-white/[0.06] flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between text-sm">
                     <span className="text-slate-500">
                       Total acreditado en tu cuenta
                     </span>

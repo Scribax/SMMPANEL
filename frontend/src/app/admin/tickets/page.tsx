@@ -128,20 +128,20 @@ export default function AdminTicketsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 pb-24 sm:pb-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <MessageCircle className="w-7 h-7 text-indigo-600" />
             Tickets de Soporte
           </h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Filter className="w-4 h-4 text-gray-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full sm:w-auto"
             >
               <option value="">Todos los estados</option>
               {statusOptions.map(s => (
@@ -153,7 +153,7 @@ export default function AdminTicketsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Ticket List */}
-          <div className="lg:col-span-1 space-y-3 max-h-[75vh] overflow-y-auto pr-1">
+          <div className="lg:col-span-1 space-y-3 max-h-none lg:max-h-[75vh] overflow-visible lg:overflow-y-auto pr-1">
             {loading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
@@ -195,12 +195,12 @@ export default function AdminTicketsPage() {
           {/* Ticket Detail */}
           <div className="lg:col-span-2">
             {selectedTicket ? (
-              <div className="bg-white rounded-lg shadow-sm flex flex-col h-[75vh]">
+              <div className="bg-white rounded-lg shadow-sm flex flex-col min-h-[420px] lg:h-[75vh]">
                 {/* Header */}
-                <div className="p-5 border-b border-gray-200">
-                  <div className="flex items-start justify-between">
+                <div className="p-4 sm:p-5 border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-900">{selectedTicket.subject}</h2>
+                      <h2 className="text-lg font-semibold text-gray-900 break-words">{selectedTicket.subject}</h2>
                       <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
                         <User className="w-3.5 h-3.5" />
                         {selectedTicket.user_name} &lt;{selectedTicket.user_email}&gt;
@@ -222,7 +222,7 @@ export default function AdminTicketsPage() {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
                   {messagesLoading ? (
                     <div className="flex justify-center py-8">
                       <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
@@ -234,7 +234,7 @@ export default function AdminTicketsPage() {
                         className={`flex ${msg.is_admin ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-md p-4 rounded-lg text-sm ${
+                          className={`max-w-[85%] sm:max-w-md p-4 rounded-lg text-sm ${
                             msg.is_admin
                               ? 'bg-indigo-600 text-white'
                               : 'bg-gray-100 text-gray-800'
@@ -256,20 +256,20 @@ export default function AdminTicketsPage() {
 
                 {/* Reply Input */}
                 {selectedTicket.status !== 'closed' && (
-                  <div className="p-5 border-t border-gray-200">
-                    <div className="flex gap-3">
+                  <div className="p-4 sm:p-5 border-t border-gray-200">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <input
                         type="text"
                         value={reply}
                         onChange={(e) => setReply(e.target.value)}
                         placeholder="Escribí tu respuesta..."
-                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 min-w-0"
                         onKeyPress={(e) => e.key === 'Enter' && sendReply()}
                       />
                       <button
                         onClick={sendReply}
                         disabled={sendingReply || !reply.trim()}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 text-sm font-medium disabled:opacity-50 transition-colors"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium disabled:opacity-50 transition-colors w-full sm:w-auto"
                       >
                         {sendingReply ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                         Responder
@@ -279,7 +279,7 @@ export default function AdminTicketsPage() {
                 )}
               </div>
             ) : (
-              <div className="bg-white rounded-lg shadow-sm h-[75vh] flex items-center justify-center text-gray-400">
+              <div className="bg-white rounded-lg shadow-sm h-[55vh] lg:h-[75vh] flex items-center justify-center text-gray-400">
                 <div className="text-center">
                   <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p>Seleccioná un ticket para ver la conversación</p>
