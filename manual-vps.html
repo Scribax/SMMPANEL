@@ -154,6 +154,13 @@ docker compose up -d --build</pre>
     <div class="tip">✅ Usá esto cada vez que hagas cambios en el código y los pushees a GitHub.</div>
 
     <div class="card">
+      <div class="card-label">Script automático de actualización Docker</div>
+      <pre>cd /var/www/smmpanel
+bash deploy/update-docker.sh</pre>
+    </div>
+    <div class="tip">✅ Hace pull, rebuild, recreate y deja todo listo en un solo paso.</div>
+
+    <div class="card">
       <div class="card-label">Solo reiniciar contenedores (sin rebuild)</div>
       <pre>docker compose up -d</pre>
     </div>
