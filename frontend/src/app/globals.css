@@ -28,6 +28,7 @@ body {
     font-family: "Inter", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    touch-action: manipulation;
 }
 
 @media (max-width: 640px) {
@@ -69,6 +70,29 @@ body {
             rgba(99, 102, 241, 0.1) 0%,
             transparent 70%
         );
+    }
+
+    .section-title {
+        @apply text-2xl sm:text-3xl;
+    }
+
+    .section-subtitle {
+        @apply text-sm mt-3;
+    }
+
+    .input-field,
+    .btn-primary,
+    .btn-secondary {
+        @apply rounded-xl;
+    }
+
+    .input-field {
+        @apply text-base py-3.5;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        @apply w-full;
     }
 }
 
@@ -175,6 +199,23 @@ body {
             rgba(99, 102, 241, 0.15) 0%,
             transparent 70%
         );
+    }
+
+    @media (max-width: 768px) {
+        .glass-card,
+        .glass-card-hover {
+            backdrop-filter: none;
+        }
+
+        .glass-card-hover:hover {
+            transform: none;
+        }
+
+        .btn-primary:hover,
+        .btn-secondary:hover {
+            transform: none;
+            box-shadow: none;
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {

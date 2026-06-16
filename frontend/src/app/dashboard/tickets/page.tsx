@@ -214,9 +214,9 @@ export default function TicketsPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Tickets List */}
-          <div className="lg:col-span-1 space-y-4 max-h-none lg:max-h-[75vh] overflow-visible lg:overflow-y-auto">
+          <div className="lg:col-span-1 space-y-3 sm:space-y-4 max-h-none lg:max-h-[75vh] overflow-visible lg:overflow-y-auto">
             {tickets.length === 0 ? (
               <div className="bg-dark-100 p-8 rounded-lg text-center">
                 <HelpCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
@@ -300,7 +300,7 @@ export default function TicketsPage() {
           {/* Ticket Details */}
           <div className="lg:col-span-2">
             {selectedTicket ? (
-              <div className="bg-dark-100 rounded-lg min-h-[420px] lg:h-[600px] flex flex-col">
+              <div className="bg-dark-100 rounded-2xl min-h-[380px] lg:h-[600px] flex flex-col overflow-hidden">
                 {/* Ticket Header */}
                 <div className="p-4 sm:p-6 border-b border-gray-700">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
@@ -319,7 +319,7 @@ export default function TicketsPage() {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-4">
                   {messagesLoading ? (
                     <div className="flex justify-center py-8">
                       <Loader2 className="w-8 h-8 animate-spin text-primary-400" />
@@ -333,7 +333,7 @@ export default function TicketsPage() {
                         className={`flex ${message.is_admin ? "justify-start" : "justify-end"}`}
                       >
                         <div
-                        className={`max-w-[85%] sm:max-w-md p-4 rounded-lg ${
+                        className={`max-w-[88%] sm:max-w-md p-3 sm:p-4 rounded-xl ${
                             message.is_admin
                               ? "bg-gray-700 text-white"
                               : "bg-primary-500 text-white"
@@ -368,7 +368,7 @@ export default function TicketsPage() {
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type your message..."
-                        className="flex-1 bg-dark-200 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400 min-w-0"
+                        className="flex-1 bg-dark-200 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 min-w-0"
                         onKeyPress={(e) => e.key === "Enter" && sendMessage()}
                       />
                       <button
@@ -388,7 +388,7 @@ export default function TicketsPage() {
                 )}
               </div>
             ) : (
-              <div className="hidden lg:flex bg-dark-100 rounded-lg h-[600px] items-center justify-center">
+              <div className="hidden lg:flex bg-dark-100 rounded-2xl h-[600px] items-center justify-center">
                 <div className="text-center">
                   <MessageCircle className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                   <p className="text-gray-400">
@@ -414,7 +414,7 @@ export default function TicketsPage() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-dark-100 rounded-t-3xl sm:rounded-lg p-5 sm:p-6 max-w-md w-full max-h-[92vh] overflow-y-auto"
+              className="bg-dark-100 rounded-t-3xl sm:rounded-2xl p-4 sm:p-6 max-w-md w-full max-h-[92vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 <h3 className="text-xl font-semibold text-white mb-4">

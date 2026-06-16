@@ -48,6 +48,8 @@ export default function Navbar() {
     router.push("/");
   };
 
+  const closeMobileMenu = () => setIsOpen(false);
+
   return (
     <motion.nav
       initial={{ y: -100 }}
@@ -248,7 +250,7 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  onClick={() => setIsOpen(false)}
+                  onClick={closeMobileMenu}
                   className={cn(
                     "block py-2.5 px-4 rounded-xl text-sm font-medium transition-colors",
                     pathname === link.href
@@ -279,14 +281,14 @@ export default function Navbar() {
                     </div>
                     <Link
                       href="/dashboard"
-                      onClick={() => setIsOpen(false)}
+                      onClick={closeMobileMenu}
                       className="flex items-center gap-2 py-3 px-4 text-sm text-slate-300 hover:text-white rounded-xl hover:bg-white/[0.04]"
                     >
                       <LayoutDashboard className="w-4 h-4" /> Mi Panel
                     </Link>
                     <Link
                       href="/order"
-                      onClick={() => setIsOpen(false)}
+                      onClick={closeMobileMenu}
                       className="flex items-center gap-2 py-3 px-4 text-sm text-slate-300 hover:text-white rounded-xl hover:bg-white/[0.04]"
                     >
                       <Wallet className="w-4 h-4" /> Nuevo Pedido
@@ -294,7 +296,7 @@ export default function Navbar() {
                     {user.role === "admin" && (
                       <Link
                         href="/admin"
-                        onClick={() => setIsOpen(false)}
+                        onClick={closeMobileMenu}
                         className="flex items-center gap-2 py-3 px-4 text-sm text-primary-400 hover:text-primary-300 rounded-xl hover:bg-white/[0.04]"
                       >
                         <ShieldCheck className="w-4 h-4" /> Panel Admin
@@ -311,14 +313,14 @@ export default function Navbar() {
                   <>
                     <Link
                       href="/login"
-                      onClick={() => setIsOpen(false)}
+                      onClick={closeMobileMenu}
                       className="block btn-secondary text-sm text-center"
                     >
                       Ingresar
                     </Link>
                     <Link
                       href="/register"
-                      onClick={() => setIsOpen(false)}
+                      onClick={closeMobileMenu}
                       className="block btn-primary text-sm text-center"
                     >
                       Empezar

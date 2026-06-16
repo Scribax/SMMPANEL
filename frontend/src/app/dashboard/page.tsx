@@ -550,7 +550,7 @@ export default function DashboardPage() {
                 Bienvenido, {user?.name?.split(" ")[0]} 👋
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:flex items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-3 items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => setSidebarOpen((prev) => !prev)}
                 className="relative flex items-center justify-center gap-2 text-sm text-slate-400 hover:text-white transition glass-card px-4 py-3 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 sm:shadow-none"
@@ -579,8 +579,8 @@ export default function DashboardPage() {
           </div>
 
           {/* Balance Hero Card */}
-          <div className="glass-card p-5 sm:p-6 mb-6 border-primary-500/20 bg-gradient-to-r from-primary-500/10 to-purple-500/10">
-            <div className="flex items-start sm:items-center justify-between gap-4">
+          <div className="glass-card p-4 sm:p-6 mb-6 border-primary-500/20 bg-gradient-to-r from-primary-500/10 to-purple-500/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="text-slate-400 text-sm mb-1">Saldo disponible</p>
                 <p className="text-3xl sm:text-4xl font-black text-white">
@@ -613,7 +613,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             {[
               {
                 label: "Total pedidos",
@@ -951,8 +951,8 @@ export default function DashboardPage() {
 
           {/* Account Tab */}
           {activeTab === "account" && user && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="glass-card p-5 sm:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="glass-card p-4 sm:p-6">
                 <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
                   <User className="w-5 h-5 text-primary-400" /> Perfil
                 </h3>
@@ -978,7 +978,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="glass-card p-5 sm:p-6">
+              <div className="glass-card p-4 sm:p-6">
                 <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
                   <Gift className="w-5 h-5 text-primary-400" /> Programa de
                   referidos
@@ -1022,7 +1022,7 @@ export default function DashboardPage() {
 
                 {/* Referral stats */}
                 {referralSummary && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
                     <div className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                       <div className="text-lg font-bold text-white">
                         {referralSummary.total}
@@ -1050,7 +1050,7 @@ export default function DashboardPage() {
 
                 {/* Referral list */}
                 {referrals.length > 0 && (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <div className="space-y-2 max-h-56 sm:max-h-48 overflow-y-auto pr-1">
                     {referrals.map((ref) => {
                       const progress = Math.min(
                         (Number(ref.referred_total_spent) /
@@ -1106,7 +1106,7 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              <div className="glass-card p-5 sm:p-6 md:col-span-2">
+              <div className="glass-card p-4 sm:p-6 md:col-span-2">
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                   <Lock className="w-5 h-5 text-primary-400" /> Cambiar
                   contraseña
@@ -1152,7 +1152,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="glass-card p-5 sm:p-6 md:col-span-2">
+              <div className="glass-card p-4 sm:p-6 md:col-span-2">
                 <h3 className="text-white font-semibold mb-4">
                   Acciones de cuenta
                 </h3>
@@ -1195,7 +1195,7 @@ export default function DashboardPage() {
       <button
         type="button"
         onClick={() => setSidebarOpen(true)}
-        className="fixed bottom-24 right-6 z-40 w-12 h-12 rounded-full bg-primary-500 shadow-lg shadow-primary-500/40 flex items-center justify-center text-white hover:bg-primary-400 transition-colors"
+        className="fixed bottom-4 right-4 sm:bottom-24 sm:right-6 z-40 w-12 h-12 rounded-full bg-primary-500 shadow-lg shadow-primary-500/40 flex items-center justify-center text-white hover:bg-primary-400 transition-colors"
       >
         <MessageCircle className="w-5 h-5" />
       </button>

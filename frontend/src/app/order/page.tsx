@@ -1242,7 +1242,7 @@ function OrderContent() {
                   </button>
 
                   {/* Username / Link */}
-                  <div className="glass-card p-5 sm:p-6">
+                  <div className="glass-card p-4 sm:p-6">
                     <label className="block text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
                       {isFollowers ? (
                         <AtSign className="w-4 h-4 text-primary-400" />
@@ -1415,7 +1415,7 @@ function OrderContent() {
                   </div>
 
                   {/* Email */}
-                  <div className="glass-card p-5 sm:p-6">
+                  <div className="glass-card p-4 sm:p-6">
                     <label className="block text-sm font-semibold text-slate-300 mb-3">
                       📧 Email para seguimiento del pedido
                     </label>
@@ -1429,7 +1429,7 @@ function OrderContent() {
                   </div>
 
                   {/* Coupon */}
-                  <div className="glass-card p-5 sm:p-6">
+                  <div className="glass-card p-4 sm:p-6">
                     <label className="block text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
                       <Tag className="w-4 h-4 text-primary-400" /> Cupón de
                       descuento{" "}
@@ -1471,7 +1471,7 @@ function OrderContent() {
                   </div>
 
                   {/* Order summary + pay */}
-                  <div className="glass-card p-5 sm:p-6">
+                  <div className="glass-card p-4 sm:p-6">
                     <h3 className="text-white font-bold text-lg mb-4">
                       Resumen del pedido
                     </h3>
@@ -1601,9 +1601,9 @@ function OrderContent() {
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
-            className="fixed bottom-0 left-0 right-0 z-40 bg-dark-300/95 backdrop-blur-xl border-t border-white/[0.08] px-4 py-3 md:hidden"
+            className="fixed bottom-0 left-0 right-0 z-40 bg-dark-300/95 backdrop-blur-xl border-t border-white/[0.08] px-4 py-3 md:hidden pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
           >
-            <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+            <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
               <div>
                 <div className="text-xs text-slate-400">{selected?.name}</div>
                 <div className="text-white font-bold">
@@ -1619,7 +1619,7 @@ function OrderContent() {
                 <button
                   onClick={handleCheckout}
                   disabled={loading || !link.trim() || !email.trim()}
-                  className="btn-primary py-2.5 px-5 text-sm flex items-center gap-2 disabled:opacity-50"
+                  className="btn-primary py-2.5 px-5 text-sm flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto"
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -1649,7 +1649,7 @@ function OrderContent() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card p-6 sm:p-8 max-w-sm w-full text-center rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto"
+              className="glass-card p-5 sm:p-8 max-w-sm w-full text-center rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <button

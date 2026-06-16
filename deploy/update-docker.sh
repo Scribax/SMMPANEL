@@ -15,6 +15,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BRANCH="${1:-main}"
 REMOTE="${2:-origin}"
+DEPLOY_COMPOSE_FILE="${DEPLOY_COMPOSE_FILE:-docker-compose.yml}"
+HEALTHCHECK_URL="${HEALTHCHECK_URL:-https://followarg.com}"
+HEALTHCHECK_RETRIES="${HEALTHCHECK_RETRIES:-12}"
+HEALTHCHECK_SLEEP="${HEALTHCHECK_SLEEP:-5}"
 
 if [ ! -d "$ROOT_DIR/.git" ]; then
   echo "❌ No se encontró un repositorio Git en: $ROOT_DIR"
@@ -57,6 +61,17 @@ if [ ! -f "$ROOT_DIR/nginx/ssl/origin.pem" ] || [ ! -f "$ROOT_DIR/nginx/ssl/orig
 fi
 
 cd "$ROOT_DIR"
+COMPOSE_CMD=(docker compose -f "$DEPLOY_COMPOSE_FILE")
+PREVIOUS_SHA="$(git rev-parse HEAD)"
+
+rollback_deploy() {
+  local reason="${1:-Desconocido}"
+  echo "❌ Deploy fallido: $reason"
+  echo "↩️ Restaurando estado anterior ($PREVIOUS_SHA)..."
+  git reset --hard "$PREVIOUS_SHA" >/dev/null
+  "${COMPOSE_CMD[@]}" up -d --build --force-recreate --remove-orphans >/dev/null
+  echo "✅ Rollback aplicado."
+}
 
 echo "=== [1/4] Actualizando código desde ${REMOTE}/${BRANCH} ==="
 git fetch "$REMOTE" "$BRANCH"
@@ -64,12 +79,28 @@ git checkout "$BRANCH" >/dev/null 2>&1 || true
 git reset --hard "$REMOTE/$BRANCH"
 
 echo "=== [2/4] Construyendo y recreando servicios Docker ==="
-docker compose -f docker-compose.yml up -d --build --force-recreate --remove-orphans
+"${COMPOSE_CMD[@]}" up -d --build --force-recreate --remove-orphans
 
 echo "=== [3/4] Verificando estado de contenedores ==="
-docker compose -f docker-compose.yml ps
+"${COMPOSE_CMD[@]}" ps
 
-echo "=== [4/4] Estado final ==="
+echo "=== [4/5] Validando salud pública ==="
+health_ok=false
+for attempt in $(seq 1 "$HEALTHCHECK_RETRIES"); do
+  if curl -fsS --max-time 15 -I "$HEALTHCHECK_URL" >/dev/null 2>&1; then
+    health_ok=true
+    break
+  fi
+  echo "   Intento $attempt/$HEALTHCHECK_RETRIES: esperando respuesta de $HEALTHCHECK_URL"
+  sleep "$HEALTHCHECK_SLEEP"
+done
+
+if [ "$health_ok" != "true" ]; then
+  rollback_deploy "no respondió el healthcheck en $HEALTHCHECK_URL"
+  exit 1
+fi
+
+echo "=== [5/5] Estado final ==="
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 echo ""

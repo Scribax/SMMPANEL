@@ -521,7 +521,7 @@ export default function AdminPage() {
             <h1 className="text-xl sm:text-2xl font-black text-white mb-6">
               Dashboard Overview
             </h1>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
               {[
                 {
                   label: "Total Revenue",
@@ -552,16 +552,18 @@ export default function AdminPage() {
                   bg: "bg-purple-400/10",
                 },
               ].map((s) => (
-                <div key={s.label} className="glass-card p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-slate-400 text-xs">{s.label}</span>
+                <div key={s.label} className="glass-card p-4 sm:p-5">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-[11px] sm:text-xs leading-tight text-slate-400">
+                      {s.label}
+                    </span>
                     <div
-                      className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}
+                      className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}
                     >
                       <s.icon className={`w-4 h-4 ${s.color}`} />
                     </div>
                   </div>
-                  <div className="text-2xl font-black text-white">
+                  <div className="text-xl sm:text-2xl font-black text-white break-words">
                     {s.value}
                   </div>
                 </div>
@@ -585,7 +587,7 @@ export default function AdminPage() {
                     Ver todos →
                   </button>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {(
                     [
                       "partial",
@@ -606,7 +608,7 @@ export default function AdminPage() {
                           setStatusFilter(status);
                           handleTabChange("orders");
                         }}
-                        className={`p-4 rounded-xl cursor-pointer transition-all hover:scale-105 ${
+                        className={`p-3 sm:p-4 rounded-xl cursor-pointer transition-all hover:scale-105 ${
                           count > 0
                             ? priority === "high"
                               ? "bg-red-500/20 border border-red-500/30 text-red-400"
@@ -614,7 +616,7 @@ export default function AdminPage() {
                             : "bg-slate-500/10 border border-slate-500/20 text-slate-500"
                         }`}
                       >
-                        <div className="text-2xl font-bold">{count}</div>
+                        <div className="text-xl sm:text-2xl font-bold">{count}</div>
                         <div className="text-xs mt-1 font-medium">
                           {STATUS_LABELS[status]}
                         </div>
@@ -637,7 +639,7 @@ export default function AdminPage() {
                 <h3 className="text-white font-semibold mb-4">
                   Orders by Status
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {Object.entries(stats.ordersByStatus).map(
                     ([status, count]) => (
                       <div
@@ -1416,7 +1418,7 @@ export default function AdminPage() {
               animate={{ scale: 1, opacity: 1 }}
               className="glass-card w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl"
             >
-              <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/[0.06]">
                 <h3 className="text-white font-bold text-lg">
                   Detalles del Pedido
                 </h3>
@@ -1428,7 +1430,7 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <div className="p-5 sm:p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400 text-sm">ID Pedido</span>
                   <code className="text-xs text-slate-300 font-mono bg-dark-200 px-2 py-1 rounded">
@@ -1538,7 +1540,7 @@ export default function AdminPage() {
               animate={{ scale: 1, opacity: 1 }}
               className="glass-card w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl"
             >
-              <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/[0.06]">
                 <h3 className="text-white font-bold text-lg">
                   Crear Pedido Manual
                 </h3>
@@ -1550,7 +1552,7 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <div className="p-5 sm:p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-4">
                 <div>
                   <label className="text-slate-400 text-sm mb-1 block">ID de Usuario</label>
                   <input
@@ -1633,7 +1635,7 @@ export default function AdminPage() {
               animate={{ scale: 1, opacity: 1 }}
               className="glass-card w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl"
             >
-              <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/[0.06]">
                 <h3 className="text-white font-bold text-lg">
                   Detalle de Usuario
                 </h3>
@@ -1645,9 +1647,9 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <div className="p-5 sm:p-6 space-y-6">
+              <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
                 {/* User Info */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
                     {String(selectedUser.name ?? "?").charAt(0).toUpperCase()}
                   </div>
@@ -1659,7 +1661,7 @@ export default function AdminPage() {
 
                 {/* Stats */}
                 {userStats && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div className="bg-dark-200/50 p-4 rounded-xl text-center">
                       <div className="text-slate-400 text-xs mb-1">Saldo</div>
                       <div className="text-primary-400 font-bold text-xl">
@@ -1690,7 +1692,7 @@ export default function AdminPage() {
                       value={balanceAdjustment}
                       onChange={(e) => setBalanceAdjustment(e.target.value)}
                       placeholder="Monto (+/-)"
-                      className="input-field flex-1"
+                    className="input-field flex-1"
                     />
                     <input
                       type="text"
