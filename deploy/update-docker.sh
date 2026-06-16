@@ -31,6 +31,31 @@ if ! docker compose version >/dev/null 2>&1; then
   exit 1
 fi
 
+resolve_ip() {
+  local host="$1"
+  getent ahostsv4 "$host" 2>/dev/null | awk 'NR==1 {print $1}'
+}
+
+EXPECTED_DOMAIN_IP="${EXPECTED_DOMAIN_IP:-186.64.123.153}"
+DOMAIN_HOSTS=("followarg.com" "www.followarg.com")
+for host in "${DOMAIN_HOSTS[@]}"; do
+  host_ip="$(resolve_ip "$host" || true)"
+  if [ -z "$host_ip" ]; then
+    echo "❌ No se pudo resolver $host. Revisá el DNS antes del deploy."
+    exit 1
+  fi
+  if [ "$host_ip" != "$EXPECTED_DOMAIN_IP" ]; then
+    echo "❌ $host resuelve a $host_ip, pero se esperaba $EXPECTED_DOMAIN_IP."
+    echo "   Corregí el DNS antes de desplegar."
+    exit 1
+  fi
+done
+
+if [ ! -f "$ROOT_DIR/nginx/ssl/origin.pem" ] || [ ! -f "$ROOT_DIR/nginx/ssl/origin.key" ]; then
+  echo "❌ Faltan los certificados SSL en nginx/ssl (origin.pem / origin.key)."
+  exit 1
+fi
+
 cd "$ROOT_DIR"
 
 echo "=== [1/4] Actualizando código desde ${REMOTE}/${BRANCH} ==="

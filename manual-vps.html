@@ -160,6 +160,7 @@ bash deploy/update-docker.sh</pre>
     </div>
     <div class="tip">✅ Hace pull, rebuild, recreate y deja todo listo en un solo paso.</div>
     <div class="warn">⚠️ El script usa solo <code>docker-compose.yml</code> para evitar tomar el override local <code>nginx.local.conf</code>.</div>
+    <div class="warn">⚠️ Antes de desplegar valida DNS de <code>followarg.com</code> y certificados en <code>nginx/ssl</code>.</div>
 
     <div class="card">
       <div class="card-label">Solo reiniciar contenedores (sin rebuild)</div>
