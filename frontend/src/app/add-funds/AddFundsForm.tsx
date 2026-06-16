@@ -20,11 +20,21 @@ function AddFundsContent() {
   const [custom, setCustom] = useState('');
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState(0);
+  const draftKey = 'followarg_add_funds_amount';
 
   useEffect(() => {
     if (!isAuthenticated()) { router.push('/login?redirect=/add-funds'); return; }
     const u = getStoredUser();
     setBalance(parseFloat(String(u?.balance ?? 0)));
+    try {
+      const saved = window.localStorage.getItem(draftKey);
+      if (saved) {
+        setCustom(saved);
+        setAmount(0);
+      }
+    } catch {
+      /* ignore storage issues */
+    }
     const suggested = parseInt(searchParams.get('amount') ?? '0', 10);
     if (suggested >= 100) {
       const preset = PRESETS.find((p) => p >= suggested) ?? suggested;
@@ -33,6 +43,14 @@ function AddFundsContent() {
       setAmount(PRESETS[1]);
     }
   }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(draftKey, custom);
+    } catch {
+      /* ignore storage issues */
+    }
+  }, [custom]);
 
   const displayAmount = amount || parseInt(custom || '0', 10);
 
@@ -129,8 +147,21 @@ function AddFundsContent() {
 export default function AddFundsForm() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-dark-300 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-dark-300 px-4 py-10">
+        <div className="max-w-lg mx-auto space-y-4">
+          <div className="h-8 w-40 bg-white/10 rounded-xl animate-pulse" />
+          <div className="glass-card p-5 space-y-4">
+            <div className="h-5 w-28 bg-white/10 rounded-lg animate-pulse" />
+            <div className="grid grid-cols-2 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-12 bg-white/5 rounded-xl animate-pulse" />
+              ))}
+            </div>
+            <div className="h-12 bg-white/5 rounded-xl animate-pulse" />
+            <div className="h-12 bg-primary-500/15 rounded-xl animate-pulse" />
+          </div>
+          <div className="h-28 bg-white/5 rounded-2xl animate-pulse" />
+        </div>
       </div>
     }>
       <AddFundsContent />

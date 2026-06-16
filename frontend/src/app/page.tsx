@@ -150,8 +150,10 @@ function AnimatedCounter({
 
 export default function HomePage() {
   const [featuredServices, setFeaturedServices] = useState<Service[]>([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     servicesApi
       .getAll()
       .then((res) => {
@@ -159,6 +161,12 @@ export default function HomePage() {
       })
       .catch(() => {});
   }, []);
+
+  const reduceMotion = !mounted;
+  const heroMotion = reduceMotion
+    ? undefined
+    : { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 } };
+  const sectionViewport = reduceMotion ? undefined : { once: true };
 
   const fadeUp = {
     hidden: { opacity: 0, y: 30 },
@@ -179,8 +187,7 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            {...heroMotion}
             transition={{ duration: 0.5 }}
             className="inline-flex flex-wrap items-center justify-center gap-2 glass-card px-3 py-2 mb-6 sm:mb-8 border-primary-500/30 text-center"
           >
@@ -191,8 +198,7 @@ export default function HomePage() {
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...heroMotion}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-5 sm:mb-6 max-w-4xl mx-auto"
           >
@@ -202,8 +208,7 @@ export default function HomePage() {
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...heroMotion}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-sm sm:text-xl text-slate-400 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-1 sm:px-0"
           >
@@ -212,8 +217,7 @@ export default function HomePage() {
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...heroMotion}
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 w-full max-w-md sm:max-w-none mx-auto"
           >
@@ -233,8 +237,7 @@ export default function HomePage() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            {...heroMotion}
             transition={{ duration: 0.8, delay: 0.5 }}
             className="mt-12 sm:mt-16 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 px-2"
           >
@@ -262,9 +265,9 @@ export default function HomePage() {
             {STATS.map((stat, i) => (
               <motion.div
                 key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
+                initial={reduceMotion ? false : { opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                viewport={sectionViewport}
                 transition={{ delay: i * 0.1 }}
                 className="text-center"
               >
@@ -288,7 +291,7 @@ export default function HomePage() {
             variants={fadeUp}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true }}
+            viewport={sectionViewport}
             className="text-center mb-16"
           >
             <h2 className="section-title">
@@ -355,7 +358,7 @@ export default function HomePage() {
                   variants={fadeUp}
                   initial="hidden"
                   whileInView="visible"
-                  viewport={{ once: true }}
+                  viewport={sectionViewport}
                   transition={{ delay: i * 0.1 }}
                   className="glass-card-hover p-5 sm:p-6 group cursor-pointer"
                 >
@@ -427,7 +430,7 @@ export default function HomePage() {
                 variants={fadeUp}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true }}
+                viewport={sectionViewport}
                 transition={{ delay: i * 0.15 }}
                 className="relative"
               >
@@ -479,7 +482,7 @@ export default function HomePage() {
                 variants={fadeUp}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true }}
+                viewport={sectionViewport}
                 transition={{ delay: i * 0.07 }}
                 className="glass-card-hover p-5 sm:p-6 flex flex-col gap-4"
               >
@@ -556,7 +559,7 @@ export default function HomePage() {
                 variants={fadeUp}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true }}
+                viewport={sectionViewport}
                 transition={{ delay: i * 0.07 }}
                 className="glass-card p-5 sm:p-6 hover:border-primary-500/20 transition-all"
               >
@@ -586,7 +589,7 @@ export default function HomePage() {
             variants={fadeUp}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true }}
+            viewport={sectionViewport}
               className="glass-card p-5 sm:p-12 border-primary-500/20 relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-radial-glow" />

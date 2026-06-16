@@ -261,6 +261,24 @@ const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
   reactions: { label: "Reacciones", emoji: "🎉" },
 };
 
+const ORDER_DRAFT_KEY = "followarg_order_draft";
+
+function readOrderDraft() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(ORDER_DRAFT_KEY);
+    return raw
+      ? (JSON.parse(raw) as {
+          link?: string;
+          email?: string;
+          couponCode?: string;
+        })
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function OrderContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -444,7 +462,26 @@ function OrderContent() {
       setUserBalance(parseFloat(String(u?.balance ?? 0)));
       if (u?.email) setEmail(u.email);
     }
+
+    const draft = readOrderDraft();
+    if (draft?.link) setLink(draft.link);
+    if (draft?.email) {
+      setEmail((current) => current || draft.email || "");
+    }
+    if (draft?.couponCode) setCouponCode(draft.couponCode);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        ORDER_DRAFT_KEY,
+        JSON.stringify({ link, email, couponCode }),
+      );
+    } catch {
+      /* ignore storage issues */
+    }
+  }, [link, email, couponCode]);
 
   useEffect(() => {
     servicesApi
@@ -515,6 +552,10 @@ function OrderContent() {
     }
     if (!link.trim()) {
       toast.error("Ingresá tu usuario o link");
+      return;
+    }
+    if (linkValidation && !linkValidation.valid) {
+      toast.error(linkValidation.message ?? "Revisá el link ingresado");
       return;
     }
     if (!email.trim()) {
