@@ -27,6 +27,8 @@ import {
   RotateCcw,
   BarChart2,
   MessageCircle,
+  Mail,
+  Send,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { adminApi } from "@/lib/api";
@@ -39,7 +41,13 @@ import {
 } from "@/lib/utils";
 import { Order, Service, OrderStatus } from "@/types";
 
-type AdminTab = "dashboard" | "orders" | "services" | "users" | "coupons";
+type AdminTab =
+  | "dashboard"
+  | "orders"
+  | "services"
+  | "users"
+  | "coupons"
+  | "emails";
 
 interface Stats {
   totalUsers: number;
@@ -104,6 +112,22 @@ export default function AdminPage() {
   const [adjustingBalance, setAdjustingBalance] = useState(false);
   const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [userStats, setUserStats] = useState<Record<string, unknown> | null>(null);
+  const [emailForm, setEmailForm] = useState({
+    audience: "active" as "all" | "active" | "selected",
+    subject: "Hola {{name}}, tenemos novedades para vos",
+    title: "Impulsá tus redes con FollowArg",
+    message:
+      "Hola {{name}},\n\nPreparamos una promo especial para que puedas seguir creciendo en Instagram, TikTok, YouTube y más.\n\nEntrá a tu cuenta, elegí tu servicio y hacé tu pedido en minutos.",
+    ctaText: "Hacer pedido ahora",
+    ctaUrl: "https://followarg.com/order",
+  });
+  const [selectedEmailUsers, setSelectedEmailUsers] = useState<string[]>([]);
+  const [emailPreview, setEmailPreview] = useState<{
+    subject: string;
+    html: string;
+  } | null>(null);
+  const [previewingEmail, setPreviewingEmail] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -159,7 +183,7 @@ export default function AdminPage() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const res = await adminApi.getUsers();
+      const res = await adminApi.getUsers(1, 200);
       setUsers(res.data.users ?? []);
     } catch {
       toast.error("Failed to load users");
@@ -185,8 +209,69 @@ export default function AdminPage() {
     if (t === "dashboard") loadDashboard();
     else if (t === "orders") loadOrders(1, statusFilter);
     else if (t === "services") loadServices();
-    else if (t === "users") loadUsers();
+    else if (t === "users" || t === "emails") loadUsers();
     else if (t === "coupons") loadCoupons();
+  };
+
+  const emailPayload = () => ({
+    ...emailForm,
+    userIds: selectedEmailUsers,
+  });
+
+  const previewMarketingEmail = async () => {
+    setPreviewingEmail(true);
+    try {
+      const res = await adminApi.previewMarketingEmail(emailPayload());
+      setEmailPreview(res.data.preview);
+      toast.success("Preview generado");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "No se pudo generar el preview";
+      toast.error(msg);
+    } finally {
+      setPreviewingEmail(false);
+    }
+  };
+
+  const sendMarketingEmail = async () => {
+    if (!emailPreview) {
+      toast.error("Generá una previsualización antes de enviar");
+      return;
+    }
+    const recipients =
+      emailForm.audience === "selected"
+        ? selectedEmailUsers.length
+        : users.filter((u) =>
+            emailForm.audience === "active" ? u.is_active !== false : true,
+          ).length;
+    const confirmed = window.confirm(
+      `Vas a enviar este correo a ${recipients} usuario(s). ¿Continuar?`,
+    );
+    if (!confirmed) return;
+
+    setSendingEmail(true);
+    try {
+      const res = await adminApi.sendMarketingEmail(emailPayload());
+      toast.success(
+        `Correos enviados: ${res.data.sent}/${res.data.total}. Fallidos: ${res.data.failed}`,
+      );
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "No se pudo enviar la campaña";
+      toast.error(msg);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const toggleEmailUser = (userId: string) => {
+    setSelectedEmailUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
+    );
   };
 
   const toggleServiceStatus = async (service: Service) => {
@@ -425,6 +510,7 @@ export default function AdminPage() {
       { id: "services", label: "Services", icon: Package },
       { id: "users", label: "Users", icon: Users },
       { id: "coupons", label: "Coupons", icon: Tag },
+      { id: "emails", label: "Correos", icon: Mail },
     ];
 
   return (
@@ -1359,6 +1445,263 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Marketing Emails Tab */}
+        {tab === "emails" && !loading && (
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+              <div>
+                <h1 className="text-2xl font-black text-white">
+                  Correos publicitarios
+                </h1>
+                <p className="text-slate-400 text-sm mt-1">
+                  Enviá campañas personalizadas usando variables como{" "}
+                  <code className="text-primary-300">{"{{name}}"}</code> y{" "}
+                  <code className="text-primary-300">{"{{email}}"}</code>.
+                </p>
+              </div>
+              <button
+                onClick={sendMarketingEmail}
+                disabled={sendingEmail || !emailPreview}
+                className="btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {sendingEmail ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                Enviar campaña
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.9fr)] gap-5">
+              <div className="space-y-4">
+                <div className="glass-card p-4 sm:p-5">
+                  <h2 className="text-white font-semibold mb-4">Audiencia</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      {
+                        id: "active",
+                        label: "Usuarios activos",
+                        desc: "Recomendado para evitar cuentas baneadas.",
+                      },
+                      {
+                        id: "all",
+                        label: "Todos",
+                        desc: "Incluye usuarios activos e inactivos.",
+                      },
+                      {
+                        id: "selected",
+                        label: "Seleccionados",
+                        desc: "Elegís manualmente los destinatarios.",
+                      },
+                    ].map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => {
+                          setEmailForm({
+                            ...emailForm,
+                            audience: option.id as "all" | "active" | "selected",
+                          });
+                          setEmailPreview(null);
+                        }}
+                        className={`text-left rounded-xl border p-4 transition-all ${
+                          emailForm.audience === option.id
+                            ? "border-primary-500/50 bg-primary-500/10"
+                            : "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.05]"
+                        }`}
+                      >
+                        <div className="text-white text-sm font-semibold">
+                          {option.label}
+                        </div>
+                        <div className="text-slate-500 text-xs mt-1 leading-relaxed">
+                          {option.desc}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {emailForm.audience === "selected" && (
+                    <div className="mt-4 border-t border-white/[0.06] pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-slate-300 text-sm font-medium">
+                          Usuarios seleccionados: {selectedEmailUsers.length}
+                        </span>
+                        <button
+                          onClick={() =>
+                            setSelectedEmailUsers(
+                              users
+                                .filter((u) => String(u.role) !== "admin")
+                                .map((u) => String(u.id)),
+                            )
+                          }
+                          className="text-primary-400 text-xs hover:text-primary-300"
+                        >
+                          Seleccionar todos
+                        </button>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                        {users
+                          .filter((u) => String(u.role) !== "admin")
+                          .map((u) => (
+                            <label
+                              key={String(u.id)}
+                              className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] cursor-pointer hover:bg-white/[0.05]"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedEmailUsers.includes(
+                                  String(u.id),
+                                )}
+                                onChange={() => toggleEmailUser(String(u.id))}
+                                className="w-4 h-4 accent-primary-500"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-white text-sm truncate">
+                                  {String(u.name)}
+                                </div>
+                                <div className="text-slate-500 text-xs truncate">
+                                  {String(u.email)}
+                                </div>
+                              </div>
+                              {u.is_active === false && (
+                                <span className="text-[11px] text-red-400">
+                                  Inactivo
+                                </span>
+                              )}
+                            </label>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="glass-card p-4 sm:p-5 space-y-4">
+                  <h2 className="text-white font-semibold">Contenido</h2>
+                  <div>
+                    <label className="text-slate-400 text-sm mb-1.5 block">
+                      Asunto
+                    </label>
+                    <input
+                      value={emailForm.subject}
+                      onChange={(e) => {
+                        setEmailForm({ ...emailForm, subject: e.target.value });
+                        setEmailPreview(null);
+                      }}
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-sm mb-1.5 block">
+                      Título principal
+                    </label>
+                    <input
+                      value={emailForm.title}
+                      onChange={(e) => {
+                        setEmailForm({ ...emailForm, title: e.target.value });
+                        setEmailPreview(null);
+                      }}
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-sm mb-1.5 block">
+                      Mensaje
+                    </label>
+                    <textarea
+                      value={emailForm.message}
+                      onChange={(e) => {
+                        setEmailForm({ ...emailForm, message: e.target.value });
+                        setEmailPreview(null);
+                      }}
+                      rows={9}
+                      className="input-field resize-y"
+                    />
+                    <p className="text-slate-500 text-xs mt-2">
+                      Separá párrafos con una línea vacía. Variables disponibles:
+                      {" {{name}}"} y {"{{email}}"}.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-slate-400 text-sm mb-1.5 block">
+                        Texto del botón
+                      </label>
+                      <input
+                        value={emailForm.ctaText}
+                        onChange={(e) => {
+                          setEmailForm({
+                            ...emailForm,
+                            ctaText: e.target.value,
+                          });
+                          setEmailPreview(null);
+                        }}
+                        className="input-field"
+                        placeholder="Hacer pedido ahora"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-slate-400 text-sm mb-1.5 block">
+                        URL del botón
+                      </label>
+                      <input
+                        value={emailForm.ctaUrl}
+                        onChange={(e) => {
+                          setEmailForm({ ...emailForm, ctaUrl: e.target.value });
+                          setEmailPreview(null);
+                        }}
+                        className="input-field"
+                        placeholder="https://followarg.com/order"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={previewMarketingEmail}
+                    disabled={previewingEmail}
+                    className="btn-secondary flex items-center justify-center gap-2"
+                  >
+                    {previewingEmail ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                    Previsualizar correo
+                  </button>
+                </div>
+              </div>
+
+              <div className="glass-card p-4 sm:p-5 min-h-[520px]">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h2 className="text-white font-semibold">Preview</h2>
+                    {emailPreview && (
+                      <p className="text-slate-500 text-xs mt-1 truncate max-w-sm">
+                        Asunto: {emailPreview.subject}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {emailPreview ? (
+                  <iframe
+                    title="Preview del correo"
+                    srcDoc={emailPreview.html}
+                    className="w-full h-[680px] bg-white rounded-xl border border-white/[0.08]"
+                  />
+                ) : (
+                  <div className="h-[520px] rounded-xl border border-dashed border-white/[0.12] flex items-center justify-center text-center px-6">
+                    <div>
+                      <Mail className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                      <p className="text-slate-400 text-sm">
+                        Completá el contenido y generá una previsualización antes
+                        de enviar.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

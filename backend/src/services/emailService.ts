@@ -51,6 +51,96 @@ const baseTemplate = (content: string): string => `
 </html>
 `;
 
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+const renderPersonalizedText = (
+  value: string,
+  user: { name: string; email: string },
+): string =>
+  value
+    .replace(/\{\{\s*name\s*\}\}/gi, user.name)
+    .replace(/\{\{\s*email\s*\}\}/gi, user.email);
+
+const renderEmailParagraphs = (body: string): string =>
+  body
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map(
+      (paragraph) =>
+        `<p style="margin:0 0 16px;color:#475569;font-size:15px;line-height:1.65;">${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`,
+    )
+    .join('');
+
+export const renderMarketingEmail = (data: {
+  subject: string;
+  title: string;
+  body: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  user: { name: string; email: string };
+}): { subject: string; html: string } => {
+  const subject = renderPersonalizedText(data.subject, data.user);
+  const title = renderPersonalizedText(data.title, data.user);
+  const body = renderPersonalizedText(data.body, data.user);
+  const ctaText = data.ctaText
+    ? renderPersonalizedText(data.ctaText, data.user)
+    : '';
+  const ctaUrl = data.ctaUrl?.trim();
+
+  return {
+    subject,
+    html: baseTemplate(`
+      <div style="display:inline-block;background:#ede9fe;color:#6366f1;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;margin:0 0 18px;">FollowArg</div>
+      <h1 style="margin:0 0 12px;color:#111827;font-size:26px;line-height:1.2;">${escapeHtml(title)}</h1>
+      <p style="margin:0 0 24px;color:#64748b;font-size:15px;line-height:1.6;">Hola <strong style="color:#1e293b;">${escapeHtml(data.user.name)}</strong>, tenemos novedades para vos.</p>
+      ${renderEmailParagraphs(body)}
+      ${
+        ctaText && ctaUrl
+          ? `<div style="margin-top:28px;"><a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:13px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;">${escapeHtml(ctaText)}</a></div>`
+          : ''
+      }
+      <div style="margin-top:30px;padding:16px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;">
+        <p style="margin:0;color:#64748b;font-size:13px;line-height:1.5;">Este correo fue enviado porque tenés una cuenta registrada en FollowArg.</p>
+      </div>
+    `),
+  };
+};
+
+export const sendMarketingEmail = async (data: {
+  email: string;
+  name: string;
+  subject: string;
+  title: string;
+  body: string;
+  ctaText?: string;
+  ctaUrl?: string;
+}): Promise<void> => {
+  if (!env.SMTP_USER) return;
+
+  const rendered = renderMarketingEmail({
+    subject: data.subject,
+    title: data.title,
+    body: data.body,
+    ctaText: data.ctaText,
+    ctaUrl: data.ctaUrl,
+    user: { name: data.name, email: data.email },
+  });
+
+  await transporter.sendMail({
+    from: env.SMTP_FROM,
+    to: data.email,
+    subject: rendered.subject,
+    html: rendered.html,
+  });
+};
+
 export const sendOrderConfirmation = async (
   email: string,
   name: string,

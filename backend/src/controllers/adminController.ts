@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import { query } from "../config/database";
 import { encrypt } from "../services/encryptionService";
+import {
+  renderMarketingEmail,
+  sendMarketingEmail,
+} from "../services/emailService";
 import { logger } from "../utils/logger";
 import { invalidateServicesCache } from "./serviceController";
 
@@ -936,4 +940,164 @@ export const adminUpdateCoupon = async (
     [isActive, discountValue, maxUses, expiresAt, id],
   );
   res.json({ success: true, message: "Coupon updated" });
+};
+
+// ─── MARKETING EMAILS ───────────────────────────────────────────────────────
+
+type MarketingAudience = "all" | "active" | "selected";
+
+const getMarketingRecipients = async (
+  audience: MarketingAudience,
+  userIds: string[] = [],
+) => {
+  if (audience === "selected") {
+    if (!userIds.length) return [];
+    const placeholders = userIds.map((_, index) => `$${index + 1}`).join(",");
+    const result = await query<{ id: string; email: string; name: string }>(
+      `SELECT id, email, name FROM users
+       WHERE role = 'user' AND id IN (${placeholders})
+       ORDER BY created_at DESC`,
+      userIds,
+    );
+    return result.rows;
+  }
+
+  const result = await query<{ id: string; email: string; name: string }>(
+    `SELECT id, email, name FROM users
+     WHERE role = 'user' ${audience === "active" ? "AND is_active = true" : ""}
+     ORDER BY created_at DESC`,
+  );
+  return result.rows;
+};
+
+const validateMarketingPayload = (body: any) => {
+  const subject = String(body.subject ?? "").trim();
+  const title = String(body.title ?? "").trim();
+  const message = String(body.message ?? body.body ?? "").trim();
+  const ctaText = String(body.ctaText ?? "").trim();
+  const ctaUrl = String(body.ctaUrl ?? "").trim();
+  const audience = String(body.audience ?? "active") as MarketingAudience;
+  const userIds = Array.isArray(body.userIds)
+    ? body.userIds.map(String).filter(Boolean)
+    : [];
+
+  if (!subject || !title || !message) {
+    return {
+      ok: false as const,
+      message: "subject, title and message are required",
+    };
+  }
+
+  if (!["all", "active", "selected"].includes(audience)) {
+    return { ok: false as const, message: "Invalid audience" };
+  }
+
+  if (audience === "selected" && !userIds.length) {
+    return {
+      ok: false as const,
+      message: "Select at least one user for selected audience",
+    };
+  }
+
+  if ((ctaText && !ctaUrl) || (!ctaText && ctaUrl)) {
+    return {
+      ok: false as const,
+      message: "ctaText and ctaUrl must be provided together",
+    };
+  }
+
+  return {
+    ok: true as const,
+    data: { subject, title, message, ctaText, ctaUrl, audience, userIds },
+  };
+};
+
+export const adminPreviewMarketingEmail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const payload = validateMarketingPayload(req.body);
+  if (!payload.ok) {
+    res.status(400).json({ success: false, message: payload.message });
+    return;
+  }
+
+  const sampleUser = {
+    name: String(req.body.sampleName ?? "Franco"),
+    email: String(req.body.sampleEmail ?? "cliente@followarg.com"),
+  };
+
+  const rendered = renderMarketingEmail({
+    subject: payload.data.subject,
+    title: payload.data.title,
+    body: payload.data.message,
+    ctaText: payload.data.ctaText,
+    ctaUrl: payload.data.ctaUrl,
+    user: sampleUser,
+  });
+
+  res.json({ success: true, preview: rendered });
+};
+
+export const adminSendMarketingEmail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const payload = validateMarketingPayload(req.body);
+  if (!payload.ok) {
+    res.status(400).json({ success: false, message: payload.message });
+    return;
+  }
+
+  const recipients = await getMarketingRecipients(
+    payload.data.audience,
+    payload.data.userIds,
+  );
+
+  if (!recipients.length) {
+    res.status(400).json({ success: false, message: "No recipients found" });
+    return;
+  }
+
+  let sent = 0;
+  const failed: Array<{ email: string; message: string }> = [];
+
+  for (const recipient of recipients) {
+    try {
+      await sendMarketingEmail({
+        email: recipient.email,
+        name: recipient.name,
+        subject: payload.data.subject,
+        title: payload.data.title,
+        body: payload.data.message,
+        ctaText: payload.data.ctaText,
+        ctaUrl: payload.data.ctaUrl,
+      });
+      sent += 1;
+    } catch (err) {
+      failed.push({
+        email: recipient.email,
+        message: err instanceof Error ? err.message : String(err),
+      });
+      logger.error("Failed to send marketing email", {
+        email: recipient.email,
+        error: err,
+      });
+    }
+  }
+
+  logger.info("Marketing email sent by admin", {
+    audience: payload.data.audience,
+    requested: recipients.length,
+    sent,
+    failed: failed.length,
+  });
+
+  res.json({
+    success: true,
+    sent,
+    failed: failed.length,
+    total: recipients.length,
+    failures: failed.slice(0, 10),
+  });
 };

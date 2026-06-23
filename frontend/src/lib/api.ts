@@ -124,4 +124,22 @@ export const adminApi = {
   getCoupons: () => apiClient.get('/admin/coupons'),
   createCoupon: (data: object) => apiClient.post('/admin/coupons', data),
   updateCoupon: (id: string, data: object) => apiClient.put(`/admin/coupons/${id}`, data),
+  previewMarketingEmail: (data: {
+    audience: 'all' | 'active' | 'selected';
+    userIds: string[];
+    subject: string;
+    title: string;
+    message: string;
+    ctaText?: string;
+    ctaUrl?: string;
+  }) => apiClient.post('/admin/marketing-email/preview', data),
+  sendMarketingEmail: (data: {
+    audience: 'all' | 'active' | 'selected';
+    userIds: string[];
+    subject: string;
+    title: string;
+    message: string;
+    ctaText?: string;
+    ctaUrl?: string;
+  }) => apiClient.post('/admin/marketing-email/send', data),
 };

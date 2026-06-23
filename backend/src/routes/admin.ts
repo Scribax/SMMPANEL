@@ -9,6 +9,7 @@ import {
   adminGetOrders, adminUpdateOrderStatus, adminRefundOrder, adminRetryOrder, adminCreateOrder,
   adminGetUsers, adminToggleUser, adminGetUserDetail, adminAdjustUserBalance,
   adminGetCoupons, adminCreateCoupon, adminUpdateCoupon,
+  adminPreviewMarketingEmail, adminSendMarketingEmail,
 } from '../controllers/adminController';
 
 const router = Router();
@@ -43,5 +44,8 @@ router.post('/users/:id/balance', adminAdjustUserBalance);
 router.get('/coupons', adminGetCoupons);
 router.post('/coupons', adminCreateCoupon);
 router.put('/coupons/:id', adminUpdateCoupon);
+
+router.post('/marketing-email/preview', adminPreviewMarketingEmail);
+router.post('/marketing-email/send', adminSendMarketingEmail);
 
 export default router;
