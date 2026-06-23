@@ -42,11 +42,12 @@ body {
 
     .glass-card,
     .glass-card-hover {
-        backdrop-filter: none;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
     }
 
     .glass-card {
-        background-color: rgba(255, 255, 255, 0.04);
+        background-color: rgba(255, 255, 255, 0.055);
     }
 
     .glass-card-hover:hover {
@@ -67,7 +68,7 @@ body {
     .bg-radial-glow {
         background: radial-gradient(
             ellipse at center,
-            rgba(99, 102, 241, 0.1) 0%,
+            rgba(99, 102, 241, 0.08) 0%,
             transparent 70%
         );
     }
@@ -93,6 +94,12 @@ body {
     .btn-primary,
     .btn-secondary {
         @apply w-full;
+    }
+
+    .btn-primary,
+    .shadow-lg,
+    .shadow-xl {
+        box-shadow: none !important;
     }
 }
 
@@ -204,7 +211,8 @@ body {
     @media (max-width: 768px) {
         .glass-card,
         .glass-card-hover {
-            backdrop-filter: none;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
         }
 
         .glass-card-hover:hover {
@@ -215,6 +223,18 @@ body {
         .btn-secondary:hover {
             transform: none;
             box-shadow: none;
+        }
+
+        .backdrop-blur-sm,
+        .backdrop-blur-xl {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        .transition-all,
+        .transition-colors,
+        .transition-shadow {
+            transition-duration: 120ms !important;
         }
     }
 

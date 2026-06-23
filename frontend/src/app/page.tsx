@@ -151,25 +151,36 @@ function AnimatedCounter({
 export default function HomePage() {
   const [featuredServices, setFeaturedServices] = useState<Service[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [liteMotion, setLiteMotion] = useState(true);
 
   useEffect(() => {
     setMounted(true);
+    const media = window.matchMedia(
+      "(max-width: 768px), (prefers-reduced-motion: reduce)",
+    );
+    const updateMotionPreference = () => setLiteMotion(media.matches);
+
+    updateMotionPreference();
+    media.addEventListener("change", updateMotionPreference);
+
     servicesApi
       .getAll()
       .then((res) => {
         setFeaturedServices(res.data.services?.slice(0, 3) ?? []);
       })
       .catch(() => {});
+
+    return () => media.removeEventListener("change", updateMotionPreference);
   }, []);
 
-  const reduceMotion = !mounted;
+  const reduceMotion = !mounted || liteMotion;
   const heroMotion = reduceMotion
     ? undefined
     : { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 } };
   const sectionViewport = reduceMotion ? undefined : { once: true };
 
   const fadeUp = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0 },
   };
 
@@ -229,7 +240,7 @@ export default function HomePage() {
               Empezar ahora
             </Link>
             <Link
-              href="/order"
+              href="/precios"
               className="btn-secondary text-base px-8 py-4 flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               Ver servicios <ChevronRight className="w-4 h-4" />
@@ -360,35 +371,40 @@ export default function HomePage() {
                   whileInView="visible"
                   viewport={sectionViewport}
                   transition={{ delay: i * 0.1 }}
-                  className="glass-card-hover p-5 sm:p-6 group cursor-pointer"
+                  className="glass-card-hover group cursor-pointer"
                 >
-                  <div
-                    className={`inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${gradient} mb-4 shadow-lg`}
+                  <Link
+                    href={`/order?service=${service.id}`}
+                    className="block p-5 sm:p-6 h-full"
                   >
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-white font-semibold text-base sm:text-lg mb-2">
-                    {service.name}
-                  </h3>
-                  <p className="text-slate-400 text-xs sm:text-sm mb-4">
-                    {service.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-primary-400 font-bold text-lg sm:text-xl">
-                        {formatCurrency(
-                          (service.price_per_unit ?? 0) *
-                            (service.min_quantity ?? 100),
-                        )}
-                      </span>
-                      <span className="text-slate-500 text-xs ml-1">
-                        / {formatNumber(service.min_quantity ?? 100)}
+                    <div
+                      className={`inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${gradient} mb-4 shadow-lg`}
+                    >
+                      <Icon className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-white font-semibold text-base sm:text-lg mb-2">
+                      {service.name}
+                    </h3>
+                    <p className="text-slate-400 text-xs sm:text-sm mb-4">
+                      {service.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-primary-400 font-bold text-lg sm:text-xl">
+                          {formatCurrency(
+                            (service.price_per_unit ?? 0) *
+                              (service.min_quantity ?? 100),
+                          )}
+                        </span>
+                        <span className="text-slate-500 text-xs ml-1">
+                          / {formatNumber(service.min_quantity ?? 100)}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-500 glass-card px-2 py-1">
+                        {service.delivery_speed}
                       </span>
                     </div>
-                    <span className="text-xs text-slate-500 glass-card px-2 py-1">
-                      {service.delivery_speed}
-                    </span>
-                  </div>
+                  </Link>
                 </motion.div>
               );
             })}
@@ -396,7 +412,7 @@ export default function HomePage() {
 
           <div className="text-center">
             <Link
-              href="/order"
+              href="/precios"
               className="btn-secondary inline-flex items-center gap-2"
             >
               Ver todos los servicios <ArrowRight className="w-4 h-4" />
