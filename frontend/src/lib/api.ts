@@ -124,6 +124,7 @@ export const adminApi = {
   getCoupons: () => apiClient.get('/admin/coupons'),
   createCoupon: (data: object) => apiClient.post('/admin/coupons', data),
   updateCoupon: (id: string, data: object) => apiClient.put(`/admin/coupons/${id}`, data),
+  deleteCoupon: (id: string) => apiClient.delete(`/admin/coupons/${id}`),
   previewMarketingEmail: (data: {
     audience: 'all' | 'active' | 'selected';
     userIds: string[];

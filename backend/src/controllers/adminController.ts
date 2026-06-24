@@ -884,43 +884,154 @@ export const adminGetCoupons = async (
   res.json({ success: true, coupons: result.rows });
 };
 
+const parseCouponPayload = (
+  body: any,
+  mode: "create" | "update",
+):
+  | {
+      ok: true;
+      data: {
+        code?: string;
+        discountType?: "percentage" | "fixed";
+        discountValue?: number;
+        minOrderValue?: number;
+        maxUses?: number | null;
+        expiresAt?: string | null;
+        isActive?: boolean;
+      };
+    }
+  | { ok: false; message: string } => {
+  const has = (key: string) => Object.prototype.hasOwnProperty.call(body, key);
+  const rawCode = body.code;
+  const rawDiscountType = body.discountType ?? body.discount_type;
+  const rawDiscountValue = body.discountValue ?? body.discount_value;
+  const rawMinOrderValue = body.minOrderValue ?? body.min_order_value;
+  const rawMaxUses = body.maxUses ?? body.max_uses;
+  const rawExpiresAt = body.expiresAt ?? body.expires_at;
+  const rawIsActive = body.isActive ?? body.is_active;
+
+  const data: {
+    code?: string;
+    discountType?: "percentage" | "fixed";
+    discountValue?: number;
+    minOrderValue?: number;
+    maxUses?: number | null;
+    expiresAt?: string | null;
+    isActive?: boolean;
+  } = {};
+
+  if (mode === "create" && (!rawCode || !rawDiscountType || rawDiscountValue === undefined)) {
+    return {
+      ok: false,
+      message: "code, discountType and discountValue are required",
+    };
+  }
+
+  if (rawCode !== undefined) {
+    const code = String(rawCode).trim().toUpperCase();
+    if (!code || code.length > 50) {
+      return { ok: false, message: "Coupon code must be 1 to 50 characters" };
+    }
+    if (!/^[A-Z0-9_-]+$/.test(code)) {
+      return {
+        ok: false,
+        message: "Coupon code can only contain letters, numbers, _ and -",
+      };
+    }
+    data.code = code;
+  }
+
+  if (rawDiscountType !== undefined) {
+    const discountType = String(rawDiscountType);
+    if (!["percentage", "fixed"].includes(discountType)) {
+      return { ok: false, message: "discountType must be percentage or fixed" };
+    }
+    data.discountType = discountType as "percentage" | "fixed";
+  }
+
+  if (rawDiscountValue !== undefined) {
+    const discountValue = Number(rawDiscountValue);
+    if (!Number.isFinite(discountValue) || discountValue <= 0) {
+      return { ok: false, message: "discountValue must be greater than 0" };
+    }
+    data.discountValue = discountValue;
+  }
+
+  const effectiveType = data.discountType ?? String(rawDiscountType || "");
+  if (effectiveType === "percentage" && data.discountValue !== undefined && data.discountValue > 100) {
+    return { ok: false, message: "percentage discount cannot be greater than 100" };
+  }
+
+  if (rawMinOrderValue !== undefined) {
+    const minOrderValue = Number(rawMinOrderValue || 0);
+    if (!Number.isFinite(minOrderValue) || minOrderValue < 0) {
+      return { ok: false, message: "minOrderValue must be 0 or greater" };
+    }
+    data.minOrderValue = minOrderValue;
+  }
+
+  if (rawMaxUses !== undefined) {
+    if (rawMaxUses === null || rawMaxUses === "") {
+      data.maxUses = null;
+    } else {
+      const maxUses = Number(rawMaxUses);
+      if (!Number.isInteger(maxUses) || maxUses <= 0) {
+        return { ok: false, message: "maxUses must be a positive integer" };
+      }
+      data.maxUses = maxUses;
+    }
+  }
+
+  if (rawExpiresAt !== undefined) {
+    if (rawExpiresAt === null || rawExpiresAt === "") {
+      data.expiresAt = null;
+    } else if (Number.isNaN(new Date(String(rawExpiresAt)).getTime())) {
+      return { ok: false, message: "expiresAt must be a valid date" };
+    } else {
+      data.expiresAt = String(rawExpiresAt);
+    }
+  }
+
+  if (has("isActive") || has("is_active")) {
+    data.isActive = Boolean(rawIsActive);
+  }
+
+  return { ok: true, data };
+};
+
 export const adminCreateCoupon = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const {
-    code,
-    discountType,
-    discountValue,
-    minOrderValue,
-    maxUses,
-    expiresAt,
-  } = req.body;
-
-  if (!code || !discountType || discountValue === undefined) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "code, discountType, and discountValue are required",
-      });
+  const payload = parseCouponPayload(req.body, "create");
+  if (!payload.ok) {
+    res.status(400).json({ success: false, message: payload.message });
     return;
   }
 
-  const result = await query(
-    `INSERT INTO coupons (code, discount_type, discount_value, min_order_value, max_uses, expires_at)
-     VALUES (UPPER($1), $2, $3, $4, $5, $6)
+  try {
+    const result = await query(
+      `INSERT INTO coupons (code, discount_type, discount_value, min_order_value, max_uses, expires_at, is_active)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
-    [
-      code,
-      discountType,
-      discountValue,
-      minOrderValue || 0,
-      maxUses || null,
-      expiresAt || null,
-    ],
-  );
-  res.status(201).json({ success: true, coupon: result.rows[0] });
+      [
+        payload.data.code,
+        payload.data.discountType,
+        payload.data.discountValue,
+        payload.data.minOrderValue ?? 0,
+        payload.data.maxUses ?? null,
+        payload.data.expiresAt ?? null,
+        payload.data.isActive ?? true,
+      ],
+    );
+    res.status(201).json({ success: true, coupon: result.rows[0] });
+  } catch (err: any) {
+    if (err?.code === "23505") {
+      res.status(409).json({ success: false, message: "Coupon code already exists" });
+      return;
+    }
+    throw err;
+  }
 };
 
 export const adminUpdateCoupon = async (
@@ -928,18 +1039,77 @@ export const adminUpdateCoupon = async (
   res: Response,
 ): Promise<void> => {
   const { id } = req.params;
-  const { isActive, discountValue, maxUses, expiresAt } = req.body;
+  const payload = parseCouponPayload(req.body, "update");
+  if (!payload.ok) {
+    res.status(400).json({ success: false, message: payload.message });
+    return;
+  }
 
-  await query(
+  try {
+    const existing = await query<{ max_uses: number | null; expires_at: string | null }>(
+      "SELECT max_uses, expires_at FROM coupons WHERE id = $1",
+      [id],
+    );
+    if (!existing.rows.length) {
+      res.status(404).json({ success: false, message: "Coupon not found" });
+      return;
+    }
+
+    const result = await query(
     `UPDATE coupons SET
-       is_active = COALESCE($1, is_active),
-       discount_value = COALESCE($2, discount_value),
-       max_uses = COALESCE($3, max_uses),
-       expires_at = COALESCE($4, expires_at)
-     WHERE id = $5`,
-    [isActive, discountValue, maxUses, expiresAt, id],
+       code = COALESCE($1, code),
+       discount_type = COALESCE($2, discount_type),
+       discount_value = COALESCE($3, discount_value),
+       min_order_value = COALESCE($4, min_order_value),
+       max_uses = $5,
+       expires_at = $6,
+       is_active = COALESCE($7, is_active)
+     WHERE id = $8
+     RETURNING *`,
+      [
+        payload.data.code ?? null,
+        payload.data.discountType ?? null,
+        payload.data.discountValue ?? null,
+        payload.data.minOrderValue ?? null,
+        Object.prototype.hasOwnProperty.call(payload.data, "maxUses")
+          ? payload.data.maxUses
+          : existing.rows[0].max_uses,
+        Object.prototype.hasOwnProperty.call(payload.data, "expiresAt")
+          ? payload.data.expiresAt
+          : existing.rows[0].expires_at,
+        payload.data.isActive ?? null,
+        id,
+      ],
+    );
+
+    if (!result.rows.length) {
+      res.status(404).json({ success: false, message: "Coupon not found" });
+      return;
+    }
+    res.json({ success: true, coupon: result.rows[0], message: "Coupon updated" });
+  } catch (err: any) {
+    if (err?.code === "23505") {
+      res.status(409).json({ success: false, message: "Coupon code already exists" });
+      return;
+    }
+    throw err;
+  }
+};
+
+export const adminDeleteCoupon = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { id } = req.params;
+  const result = await query(
+    "UPDATE coupons SET is_active = false WHERE id = $1 RETURNING *",
+    [id],
   );
-  res.json({ success: true, message: "Coupon updated" });
+  if (!result.rows.length) {
+    res.status(404).json({ success: false, message: "Coupon not found" });
+    return;
+  }
+  res.json({ success: true, coupon: result.rows[0], message: "Coupon deactivated" });
 };
 
 // ─── MARKETING EMAILS ───────────────────────────────────────────────────────

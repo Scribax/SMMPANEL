@@ -8,7 +8,7 @@ import {
   adminGetProviderBalance, adminSyncProviderServices,
   adminGetOrders, adminUpdateOrderStatus, adminRefundOrder, adminRetryOrder, adminCreateOrder,
   adminGetUsers, adminToggleUser, adminGetUserDetail, adminAdjustUserBalance,
-  adminGetCoupons, adminCreateCoupon, adminUpdateCoupon,
+  adminGetCoupons, adminCreateCoupon, adminUpdateCoupon, adminDeleteCoupon,
   adminPreviewMarketingEmail, adminSendMarketingEmail,
 } from '../controllers/adminController';
 
@@ -44,6 +44,7 @@ router.post('/users/:id/balance', adminAdjustUserBalance);
 router.get('/coupons', adminGetCoupons);
 router.post('/coupons', adminCreateCoupon);
 router.put('/coupons/:id', adminUpdateCoupon);
+router.delete('/coupons/:id', adminDeleteCoupon);
 
 router.post('/marketing-email/preview', adminPreviewMarketingEmail);
 router.post('/marketing-email/send', adminSendMarketingEmail);
