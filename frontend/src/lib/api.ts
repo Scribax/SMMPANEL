@@ -132,6 +132,7 @@ export const adminApi = {
     message: string;
     ctaText?: string;
     ctaUrl?: string;
+    customHtml?: string;
   }) => apiClient.post('/admin/marketing-email/preview', data),
   sendMarketingEmail: (data: {
     audience: 'all' | 'active' | 'selected';
@@ -141,5 +142,6 @@ export const adminApi = {
     message: string;
     ctaText?: string;
     ctaUrl?: string;
+    customHtml?: string;
   }) => apiClient.post('/admin/marketing-email/send', data),
 };

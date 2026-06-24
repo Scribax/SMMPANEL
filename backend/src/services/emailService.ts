@@ -84,9 +84,19 @@ export const renderMarketingEmail = (data: {
   body: string;
   ctaText?: string;
   ctaUrl?: string;
+  customHtml?: string;
   user: { name: string; email: string };
 }): { subject: string; html: string } => {
   const subject = renderPersonalizedText(data.subject, data.user);
+  const customHtml = data.customHtml?.trim();
+
+  if (customHtml) {
+    return {
+      subject,
+      html: renderPersonalizedText(customHtml, data.user),
+    };
+  }
+
   const title = renderPersonalizedText(data.title, data.user);
   const body = renderPersonalizedText(data.body, data.user);
   const ctaText = data.ctaText
@@ -121,6 +131,7 @@ export const sendMarketingEmail = async (data: {
   body: string;
   ctaText?: string;
   ctaUrl?: string;
+  customHtml?: string;
 }): Promise<void> => {
   if (!env.SMTP_USER) return;
 
@@ -130,6 +141,7 @@ export const sendMarketingEmail = async (data: {
     body: data.body,
     ctaText: data.ctaText,
     ctaUrl: data.ctaUrl,
+    customHtml: data.customHtml,
     user: { name: data.name, email: data.email },
   });
 

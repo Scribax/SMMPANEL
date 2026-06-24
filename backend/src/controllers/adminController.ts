@@ -976,15 +976,16 @@ const validateMarketingPayload = (body: any) => {
   const message = String(body.message ?? body.body ?? "").trim();
   const ctaText = String(body.ctaText ?? "").trim();
   const ctaUrl = String(body.ctaUrl ?? "").trim();
+  const customHtml = String(body.customHtml ?? "").trim();
   const audience = String(body.audience ?? "active") as MarketingAudience;
   const userIds = Array.isArray(body.userIds)
     ? body.userIds.map(String).filter(Boolean)
     : [];
 
-  if (!subject || !title || !message) {
+  if (!subject || (!customHtml && (!title || !message))) {
     return {
       ok: false as const,
-      message: "subject, title and message are required",
+      message: "subject is required, plus either customHtml or title and message",
     };
   }
 
@@ -1008,7 +1009,7 @@ const validateMarketingPayload = (body: any) => {
 
   return {
     ok: true as const,
-    data: { subject, title, message, ctaText, ctaUrl, audience, userIds },
+    data: { subject, title, message, ctaText, ctaUrl, customHtml, audience, userIds },
   };
 };
 
@@ -1033,6 +1034,7 @@ export const adminPreviewMarketingEmail = async (
     body: payload.data.message,
     ctaText: payload.data.ctaText,
     ctaUrl: payload.data.ctaUrl,
+    customHtml: payload.data.customHtml,
     user: sampleUser,
   });
 
@@ -1072,6 +1074,7 @@ export const adminSendMarketingEmail = async (
         body: payload.data.message,
         ctaText: payload.data.ctaText,
         ctaUrl: payload.data.ctaUrl,
+        customHtml: payload.data.customHtml,
       });
       sent += 1;
     } catch (err) {

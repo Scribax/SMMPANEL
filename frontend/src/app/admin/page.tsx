@@ -120,6 +120,7 @@ export default function AdminPage() {
       "Hola {{name}},\n\nPreparamos una promo especial para que puedas seguir creciendo en Instagram, TikTok, YouTube y más.\n\nEntrá a tu cuenta, elegí tu servicio y hacé tu pedido en minutos.",
     ctaText: "Hacer pedido ahora",
     ctaUrl: "https://followarg.com/order",
+    customHtml: "",
   });
   const [selectedEmailUsers, setSelectedEmailUsers] = useState<string[]>([]);
   const [emailPreview, setEmailPreview] = useState<{
@@ -1657,6 +1658,29 @@ export default function AdminPage() {
                         placeholder="https://followarg.com/order"
                       />
                     </div>
+                  </div>
+                  <div className="border-t border-white/[0.06] pt-4">
+                    <label className="text-slate-400 text-sm mb-1.5 block">
+                      HTML personalizado (opcional)
+                    </label>
+                    <textarea
+                      value={emailForm.customHtml}
+                      onChange={(e) => {
+                        setEmailForm({
+                          ...emailForm,
+                          customHtml: e.target.value,
+                        });
+                        setEmailPreview(null);
+                      }}
+                      rows={12}
+                      className="input-field resize-y font-mono text-xs leading-relaxed"
+                      placeholder="Pegá acá el HTML completo del correo"
+                    />
+                    <p className="text-slate-500 text-xs mt-2">
+                      Si completás este campo, el preview y el envío usan este
+                      HTML en lugar del diseño armado arriba. Variables
+                      disponibles: {"{{name}}"} y {"{{email}}"}.
+                    </p>
                   </div>
                   <button
                     onClick={previewMarketingEmail}
