@@ -278,6 +278,11 @@ function readOrderDraft() {
           link?: string;
           email?: string;
           couponCode?: string;
+          couponApplied?: boolean;
+          couponDiscount?: number;
+          quantity?: number;
+          quantityInput?: string;
+          serviceId?: string;
         })
       : null;
   } catch {
@@ -525,12 +530,21 @@ function OrderContent() {
     try {
       window.localStorage.setItem(
         ORDER_DRAFT_KEY,
-        JSON.stringify({ link, email, couponCode }),
+        JSON.stringify({
+          link,
+          email,
+          couponCode,
+          couponApplied,
+          couponDiscount,
+          quantity,
+          quantityInput,
+          serviceId: selectedId,
+        }),
       );
     } catch {
       /* ignore storage issues */
     }
-  }, [link, email, couponCode]);
+  }, [link, email, couponCode, couponApplied, couponDiscount, quantity, quantityInput, selectedId]);
 
   // ── Load services ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -562,20 +576,38 @@ function OrderContent() {
 
   // ── Reset when service changes ────────────────────────────────────────────
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId || services.length === 0) return;
     const svc = services.find((s) => s.id === selectedId);
-    if (svc?.category === "boost") {
-      setQuantity(svc.min_quantity);
-      setQuantityInput(String(svc.min_quantity));
+    
+    // Check if we can restore from draft
+    const draft = readOrderDraft();
+    if (draft && draft.serviceId === selectedId) {
+      if (draft.quantity) {
+        setQuantity(draft.quantity);
+        setQuantityInput(draft.quantityInput ?? String(draft.quantity));
+      }
+      if (draft.couponCode) {
+        setCouponCode(draft.couponCode);
+      }
+      if (draft.couponApplied) {
+        setCouponApplied(draft.couponApplied);
+        setCouponDiscount(draft.couponDiscount ?? 0);
+        setCouponOpen(true);
+      }
     } else {
-      setQuantity(0);
-      setQuantityInput("");
+      if (svc?.category === "boost") {
+        setQuantity(svc.min_quantity);
+        setQuantityInput(String(svc.min_quantity));
+      } else {
+        setQuantity(0);
+        setQuantityInput("");
+      }
+      setCouponApplied(false);
+      setCouponDiscount(0);
+      setCouponCode("");
+      setCouponOpen(false);
     }
-    setCouponApplied(false);
-    setCouponDiscount(0);
-    setCouponCode("");
-    setCouponOpen(false);
-  }, [selectedId]);
+  }, [selectedId, services]);
 
   // ── Coupon ────────────────────────────────────────────────────────────────
   const handleApplyCoupon = async () => {
