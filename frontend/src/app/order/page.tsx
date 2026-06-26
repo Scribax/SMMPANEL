@@ -9,14 +9,14 @@ import {
   Loader2,
   CheckCircle2,
   ChevronRight,
+  ChevronDown,
   AtSign,
   Link2,
   Wallet,
   PlusCircle,
   X,
-  Rocket,
   ShieldCheck,
-  Sparkles,
+  ArrowLeft,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
@@ -53,13 +53,10 @@ interface LinkPreview {
   site?: string;
 }
 
-// ya no usamos slider avanzado; la cantidad manual se controla con un input numérico
-
 // ── Validación de links según servicio ────────────────────────────────────────
 function validateLinkForService(link: string, service: Service): { valid: boolean; message?: string } {
   const lowerLink = link.toLowerCase().trim();
 
-  // Servicios de DISCORD BOOST — necesitan un link de invitación al servidor
   if (service.platform === "discord" && service.category === "boost") {
     if (
       !lowerLink.includes("discord.gg/") &&
@@ -73,7 +70,6 @@ function validateLinkForService(link: string, service: Service): { valid: boolea
     return { valid: true };
   }
 
-  // Servicios de TELEGRAM REACTIONS — necesitan link del post (t.me/canal/PostID)
   if (service.platform === "telegram" && service.category === "reactions") {
     if (!lowerLink.includes("t.me/") && !lowerLink.includes("telegram.me/")) {
       return {
@@ -81,7 +77,6 @@ function validateLinkForService(link: string, service: Service): { valid: boolea
         message: "⚠️ Ingresá el link del post de Telegram (t.me/tucanal/123)",
       };
     }
-    // Verificar que tenga un número de post al final (t.me/canal/123)
     const hasPostId = /t\.me\/[^/]+\/\d+/.test(lowerLink);
     if (!hasPostId) {
       return {
@@ -92,7 +87,6 @@ function validateLinkForService(link: string, service: Service): { valid: boolea
     return { valid: true };
   }
 
-  // Servicios de STORIES solo funcionan con historias
   if (service.name.toLowerCase().includes("story")) {
     if (!lowerLink.includes("/stories/") && !lowerLink.includes("instagram.com/stories/")) {
       return {
@@ -102,13 +96,12 @@ function validateLinkForService(link: string, service: Service): { valid: boolea
     }
     return { valid: true };
   }
-  
-  // Servicios de POSTS/REELS/LIKES/VIEWS - NO funcionan con historias
+
   if (service.category === "likes" || service.category === "views" || service.category === "comments") {
     if (lowerLink.includes("/stories/") || lowerLink.includes("instagram.com/stories/")) {
-      const suggestion = service.category === "likes" 
+      const suggestion = service.category === "likes"
         ? "Usá el servicio 'Story Stickers' para darle like a historias"
-        : service.category === "views" 
+        : service.category === "views"
           ? "Usá el servicio 'Story Views' para ver historias"
           : "Mirá los servicios que dicen 'Story' en el nombre";
       return {
@@ -116,7 +109,6 @@ function validateLinkForService(link: string, service: Service): { valid: boolea
         message: `❌ Este servicio NO funciona con historias de Instagram. ${suggestion}`
       };
     }
-    // Validar que sea un link válido de Instagram
     if (lowerLink.includes("instagram.com")) {
       const validPatterns = ["/p/", "/reel/", "/reels/", "/tv/"];
       const hasValidPattern = validPatterns.some(pattern => lowerLink.includes(pattern));
@@ -129,8 +121,7 @@ function validateLinkForService(link: string, service: Service): { valid: boolea
     }
     return { valid: true };
   }
-  
-  // Seguidores - solo username o perfil
+
   if (service.category === "followers") {
     if (lowerLink.includes("/p/") || lowerLink.includes("/reel/") || lowerLink.includes("/stories/")) {
       return {
@@ -140,8 +131,28 @@ function validateLinkForService(link: string, service: Service): { valid: boolea
     }
     return { valid: true };
   }
-  
+
   return { valid: true };
+}
+
+// ── Smart badge for service cards ─────────────────────────────────────────────
+function getServiceBadge(svc: Service): { label: string; colorClass: string } {
+  const name = svc.name.toLowerCase();
+  if (name.includes("básic") || name.includes("basic")) {
+    return { label: "💰 Económico", colorClass: "bg-amber-500/20 text-amber-200 border border-amber-500/30" };
+  }
+  if (
+    name.includes("365") ||
+    name.includes("reposición") ||
+    name.includes("garantía") ||
+    name.includes("refill")
+  ) {
+    return { label: "🔄 Con garantía", colorClass: "bg-emerald-500/20 text-emerald-200 border border-emerald-500/30" };
+  }
+  if (name.includes("premium") || name.includes("real")) {
+    return { label: "⭐ Premium", colorClass: "bg-purple-500/20 text-purple-200 border border-purple-500/30" };
+  }
+  return { label: "🔥 Popular", colorClass: "bg-primary-500/20 text-primary-200 border border-primary-500/30" };
 }
 
 // ── Platform / category meta ─────────────────────────────────────────────────
@@ -154,7 +165,7 @@ interface PlatformDef {
 }
 
 const TelegramIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-9 h-9" aria-hidden="true">
+  <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
     <defs>
       <linearGradient id="tg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#2AABEE" />
@@ -170,9 +181,9 @@ const TelegramIcon = () => (
 );
 
 const InstagramIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-9 h-9" fill="none" aria-hidden="true">
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" aria-hidden="true">
     <defs>
-      <radialGradient id="ig-grad" cx="30%" cy="107%" r="130%">
+      <radialGradient id="ig-grad2" cx="30%" cy="107%" r="130%">
         <stop offset="0%" stopColor="#ffd600" />
         <stop offset="30%" stopColor="#ff6a00" />
         <stop offset="60%" stopColor="#ee0979" />
@@ -180,7 +191,7 @@ const InstagramIcon = () => (
         <stop offset="100%" stopColor="#7b2ff7" />
       </radialGradient>
     </defs>
-    <rect width="24" height="24" rx="6" fill="url(#ig-grad)" />
+    <rect width="24" height="24" rx="6" fill="url(#ig-grad2)" />
     <rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="white" strokeWidth="1.5" />
     <circle cx="12" cy="12" r="4.2" fill="none" stroke="white" strokeWidth="1.5" />
     <circle cx="17.5" cy="6.5" r="1.1" fill="white" />
@@ -188,29 +199,23 @@ const InstagramIcon = () => (
 );
 
 const TikTokIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-9 h-9" fill="white" aria-hidden="true">
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white" aria-hidden="true">
     <rect width="24" height="24" rx="6" fill="#010101" />
     <path d="M19.32 6.78a4.84 4.84 0 0 1-2.99-1.04 4.84 4.84 0 0 1-1.7-3.24h-2.98v13.3a2.3 2.3 0 0 1-2.3 2.05 2.3 2.3 0 0 1-2.3-2.3 2.3 2.3 0 0 1 2.3-2.3c.23 0 .44.04.65.1V10.3a5.3 5.3 0 0 0-.65-.04 5.3 5.3 0 0 0-5.3 5.3 5.3 5.3 0 0 0 5.3 5.3 5.3 5.3 0 0 0 5.3-5.3V9.97a7.77 7.77 0 0 0 4.67 1.54V8.53a4.85 4.85 0 0 1-2-.75z" fill="white" />
-    <path d="M16.33 9.97V9.2a4.84 4.84 0 0 1-2-.75v.01a7.77 7.77 0 0 0 2 1.51z" fill="#69C9D0" opacity="0.8" />
   </svg>
 );
 
 const YouTubeIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-9 h-9" fill="white" aria-hidden="true">
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white" aria-hidden="true">
     <rect width="24" height="24" rx="6" fill="#FF0000" />
-    <path d="M21.8 8.4s-.2-1.4-.8-2c-.8-.8-1.6-.8-2-.9C16.8 5.3 12 5.3 12 5.3s-4.8 0-7 .2c-.4.1-1.2.1-2 .9-.6.6-.8 2-.8 2S2 10 2 11.6v1.5c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.8 2.3.9C6.8 19.4 12 19.4 12 19.4s4.8 0 7-.2c.4-.1 1.2-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.5C22 10 21.8 8.4 21.8 8.4z" fill="#FF0000" />
     <polygon points="9.8,15.1 9.8,9.1 15.8,12.1" fill="white" />
   </svg>
 );
 
 const DiscordIcon = () => (
-  <svg
-    viewBox="0 0 127.14 96.36"
-    className="w-9 h-9 drop-shadow-[0_6px_24px_rgba(88,101,242,0.6)]"
-    fill="white"
-    aria-hidden="true"
-  >
-    <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#5865F2" aria-hidden="true">
+    <rect width="24" height="24" rx="6" fill="#5865F2" />
+    <path d="M16.5 6.5C15.4 6 14.2 5.7 13 5.6l-.2.4c1 .2 2 .6 2.9 1.1A9.7 9.7 0 0 0 8.3 7.1a10 10 0 0 1 2.9-1.1L11 5.6c-1.2.1-2.4.4-3.5.9C5.8 8.9 5 11.9 5 14.8c1.1 1.2 2.5 2 4 2.4.3-.4.6-.9.9-1.3-.5-.2-1-.4-1.4-.7l.3-.3a7 7 0 0 0 6.3 0l.3.3c-.5.3-1 .5-1.5.7.3.5.6.9.9 1.3 1.5-.4 2.9-1.2 4-2.4 0-2.9-.8-5.9-2.3-8.3zm-7 7a1.4 1.4 0 0 1 0-2.8 1.4 1.4 0 0 1 0 2.8zm5 0a1.4 1.4 0 0 1 0-2.8 1.4 1.4 0 0 1 0 2.8z" fill="white" />
   </svg>
 );
 
@@ -252,13 +257,13 @@ const PLATFORMS: PlatformDef[] = [
   },
 ];
 
-const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
-  followers: { label: "Seguidores", emoji: "👥" },
-  likes: { label: "Likes", emoji: "❤️" },
-  views: { label: "Vistas", emoji: "👁️" },
-  comments: { label: "Comentarios", emoji: "💬" },
-  boost: { label: "Server Boost", emoji: "🚀" },
-  reactions: { label: "Reacciones", emoji: "🎉" },
+const CATEGORY_LABELS: Record<string, { label: string; emoji: string; desc: string }> = {
+  followers: { label: "Seguidores", emoji: "👥", desc: "Hacé crecer tu perfil" },
+  likes: { label: "Likes", emoji: "❤️", desc: "Más engagement en tus posts" },
+  views: { label: "Vistas", emoji: "👁️", desc: "Más reproducciones" },
+  comments: { label: "Comentarios", emoji: "💬", desc: "Interacción real" },
+  boost: { label: "Server Boost", emoji: "🚀", desc: "Potenciá tu servidor" },
+  reactions: { label: "Reacciones", emoji: "🎉", desc: "Para tus posts de Telegram" },
 };
 
 const ORDER_DRAFT_KEY = "followarg_order_draft";
@@ -279,24 +284,52 @@ function readOrderDraft() {
   }
 }
 
+// ── Loading skeleton ─────────────────────────────────────────────────────────
+function CatalogSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <div className="flex gap-2 justify-center flex-wrap">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-10 w-28 rounded-2xl bg-white/[0.06]" />
+        ))}
+      </div>
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 rounded-full bg-white/[0.06]" />
+          <div className="h-5 w-32 rounded bg-white/[0.06]" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5 space-y-3">
+              <div className="h-5 w-24 rounded-full bg-white/[0.06]" />
+              <div className="h-4 w-full rounded bg-white/[0.06]" />
+              <div className="h-4 w-3/4 rounded bg-white/[0.06]" />
+              <div className="h-8 w-20 rounded-xl bg-white/[0.06] mt-3" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OrderContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const [services, setServices] = useState<Service[]>([]);
-  const [platform, setPlatform] = useState("");
-  const [category, setCategory] = useState("");
+  const [platform, setPlatform] = useState("instagram");
   const [selectedId, setSelectedId] = useState(
     searchParams.get("service") ?? "",
   );
   const [quantity, setQuantity] = useState(0);
-  const [quantityConfirmed, setQuantityConfirmed] = useState(false);
   const [quantityInput, setQuantityInput] = useState("");
   const [link, setLink] = useState("");
   const [email, setEmail] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponApplied, setCouponApplied] = useState(false);
+  const [couponOpen, setCouponOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
   const [userBalance, setUserBalance] = useState(0);
@@ -309,13 +342,16 @@ function OrderContent() {
   const linkPreviewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastPreviewUrlRef = useRef<string>("");
 
+  // ── Simple 2-step logic ───────────────────────────────────────────────────
+  const step = !selectedId ? 1 : 2;
+
   const selected = services.find((s) => s.id === selectedId);
   const basePrice =
     selected && quantity
       ? parseFloat((selected.price_per_unit * quantity).toFixed(2))
       : 0;
   const finalPrice = Math.max(basePrice - couponDiscount, 0.01);
-  const CASHBACK_PERCENT = 5; // 5% cashback acreditado automáticamente
+  const CASHBACK_PERCENT = 5;
   const cashbackAmount = parseFloat(
     (finalPrice * (CASHBACK_PERCENT / 100)).toFixed(2),
   );
@@ -328,26 +364,15 @@ function OrderContent() {
     ? "https://t.me/tucanal/123"
     : isFollowers
     ? `@tunombredeusuario`
-    : `https://${platform}.com/p/...`;
+    : `https://${selected?.platform ?? "instagram"}.com/p/...`;
 
-  // platforms available from loaded services
   const availablePlatforms = [
     ...new Set(services.map((s) => s.platform)),
   ] as string[];
+  const platformServices = services.filter((s) => s.platform === platform);
+  const categories = [...new Set(platformServices.map((s) => s.category))];
 
-  // categories for selected platform
-  const categories = [
-    ...new Set(
-      services.filter((s) => s.platform === platform).map((s) => s.category),
-    ),
-  ];
-
-  // services for selected platform + category
-  const filteredServices = services.filter(
-    (s) => s.platform === platform && s.category === category,
-  );
-
-  // Link validation handler --------------------------------------------------
+  // ── Link validation ────────────────────────────────────────────────────────
   useEffect(() => {
     if (selected && link.trim()) {
       const validation = validateLinkForService(link, selected);
@@ -357,7 +382,7 @@ function OrderContent() {
     }
   }, [link, selected]);
 
-  // Link preview handler -----------------------------------------------------
+  // ── Link preview ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (linkPreviewTimeoutRef.current) {
       clearTimeout(linkPreviewTimeoutRef.current);
@@ -373,8 +398,7 @@ function OrderContent() {
       lastPreviewUrlRef.current = "";
       return;
     }
-    
-    // Si hay error de validación, no buscamos preview
+
     if (linkValidation && !linkValidation.valid) {
       setLinkPreview(null);
       setLinkPreviewError(null);
@@ -423,7 +447,7 @@ function OrderContent() {
             "No pudimos previsualizar el link, pero podés continuar.",
           );
         }
-      } catch (error) {
+      } catch {
         if (lastPreviewUrlRef.current !== sanitized) return;
         setLinkPreview(null);
         setLinkPreviewError(
@@ -442,19 +466,9 @@ function OrderContent() {
         linkPreviewTimeoutRef.current = null;
       }
     };
-  }, [link, selected, isFollowers]);
+  }, [link, selected, isFollowers, linkValidation]);
 
-  // step logic: step 5 requires explicitly confirming the quantity
-  const step = !platform
-    ? 1
-    : !category
-      ? 2
-      : !selectedId
-        ? 3
-        : !quantity || !quantityConfirmed
-          ? 4
-          : 5;
-
+  // ── Auth + draft ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (isAuthenticated()) {
       const u = getStoredUser();
@@ -483,6 +497,7 @@ function OrderContent() {
     }
   }, [link, email, couponCode]);
 
+  // ── Load services ─────────────────────────────────────────────────────────
   useEffect(() => {
     servicesApi
       .getAll()
@@ -492,34 +507,42 @@ function OrderContent() {
           price_per_unit: parseFloat(String(s.price_per_unit)),
         }));
         setServices(all);
-        // if coming from ?service=id, pre-select everything
         const preselect = searchParams.get("service");
         const preplatform = searchParams.get("platform");
-        const precategory = searchParams.get("category");
         if (preselect) {
           const svc = all.find((s) => s.id === preselect);
           if (svc) {
             setPlatform(svc.platform);
-            setCategory(svc.category);
             setSelectedId(svc.id);
           }
         } else if (preplatform) {
           setPlatform(preplatform);
-          if (precategory) setCategory(precategory);
+        } else {
+          const firstPlatform = all[0]?.platform ?? "instagram";
+          setPlatform(firstPlatform);
         }
       })
       .catch(() => {});
   }, []);
 
-  // reset downstream when service changes
+  // ── Reset when service changes ────────────────────────────────────────────
   useEffect(() => {
-    setQuantity(0);
-    setQuantityConfirmed(false);
+    if (!selectedId) return;
+    const svc = services.find((s) => s.id === selectedId);
+    if (svc?.category === "boost") {
+      setQuantity(svc.min_quantity);
+      setQuantityInput(String(svc.min_quantity));
+    } else {
+      setQuantity(0);
+      setQuantityInput("");
+    }
     setCouponApplied(false);
     setCouponDiscount(0);
     setCouponCode("");
+    setCouponOpen(false);
   }, [selectedId]);
 
+  // ── Coupon ────────────────────────────────────────────────────────────────
   const handleApplyCoupon = async () => {
     if (!couponCode) return;
     setValidating(true);
@@ -541,6 +564,7 @@ function OrderContent() {
     }
   };
 
+  // ── Checkout ──────────────────────────────────────────────────────────────
   const hasEnoughBalance =
     loggedIn && userBalance >= finalPrice && finalPrice > 0;
   const orderReturnPath = selectedId
@@ -572,7 +596,6 @@ function OrderContent() {
     }
     const linkVal = link.trim();
 
-    // Validación de link según el tipo de servicio
     if (selected?.platform === "discord" && selected?.category === "boost") {
       const lowerLink = linkVal.toLowerCase();
       if (
@@ -597,7 +620,6 @@ function OrderContent() {
     } else if (selected?.platform === "instagram") {
       const lowerLink = linkVal.toLowerCase();
 
-      // VIEWS normales = solo para videos/reels (NO fotos, NO historias)
       if (selected.category === "views" && !selected.name?.toLowerCase().includes("story")) {
         if (
           !lowerLink.includes("/reel/") &&
@@ -611,7 +633,6 @@ function OrderContent() {
         }
       }
 
-      // LIKES normales = para posts y reels (NO historias)
       if (selected.category === "likes" && !selected.name?.toLowerCase().includes("story")) {
         if (
           !lowerLink.includes("/p/") &&
@@ -625,7 +646,6 @@ function OrderContent() {
         }
       }
 
-      // STORY servicios = solo para historias
       if (selected.name?.toLowerCase().includes("story")) {
         if (!lowerLink.includes("/stories/")) {
           toast.error(
@@ -639,7 +659,7 @@ function OrderContent() {
     if (isFollowers) {
       const username = linkVal
         .replace(/^@/, "")
-        .replace(/^https?:\/\/.+\//, "")
+        .replace(/^https?:\/.+\//, "")
         .replace(/\/$/, "");
       if (!username || username.length < 2 || /\s/.test(username)) {
         toast.error(
@@ -664,7 +684,7 @@ function OrderContent() {
 
     setLoading(true);
     try {
-      const res = await paymentsApi.createCheckout({
+      await paymentsApi.createCheckout({
         serviceId: selectedId,
         quantity,
         link: link.trim(),
@@ -693,960 +713,804 @@ function OrderContent() {
     }
   };
 
-  // ── Step indicator ──────────────────────────────────────────────────────────
-  const STEPS = ["Plataforma", "Servicio", "Paquete", "Datos", "Pagar"];
-  const progress = Math.min(
-    100,
-    Math.max(0, ((step - 1) / (STEPS.length - 1)) * 100),
-  );
+  // ── Render ────────────────────────────────────────────────────────────────
+  const presets = selected ? getPresets(selected) : [];
+  const popularPresetIdx = Math.floor(presets.length / 2);
 
   return (
     <div className="min-h-screen bg-dark-300">
       <Navbar />
-      <div className="pt-20 sm:pt-24 pb-16">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative mb-12 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-primary-500/30 via-primary-500/5 to-sky-500/10 px-5 py-8 sm:px-8 sm:py-12 shadow-[0_40px_80px_-40px_rgba(99,102,241,0.7)]"
-          >
-            <div className="absolute -top-32 -right-24 h-64 w-64 rounded-full bg-primary-500/30 blur-3xl" />
-            <div className="absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-sky-400/30 blur-3xl" />
-            <div className="relative z-10 flex flex-col gap-10 md:flex-row md:items-center md:justify-between">
-              <div className="text-left max-w-xl">
-                <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">
-                  <Sparkles className="h-3 w-3" /> flujo guiado
-                </p>
-                <h1 className="text-3xl font-black text-white sm:text-4xl md:text-5xl">
-                  Potenciá tu cuenta en{" "}
-                  <span className="text-primary-200">5 pasos</span>
-                </h1>
-                <p className="mt-4 text-sm leading-relaxed text-slate-200/80">
-                  Elegí plataforma, paquetizá tu pedido y pagá seguro con
-                  MercadoPago. Te guiamos paso a paso y monitoreamos la entrega
-                  en vivo.
-                </p>
-              </div>
-              <div className="grid gap-3 text-left sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/15 bg-white/8 p-4 backdrop-blur">
-                  <div className="flex items-center gap-3 text-sm font-semibold text-white">
-                    <ShieldCheck className="h-4 w-4 text-emerald-400" />{" "}
-                    Garantía de reposición
-                  </div>
-                  <p className="mt-2 text-xs text-slate-300">
-                    Servicios curados con refill automático y monitoreo 24/7.
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-white/15 bg-white/8 p-4 backdrop-blur">
-                  <div className="flex items-center gap-3 text-sm font-semibold text-white">
-                    <Rocket className="h-4 w-4 text-sky-400" /> Entrega
-                    ultrarrápida
-                  </div>
-                  <p className="mt-2 text-xs text-slate-300">
-                    Pedidos procesados en minutos con seguimiento desde tu
-                    dashboard.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Progress steps */}
-          <div className="relative mx-auto mb-10 max-w-3xl">
-            <div className="relative flex items-start">
-              {/* Background line – from center of first dot to center of last dot */}
-              <div className="pointer-events-none absolute left-[10%] right-[10%] top-[18px] h-0.5 bg-white/10" />
-              {/* Progress fill */}
-              <div
-                className="pointer-events-none absolute left-[10%] top-[18px] h-0.5 bg-gradient-to-r from-primary-500 via-fuchsia-500 to-sky-400 transition-all duration-500"
-                style={{
-                  width: `calc(80% * ${(step - 1) / (STEPS.length - 1)})`,
-                }}
-              />
-              {STEPS.map((s, i) => {
-                const n = i + 1;
-                const done = step > n;
-                const active = step === n;
-                return (
-                  <div
-                    key={s}
-                    className="relative z-10 flex w-1/5 flex-col items-center gap-1.5"
-                  >
-                    <div
-                      className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition-all duration-300 ${
-                        done
-                          ? "border-emerald-400 bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
-                          : active
-                            ? "border-primary-400 bg-primary-500 text-white shadow-lg shadow-primary-500/40"
-                            : "border-white/15 bg-dark-200 text-slate-500"
-                      }`}
-                    >
-                      {done ? <CheckCircle2 className="h-4 w-4" /> : n}
-                    </div>
-                    <span
-                      className={`w-full text-center text-[8px] uppercase leading-tight tracking-[0.05em] sm:text-[10px] sm:tracking-[0.15em] ${active ? "text-primary-200" : "text-slate-500"}`}
-                    >
-                      {s}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+      <div className="pt-20 sm:pt-24 pb-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <AnimatePresence mode="wait">
-            {/* ── STEP 1: Platform ─────────────────────────────────────────── */}
+
+            {/* ════════════════════════════════════════════════════════════
+                STEP 1 — Catálogo de servicios
+            ════════════════════════════════════════════════════════════ */}
             {step === 1 && (
               <motion.div
                 key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
               >
-                <div className="glass-card p-5 sm:p-10">
-                  <h2 className="text-white font-bold text-2xl text-center">
-                    ¿En qué plataforma?
-                  </h2>
-                  <p className="mt-2 text-center text-sm text-slate-400">
-                    Seleccioná dónde querés crecer. Cada plataforma tiene
-                    presets optimizados.
+                {/* Header */}
+                <div className="text-center mb-8 sm:mb-10">
+                  <h1 className="text-3xl sm:text-4xl font-black text-white leading-tight">
+                    ¿Qué querés{" "}
+                    <span className="text-gradient">potenciar</span>?
+                  </h1>
+                  <p className="text-slate-400 mt-2 text-sm sm:text-base">
+                    Elegí el servicio — en 2 pasos tenés tu pedido listo.
                   </p>
-                  {services.length === 0 ? (
-                    <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      {[...Array(3)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 animate-pulse"
-                        >
-                          <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 bg-white/10 rounded-full" />
-                            <div className="h-5 bg-white/10 rounded w-24" />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="h-3 bg-white/10 rounded w-20" />
-                            <div className="h-6 bg-white/10 rounded-full w-24" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      {PLATFORMS.filter((p) =>
-                        availablePlatforms.includes(p.id),
-                      ).map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => {
-                            setPlatform(p.id);
-                            setCategory("");
-                            setSelectedId("");
-                          }}
-                          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/8 via-dark-300 to-dark-200/80 p-6 text-left shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-400/80 hover:shadow-primary-500/30"
-                        >
-                          <div
-                            className={`absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br ${p.gradient} mix-blend-screen`}
-                          />
-                          <div className="relative z-10 flex h-full flex-col justify-between">
-                            <div className="flex items-center gap-3">
-                              <span className="text-4xl drop-shadow-[0_6px_24px_rgba(0,0,0,0.35)]">
-                                {p.customIcon ?? p.emoji}
-                              </span>
-                              <span className="text-lg font-semibold text-white">
-                                {p.label}
-                              </span>
-                            </div>
-                            <div className="mt-6 flex items-center justify-between text-xs text-slate-400">
-                              <span>
-                                {
-                                  services.filter((s) => s.platform === p.id)
-                                    .length
-                                }{" "}
-                                servicios
-                              </span>
-                              <span className="inline-flex items-center gap-1 rounded-full border border-white/20 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-white/70">
-                                Explorar <ChevronRight className="h-3 w-3" />
-                              </span>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
-              </motion.div>
-            )}
 
-            {/* ── STEP 2: Category ─────────────────────────────────────────── */}
-            {step === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
-                <div className="glass-card p-5 sm:p-10">
-                  <button
-                    onClick={() => setPlatform("")}
-                    className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
-                  >
-                    ← Volver
-                  </button>
-                  <h2 className="text-white text-center text-2xl font-bold">
-                    ¿Qué tipo de servicio?
-                  </h2>
-                  <p className="mt-2 text-center text-sm text-slate-400">
-                    Elegí el objetivo de tu campaña para ver servicios
-                    compatibles.
-                  </p>
-                  <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {/* Platform pills */}
+                <div className="flex gap-2 justify-center flex-wrap mb-8">
+                  {PLATFORMS.filter((p) =>
+                    availablePlatforms.includes(p.id),
+                  ).map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setPlatform(p.id)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-semibold text-sm transition-all ${
+                        platform === p.id
+                          ? "bg-primary-500 text-white shadow-lg shadow-primary-500/30"
+                          : "glass-card text-slate-400 hover:text-white hover:border-primary-500/30"
+                      }`}
+                    >
+                      <span className="flex-shrink-0">{p.customIcon ?? p.emoji}</span>
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Service catalog */}
+                {services.length === 0 ? (
+                  <CatalogSkeleton />
+                ) : categories.length === 0 ? (
+                  <div className="text-center text-slate-500 py-16">
+                    No hay servicios disponibles para esta plataforma.
+                  </div>
+                ) : (
+                  <div className="space-y-8">
                     {categories.map((cat) => {
+                      const catServices = platformServices.filter(
+                        (s) => s.category === cat,
+                      );
                       const meta = CATEGORY_LABELS[cat] ?? {
                         label: cat,
                         emoji: "⚡",
+                        desc: "",
                       };
-                      const count = services.filter(
-                        (s) => s.platform === platform && s.category === cat,
-                      ).length;
                       return (
-                        <button
-                          key={cat}
-                          onClick={() => {
-                            setCategory(cat);
-                            setSelectedId("");
-                          }}
-                          className="rounded-3xl border border-white/10 bg-white/6 p-6 text-left shadow-md shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-400/60 hover:bg-primary-500/10"
-                        >
-                          <div className="text-3xl">{meta.emoji}</div>
-                          <div className="mt-3 text-lg font-semibold text-white">
-                            {meta.label}
-                          </div>
-                          <div className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">
-                            {count} opción{count !== 1 ? "es" : ""}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* ── STEP 3: Service variant ──────────────────────────────────── */}
-            {step === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
-                <div className="glass-card p-5 sm:p-10">
-                  <button
-                    onClick={() => setCategory("")}
-                    className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
-                  >
-                    ← Volver
-                  </button>
-                  <h2 className="text-white text-center text-2xl font-bold">
-                    Elegí el tipo
-                  </h2>
-                  <p className="mt-2 text-center text-sm text-slate-400">
-                    Compará velocidad, reposición y precio mínimo antes de
-                    continuar.
-                  </p>
-                  <div className="mt-8 space-y-3">
-                    {filteredServices.map((svc) => {
-                      const minPrice = parseFloat(
-                        (svc.price_per_unit * svc.min_quantity).toFixed(2),
-                      );
-                      const isBasic =
-                        svc.name.toLowerCase().includes("básico") ||
-                        svc.name.toLowerCase().includes("basic");
-                      const isStoryService = svc.name.toLowerCase().includes("story");
-                      const isReelService = svc.name.toLowerCase().includes("reel");
-                      return (
-                        <button
-                          key={svc.id}
-                          onClick={() => setSelectedId(svc.id)}
-                          className={`group flex w-full items-start justify-between gap-6 rounded-3xl border p-6 text-left transition-all hover:-translate-y-1 hover:shadow-xl ${
-                            isBasic
-                              ? "border-amber-400/40 bg-amber-500/10 hover:border-amber-400/70 hover:bg-amber-500/20"
-                              : "border-white/12 bg-white/6 hover:border-primary-400/60 hover:bg-primary-500/10"
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-3">
-                              <span className="text-sm font-semibold text-white md:text-base">
-                                {svc.name}
-                              </span>
-                              {isBasic && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-200">
-                                  <AlertCircle className="h-3 w-3" /> Básico
-                                </span>
-                              )}
-                              {isStoryService && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-purple-200">
-                                  📱 SOLO Historias
-                                </span>
-                              )}
-                              {isReelService && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-200">
-                                  🎬 Posts & Reels
-                                </span>
-                              )}
-                              {!isStoryService && !isReelService && svc.category === "likes" && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-green-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-green-200">
-                                  📸 Posts & Reels
-                                </span>
-                              )}
-                              {!isStoryService && !isReelService && svc.category === "views" && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-cyan-200">
-                                  🎬 Videos & Reels
-                                </span>
-                              )}
-                            </div>
-                            {svc.description && (
-                              <p className="mt-2 text-xs leading-relaxed text-slate-300 md:text-sm">
-                                {svc.description}
+                        <div key={cat}>
+                          {/* Category header */}
+                          <div className="flex items-center gap-3 mb-4">
+                            <span className="text-2xl">{meta.emoji}</span>
+                            <div>
+                              <h2 className="text-white font-bold text-lg leading-none">
+                                {meta.label}
+                              </h2>
+                              <p className="text-slate-500 text-xs mt-0.5">
+                                {meta.desc}
                               </p>
-                            )}
-                            <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                              <span>⚡ {svc.delivery_speed}</span>
-                              <span>
-                                📦 {formatNumber(svc.min_quantity)}–
-                                {formatNumber(svc.max_quantity)}
-                              </span>
                             </div>
+                            <div className="flex-1 h-px bg-white/[0.06] ml-2" />
                           </div>
-                          <div className="flex shrink-0 items-center gap-4">
-                            <div className="text-right">
-                              <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">
-                                desde
-                              </div>
-                              <div className="text-sm font-bold text-primary-300 md:text-base">
-                                {formatCurrency(minPrice)}
-                              </div>
-                            </div>
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/8 text-slate-400 transition-colors group-hover:border-primary-400 group-hover:text-primary-200">
-                              <ChevronRight className="h-4 w-4" />
-                            </div>
+
+                          {/* Service cards */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {catServices.map((svc) => {
+                              const badge = getServiceBadge(svc);
+                              const minPrice = parseFloat(
+                                (
+                                  svc.price_per_unit * svc.min_quantity
+                                ).toFixed(2),
+                              );
+                              return (
+                                <button
+                                  key={svc.id}
+                                  onClick={() => {
+                                    setSelectedId(svc.id);
+                                    window.scrollTo({
+                                      top: 0,
+                                      behavior: "smooth",
+                                    });
+                                  }}
+                                  className="glass-card-hover p-5 text-left group transition-all hover:-translate-y-0.5 flex flex-col"
+                                >
+                                  {/* Badge + speed */}
+                                  <div className="flex items-start justify-between gap-2 mb-3">
+                                    <span
+                                      className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${badge.colorClass}`}
+                                    >
+                                      {badge.label}
+                                    </span>
+                                    <span className="text-[11px] text-slate-500 shrink-0">
+                                      ⚡ {svc.delivery_speed}
+                                    </span>
+                                  </div>
+
+                                  {/* Name */}
+                                  <h3 className="text-white font-semibold text-sm leading-snug mb-1">
+                                    {svc.name}
+                                  </h3>
+
+                                  {/* Description */}
+                                  {svc.description && (
+                                    <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 flex-1">
+                                      {svc.description}
+                                    </p>
+                                  )}
+
+                                  {/* Price + CTA */}
+                                  <div className="flex items-center justify-between pt-3 mt-3 border-t border-white/[0.06]">
+                                    <div>
+                                      <span className="text-[10px] uppercase tracking-widest text-slate-500">
+                                        desde
+                                      </span>
+                                      <div className="text-primary-300 font-bold text-base leading-none mt-0.5">
+                                        {formatCurrency(minPrice)}
+                                      </div>
+                                    </div>
+                                    <span className="flex items-center gap-1 bg-primary-500 hover:bg-primary-400 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors group-hover:bg-primary-400">
+                                      Elegir{" "}
+                                      <ChevronRight className="w-3 h-3" />
+                                    </span>
+                                  </div>
+                                </button>
+                              );
+                            })}
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
-                </div>
+                )}
               </motion.div>
             )}
 
-            {/* ── STEP 4: Quantity packages ────────────────────────────────── */}
-            {step === 4 && selected && (
+            {/* ════════════════════════════════════════════════════════════
+                STEP 2 — Configurá y pagá
+            ════════════════════════════════════════════════════════════ */}
+            {step === 2 && selected && (
               <motion.div
-                key="step4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                key="step2"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
               >
-                <div className="glass-card p-5 sm:p-10">
-                  <button
-                    onClick={() => setSelectedId("")}
-                    className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
-                  >
-                    ← Volver
-                  </button>
-                  <div className="rounded-3xl border border-white/10 bg-white/6 p-6 md:flex md:items-center md:justify-between md:gap-10">
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">
-                        Elegí el paquete ideal
-                      </h2>
-                      <p className="mt-2 text-sm text-slate-300">
-                        {selected.name}
-                      </p>
-                      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-slate-500">
-                        <span>⚡ {selected.delivery_speed}</span>
-                        <span>
-                          📦 {formatNumber(selected.min_quantity)}–
-                          {formatNumber(selected.max_quantity)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-6 md:mt-0">
-                      <div className="rounded-2xl border border-primary-500/30 bg-primary-500/10 px-5 py-4 text-right">
-                        <p className="text-[11px] uppercase tracking-[0.3em] text-primary-200/80">
-                          precio actual
+                {/* Back */}
+                <button
+                  onClick={() => setSelectedId("")}
+                  className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-6"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Cambiar servicio
+                </button>
+
+                <div className="lg:grid lg:grid-cols-[1fr,320px] lg:gap-6 lg:items-start">
+
+                  {/* ── Left: form ── */}
+                  <div className="space-y-4">
+
+                    {/* Selected service chip */}
+                    <div className="glass-card p-4 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">
+                          Servicio elegido
                         </p>
-                        <p className="text-2xl font-black text-primary-200">
-                          {formatCurrency(
-                            basePrice ||
-                              selected.price_per_unit * selected.min_quantity,
-                          )}
+                        <p className="text-white font-semibold text-sm leading-snug truncate">
+                          {selected.name}
+                        </p>
+                        <p className="text-slate-500 text-xs mt-0.5">
+                          ⚡ {selected.delivery_speed}
                         </p>
                       </div>
-                    </div>
-                  </div>
-
-                  <h3 className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">
-                    Paquetes recomendados
-                  </h3>
-                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {(() => {
-                      const popularPresets = getPresets(selected);
-                      const popularIdx = Math.floor(popularPresets.length / 2);
-                      return popularPresets.map((qty, presetIdx) => {
-                        const price = parseFloat(
-                          (selected.price_per_unit * qty).toFixed(2),
-                        );
-                        const isActive = quantity === qty;
-                        // Para boost de Discord, extraer "x2", "x4", etc. del nombre
-                        const boostLabel = selected.category === "boost"
-                          ? selected.name.match(/x\d+/i)?.[0] ?? "Paquete"
-                          : null;
-                        return (
-                          <button
-                            key={qty}
-                            onClick={() => {
-                              setQuantity(qty);
-                              setQuantityInput(String(qty));
-                              setTimeout(() => {
-                                window.scrollTo({ top: 0, behavior: "smooth" });
-                              }, 150);
-                            }}
-                            className={`rounded-3xl border p-4 text-center transition-all hover:-translate-y-1 ${
-                              isActive
-                                ? "border-primary-400 bg-primary-500/20 shadow-lg shadow-primary-500/30"
-                                : "border-white/12 bg-white/6 hover:border-primary-400/60 hover:bg-primary-500/10"
-                            }`}
-                          >
-                            <div
-                              className={`text-2xl font-black ${isActive ? "text-primary-100" : "text-white"}`}
-                            >
-                              {boostLabel ?? formatNumber(qty)}
-                            </div>
-                            <div className="mt-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">
-                              {CATEGORY_LABELS[selected.category]?.label ??
-                                selected.category}
-                            </div>
-                            <div
-                              className={`mt-2 text-sm font-bold ${isActive ? "text-primary-200" : "text-slate-300"}`}
-                            >
-                              {formatCurrency(price)}
-                            </div>
-                            {presetIdx === popularIdx && !isActive && (
-                              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
-                                ⭐ Más popular
-                              </div>
-                            )}
-                            {isActive && (
-                              <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
-                                Seleccionado
-                              </div>
-                            )}
-                          </button>
-                        );
-                      });
-                    })()}
-                  </div>
-                  <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr),320px]">
-                    {selected.category !== "boost" ? (
-                    <div className="rounded-3xl border border-white/10 bg-white/6 p-6">
-                      <div className="flex items-center justify-between text-xs text-slate-400">
-                        <span>Mín: {formatNumber(selected.min_quantity)}</span>
-                        <span>Máx: {formatNumber(selected.max_quantity)}</span>
-                      </div>
-                      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={
-                            quantityInput !== ""
-                              ? quantityInput
-                              : String(quantity || selected.min_quantity)
-                          }
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9]/g, "");
-                            setQuantityInput(val);
-                            const num = parseInt(val, 10);
-                            if (!isNaN(num) && val !== "") {
-                              setQuantity(Math.min(selected.max_quantity, num));
-                            }
-                            setQuantityConfirmed(false);
-                          }}
-                          onBlur={() => {
-                            const num = parseInt(quantityInput, 10);
-                            if (
-                              isNaN(num) ||
-                              quantityInput === "" ||
-                              num < selected.min_quantity
-                            ) {
-                              setQuantity(selected.min_quantity);
-                              setQuantityInput(String(selected.min_quantity));
-                            } else if (num > selected.max_quantity) {
-                              setQuantity(selected.max_quantity);
-                              setQuantityInput(String(selected.max_quantity));
-                            } else {
-                              setQuantityInput(String(num));
-                            }
-                          }}
-                          className="input-field flex-1 text-lg"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              setQuantity(selected.min_quantity);
-                              setQuantityInput(String(selected.min_quantity));
-                              setQuantityConfirmed(false);
-                            }}
-                            className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition-colors hover:border-primary-400 hover:text-primary-200"
-                          >
-                            Mín
-                          </button>
-                          <button
-                            onClick={() => {
-                              setQuantity(selected.max_quantity);
-                              setQuantityInput(String(selected.max_quantity));
-                              setQuantityConfirmed(false);
-                            }}
-                            className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition-colors hover:border-primary-400 hover:text-primary-200"
-                          >
-                            Máx
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    ) : (
-                    <div className="rounded-3xl border border-indigo-500/20 bg-indigo-500/8 p-6 flex items-center gap-4">
-                      <span className="text-3xl">🚀</span>
-                      <div>
-                        <p className="text-sm font-semibold text-white">{selected.name}</p>
-                        <p className="text-xs text-slate-400 mt-1">Paquete fijo · entrega única · {selected.delivery_speed}</p>
-                      </div>
-                    </div>
-                    )}
-                    <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-primary-500/10 p-6 text-sm text-slate-200">
-                      <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-200">
-                        <ShieldCheck className="h-4 w-4" /> Consejos rápidos
-                      </h4>
-                      <ul className="mt-3 space-y-2 text-xs leading-relaxed text-slate-200/80">
-                        <li>
-                          {selected.category === "boost"
-                            ? "Necesitás un link de invitación permanente y verificación en Ninguna o Baja."
-                            : "Elegí un paquete proporcional al alcance real de tu contenido para evitar drops."}
-                        </li>
-                        <li>
-                          {selected.category === "boost"
-                            ? "Desactivá bots anti-raid durante el proceso. Podés reactivarlos luego."
-                            : "¿Campaña escalonada? Ajustá manualmente para repartir en varias publicaciones."}
-                        </li>
-                        <li>
-                          Podés confirmar y volver a editar antes de pagar en el
-                          siguiente paso.
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <button
-                      onClick={() => {
-                        const raw = parseInt(quantityInput, 10);
-                        const confirmedQty =
-                          !isNaN(raw) && raw >= selected.min_quantity
-                            ? Math.min(selected.max_quantity, raw)
-                            : quantity || selected.min_quantity;
-                        setQuantity(confirmedQty);
-                        setQuantityInput(String(confirmedQty));
-                        setQuantityConfirmed(true);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className="w-full btn-primary py-3 text-base font-semibold"
-                    >
-                      Continuar
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* ── STEP 5: Details + Pay ────────────────────────────────────── */}
-            {step === 5 && selected && (
-              <motion.div
-                key="step5"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
-                <div className="space-y-4">
-                  <button
-                    onClick={() => {
-                      setQuantity(0);
-                      setQuantityConfirmed(false);
-                    }}
-                    className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors"
-                  >
-                    ← Volver al paquete
-                  </button>
-
-                  <div className="glass-card p-4 sm:p-5 border-primary-500/20 bg-primary-500/5">
-                    <div className="flex items-start gap-3">
-                      <ShieldCheck className="w-5 h-5 text-primary-400 shrink-0 mt-0.5" />
-                      <div>
-                        <h2 className="text-white font-bold text-base">
-                          Último paso: confirmá tu pedido
-                        </h2>
-                        <p className="text-slate-400 text-sm mt-1 leading-relaxed">
-                          Creá tu cuenta gratis para guardar el seguimiento. Si
-                          no tenés saldo, lo cargás con MercadoPago y volvés a
-                          este pedido.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Username / Link */}
-                  <div className="glass-card p-4 sm:p-6">
-                    <label className="block text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-                      {isFollowers ? (
-                        <AtSign className="w-4 h-4 text-primary-400" />
-                      ) : (
-                        <Link2 className="w-4 h-4 text-primary-400" />
-                      )}
-                      {isDiscordBoost
-                        ? "Link de invitación de tu servidor Discord"
-                        : isTelegramReactions
-                        ? "Link del post de Telegram"
-                        : isFollowers
-                        ? "Tu usuario de " +
-                          platform.charAt(0).toUpperCase() +
-                          platform.slice(1)
-                        : "Link del post"}
-                    </label>
-                    <input
-                      type="text"
-                      value={link}
-                      onChange={(e) => setLink(e.target.value)}
-                      placeholder={linkPlaceholder}
-                      className={`input-field ${linkValidation && !linkValidation.valid ? 'border-red-500/50 focus:border-red-500' : ''}`}
-                      autoFocus
-                    />
-
-                    {/* Link validation error */}
-                    {linkValidation && !linkValidation.valid && (
-                      <div className="mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                        <p className="text-sm text-red-400 flex items-start gap-2">
-                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                          {linkValidation.message}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Link validation success */}
-                    {linkValidation && linkValidation.valid && link.trim() && (
-                      <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
-                        <p className="text-sm text-green-400 flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4" />
-                          ✓ Link válido para este servicio
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Warning based on service type */}
-                    {/* Mensaje para DISCORD BOOST */}
-                    {isDiscordBoost && (
-                      <div className="mt-2 p-2 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
-                        <p className="text-xs text-indigo-300 flex items-start gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          <span>
-                            <strong>✓ Servicio de Discord Server Boost</strong><br/>
-                            Ingresá tu link de invitación: <strong>discord.gg/tuservidor</strong><br/>
-                            💡 Tu servidor debe ser accesible con el link
-                          </span>
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Mensaje para TELEGRAM REACTIONS */}
-                    {isTelegramReactions && (
-                      <div className="mt-2 p-2 bg-sky-500/10 border border-sky-500/30 rounded-lg">
-                        <p className="text-xs text-sky-300 flex items-start gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          <span>
-                            <strong>✓ Reacciones para posts de Telegram</strong><br/>
-                            Formato del link: <strong>t.me/tucanal/123</strong><br/>
-                            💡 El canal debe ser público y el post accesible
-                          </span>
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Mensaje para servicios de VISTAS normales (no historias) */}
-                    {selected?.platform === "instagram" &&
-                      selected?.category === "views" &&
-                      !selected?.name?.toLowerCase().includes("story") && (
-                        <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                          <p className="text-xs text-amber-400 flex items-start gap-1.5">
-                            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <span>
-                              <strong>SOLO para VIDEOS/REELS</strong> (instagram.com/reel/...).<br/>
-                              ❌ NO funciona con fotos ni historias.<br/>
-                              💡 Para historias usá el servicio <strong>"Story Views"</strong>
-                            </span>
-                          </p>
-                        </div>
-                      )}
-
-                    {/* Mensaje POSITIVO para servicios de HISTORIAS */}
-                    {selected?.platform === "instagram" &&
-                      selected?.name?.toLowerCase().includes("story") && (
-                        <div className="mt-2 p-2 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                          <p className="text-xs text-purple-400 flex items-start gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <span>
-                              <strong>✓ Servicio correcto para historias</strong><br/>
-                              Poné el link de tu historia (instagram.com/stories/...)<br/>
-                              💡 Recordá que las historias duran solo 24 horas
-                            </span>
-                          </p>
-                        </div>
-                      )}
-                    {selected?.platform === "instagram" &&
-                      selected?.category === "likes" &&
-                      !selected?.name?.toLowerCase().includes("story") && (
-                        <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                          <p className="text-xs text-blue-400 flex items-start gap-1.5">
-                            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <span>
-                              <strong>✓ Funciona con:</strong> FOTOS (instagram.com/p/...) y REELS (instagram.com/reel/...)<br/>
-                              <strong>❌ NO funciona con:</strong> Historias<br/>
-                              💡 Para historias usá <strong>"Story Stickers"</strong>
-                            </span>
-                          </p>
-                        </div>
-                      )}
-
-                    <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      {isDiscordBoost
-                        ? "Tu servidor debe ser accesible con el link de invitación"
-                        : isTelegramReactions
-                        ? "El canal y el post deben ser públicos"
-                        : isFollowers
-                        ? "Tu cuenta debe estar en público"
-                        : "Asegurate que el post sea público"}
-                    </p>
-
-                    {!isFollowers && !isDiscordBoost && !isTelegramReactions && (
-                      <div className="mt-4">
-                        {linkPreviewLoading && (
-                          <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-slate-400 flex items-center gap-3">
-                            <Loader2 className="w-4 h-4 animate-spin text-primary-400" />
-                            Buscando previsualización...
-                          </div>
-                        )}
-                        {linkPreview && !linkPreviewLoading && (
-                          <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                            {linkPreview.image && (
-                              <img
-                                src={linkPreview.image}
-                                alt={linkPreview.title ?? "Preview"}
-                                className="w-full h-40 object-cover"
-                              />
-                            )}
-                            <div className="p-4">
-                              <div className="text-xs uppercase tracking-widest text-slate-500 mb-1">
-                                {linkPreview.site}
-                              </div>
-                              <h4 className="text-white font-semibold text-sm mb-1 line-clamp-2">
-                                {linkPreview.title ?? "Contenido encontrado"}
-                              </h4>
-                              {linkPreview.description && (
-                                <p className="text-slate-400 text-xs line-clamp-3">
-                                  {linkPreview.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {linkPreviewError && !linkPreviewLoading && (
-                          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200">
-                            {linkPreviewError}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div className="glass-card p-4 sm:p-6">
-                    <label className="block text-sm font-semibold text-slate-300 mb-3">
-                      📧 Email para seguimiento del pedido
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="tu@email.com"
-                      className="input-field"
-                    />
-                  </div>
-
-                  {/* Coupon */}
-                  <div className="glass-card p-4 sm:p-6">
-                    <label className="block text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-                      <Tag className="w-4 h-4 text-primary-400" /> Cupón de
-                      descuento{" "}
-                      <span className="text-slate-500 font-normal">
-                        (opcional)
-                      </span>
-                    </label>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => {
-                          setCouponCode(e.target.value.toUpperCase());
-                          setCouponApplied(false);
-                          setCouponDiscount(0);
-                        }}
-                        placeholder="BOOST20"
-                        className="input-field flex-1 uppercase tracking-widest min-w-0"
-                        disabled={couponApplied}
-                      />
                       <button
-                        onClick={handleApplyCoupon}
-                        disabled={!couponCode || validating || couponApplied}
-                        className={`w-full sm:w-auto px-4 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap ${
-                          couponApplied
-                            ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                            : "bg-primary-500/20 text-primary-400 border border-primary-500/30 hover:bg-primary-500/30"
-                        }`}
+                        onClick={() => setSelectedId("")}
+                        className="text-xs text-primary-400 hover:text-primary-300 font-semibold transition-colors whitespace-nowrap"
                       >
-                        {validating ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : couponApplied ? (
-                          "✓ Aplicado"
-                        ) : (
-                          "Aplicar"
-                        )}
+                        Cambiar
                       </button>
                     </div>
-                  </div>
 
-                  {/* Order summary + pay */}
-                  <div className="glass-card p-4 sm:p-6">
-                    <h3 className="text-white font-bold text-lg mb-4">
-                      Resumen del pedido
-                    </h3>
-                    <div className="space-y-3 mb-5">
-                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
-                        <span className="text-slate-400">Servicio</span>
-                        <span className="text-white text-right max-w-[200px] text-xs leading-snug">
-                          {selected.name}
-                        </span>
+                    {/* ── Quantity ── */}
+                    {selected.category !== "boost" ? (
+                      <div className="glass-card p-5">
+                        <h3 className="text-white font-semibold text-sm mb-4">
+                          Elegí la cantidad
+                        </h3>
+
+                        {/* Preset buttons */}
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4">
+                          {presets.map((qty, idx) => {
+                            const price = parseFloat(
+                              (selected.price_per_unit * qty).toFixed(2),
+                            );
+                            const isActive = quantity === qty;
+                            const isPopular = idx === popularPresetIdx;
+                            return (
+                              <button
+                                key={qty}
+                                onClick={() => {
+                                  setQuantity(qty);
+                                  setQuantityInput(String(qty));
+                                }}
+                                className={`rounded-2xl border p-3 text-center transition-all hover:-translate-y-0.5 relative ${
+                                  isActive
+                                    ? "border-primary-400 bg-primary-500/20 shadow-lg shadow-primary-500/20"
+                                    : "border-white/10 bg-white/[0.04] hover:border-primary-400/50 hover:bg-primary-500/10"
+                                }`}
+                              >
+                                {isPopular && !isActive && (
+                                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] bg-amber-500 text-black font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                    ⭐ Popular
+                                  </div>
+                                )}
+                                <div
+                                  className={`text-base font-black ${isActive ? "text-primary-100" : "text-white"}`}
+                                >
+                                  {formatNumber(qty)}
+                                </div>
+                                <div
+                                  className={`text-xs mt-0.5 font-semibold ${isActive ? "text-primary-200" : "text-slate-400"}`}
+                                >
+                                  {formatCurrency(price)}
+                                </div>
+                                {isActive && (
+                                  <div className="mt-1 text-[9px] text-primary-300 font-bold">
+                                    ✓ Elegido
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Custom input */}
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={
+                              quantityInput !== ""
+                                ? quantityInput
+                                : quantity
+                                ? String(quantity)
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, "");
+                              setQuantityInput(val);
+                              const num = parseInt(val, 10);
+                              if (!isNaN(num) && val !== "") {
+                                setQuantity(
+                                  Math.min(selected.max_quantity, num),
+                                );
+                              }
+                            }}
+                            onBlur={() => {
+                              const num = parseInt(quantityInput, 10);
+                              if (
+                                isNaN(num) ||
+                                quantityInput === "" ||
+                                num < selected.min_quantity
+                              ) {
+                                if (quantity > 0) {
+                                  setQuantityInput(String(quantity));
+                                } else {
+                                  setQuantityInput("");
+                                }
+                              } else if (num > selected.max_quantity) {
+                                setQuantity(selected.max_quantity);
+                                setQuantityInput(String(selected.max_quantity));
+                              } else {
+                                setQuantity(num);
+                                setQuantityInput(String(num));
+                              }
+                            }}
+                            placeholder={`Cantidad personalizada (${formatNumber(selected.min_quantity)}–${formatNumber(selected.max_quantity)})`}
+                            className="input-field flex-1 text-sm"
+                          />
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2">
+                          Mín: {formatNumber(selected.min_quantity)} · Máx:{" "}
+                          {formatNumber(selected.max_quantity)}
+                        </p>
                       </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
-                        <span className="text-slate-400">Cantidad</span>
-                        <span className="text-white font-semibold">
-                          {selected.category === "boost"
-                            ? (selected.name.match(/x\d+/i)?.[0] ?? "Paquete") + " · 1 entrega"
-                            : `${formatNumber(quantity)} ${CATEGORY_LABELS[selected.category]?.label ?? ""}`}
-                        </span>
+                    ) : (
+                      /* Discord boost fixed */
+                      <div className="glass-card p-5 flex items-center gap-4">
+                        <span className="text-3xl">🚀</span>
+                        <div>
+                          <p className="text-white font-semibold text-sm">
+                            {selected.name}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            Paquete fijo · {selected.delivery_speed}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
-                        <span className="text-slate-400">Entrega</span>
-                        <span className="text-white">
-                          ⚡ {selected.delivery_speed}
-                        </span>
-                      </div>
-                      {couponApplied && (
-                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
-                          <span className="text-green-400">
-                            Descuento ({couponCode})
-                          </span>
-                          <span className="text-green-400 font-semibold">
-                            −{formatCurrency(couponDiscount)}
-                          </span>
+                    )}
+
+                    {/* ── Link / username ── */}
+                    <div className="glass-card p-5">
+                      <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-3">
+                        {isFollowers ? (
+                          <AtSign className="w-4 h-4 text-primary-400" />
+                        ) : (
+                          <Link2 className="w-4 h-4 text-primary-400" />
+                        )}
+                        {isDiscordBoost
+                          ? "Link de invitación de tu servidor Discord"
+                          : isTelegramReactions
+                            ? "Link del post de Telegram"
+                            : isFollowers
+                              ? `Tu usuario de ${selected.platform.charAt(0).toUpperCase() + selected.platform.slice(1)}`
+                              : "Link del post"}
+                      </label>
+                      <input
+                        type="text"
+                        value={link}
+                        onChange={(e) => setLink(e.target.value)}
+                        placeholder={linkPlaceholder}
+                        className={`input-field ${linkValidation && !linkValidation.valid ? "border-red-500/50 focus:border-red-500" : ""}`}
+                        autoFocus
+                      />
+
+                      {/* Validation error */}
+                      {linkValidation && !linkValidation.valid && (
+                        <div className="mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                          <p className="text-sm text-red-400 flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                            {linkValidation.message}
+                          </p>
                         </div>
                       )}
-                      <div className="border-t border-white/[0.08] pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                        <span className="text-white font-bold text-lg">
-                          Total
-                        </span>
-                        <div className="text-right">
-                          {couponApplied && (
-                            <div className="text-slate-500 text-xs line-through">
-                              {formatCurrency(basePrice)}
+
+                      {/* Validation success */}
+                      {linkValidation && linkValidation.valid && link.trim() && (
+                        <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+                          <p className="text-sm text-green-400 flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4" />✓ Link válido para este servicio
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Discord boost tip */}
+                      {isDiscordBoost && (
+                        <div className="mt-2 p-2 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
+                          <p className="text-xs text-indigo-300 flex items-start gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>
+                              Ingresá tu link de invitación:{" "}
+                              <strong>discord.gg/tuservidor</strong>
+                              <br />
+                              💡 Tu servidor debe ser accesible con el link
+                            </span>
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Telegram reactions tip */}
+                      {isTelegramReactions && (
+                        <div className="mt-2 p-2 bg-sky-500/10 border border-sky-500/30 rounded-lg">
+                          <p className="text-xs text-sky-300 flex items-start gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>
+                              Formato: <strong>t.me/tucanal/123</strong>
+                              <br />
+                              💡 El canal y el post deben ser públicos
+                            </span>
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Instagram views warning */}
+                      {selected.platform === "instagram" &&
+                        selected.category === "views" &&
+                        !selected.name?.toLowerCase().includes("story") && (
+                          <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                            <p className="text-xs text-amber-400 flex items-start gap-1.5">
+                              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                              <span>
+                                <strong>SOLO para VIDEOS/REELS</strong>{" "}
+                                (instagram.com/reel/...)
+                                <br />❌ NO funciona con fotos ni historias
+                              </span>
+                            </p>
+                          </div>
+                        )}
+
+                      {/* Instagram likes tip */}
+                      {selected.platform === "instagram" &&
+                        selected.category === "likes" &&
+                        !selected.name?.toLowerCase().includes("story") && (
+                          <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                            <p className="text-xs text-blue-400 flex items-start gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                              <span>
+                                <strong>✓ Funciona con:</strong> fotos
+                                (instagram.com/p/...) y reels
+                                (instagram.com/reel/...)
+                                <br />
+                                <strong>❌ NO:</strong> historias
+                              </span>
+                            </p>
+                          </div>
+                        )}
+
+                      {/* Instagram story tip */}
+                      {selected.platform === "instagram" &&
+                        selected.name?.toLowerCase().includes("story") && (
+                          <div className="mt-2 p-2 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                            <p className="text-xs text-purple-400 flex items-start gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                              <span>
+                                <strong>✓ Servicio para historias</strong>
+                                <br />
+                                Link: instagram.com/stories/...
+                              </span>
+                            </p>
+                          </div>
+                        )}
+
+                      <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        {isFollowers
+                          ? "Tu cuenta debe estar en público"
+                          : isDiscordBoost
+                            ? "El servidor debe ser accesible con el link"
+                            : isTelegramReactions
+                              ? "El canal y el post deben ser públicos"
+                              : "Asegurate que el post sea público"}
+                      </p>
+
+                      {/* Link preview */}
+                      {!isFollowers && !isDiscordBoost && !isTelegramReactions && (
+                        <div className="mt-4">
+                          {linkPreviewLoading && (
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-slate-400 flex items-center gap-3">
+                              <Loader2 className="w-4 h-4 animate-spin text-primary-400" />
+                              Verificando link...
                             </div>
                           )}
-                          <div className="text-primary-400 font-black text-2xl sm:text-3xl">
-                            {formatCurrency(finalPrice)}
-                          </div>
-                        </div>
-                      </div>
-                      {/* Cashback */}
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs pt-1">
-                        <span className="text-emerald-400 flex items-center gap-1">
-                          💰 Cashback ({CASHBACK_PERCENT}%)
-                        </span>
-                        <span className="text-emerald-400 font-semibold">
-                          +{formatCurrency(cashbackAmount)}
-                        </span>
-                      </div>
-                      {loggedIn && (
-                        <div
-                          className={`flex justify-between text-xs pt-1 ${
-                            hasEnoughBalance
-                              ? "text-green-400"
-                              : "text-slate-500"
-                          }`}
-                        >
-                          <span>Tu saldo</span>
-                          <span className="font-semibold">
-                            {formatCurrency(userBalance)}
-                            {hasEnoughBalance ? " ✓" : " (insuficiente)"}
-                          </span>
+                          {linkPreview && !linkPreviewLoading && (
+                            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                              {linkPreview.image && (
+                                <img
+                                  src={linkPreview.image}
+                                  alt={linkPreview.title ?? "Preview"}
+                                  className="w-full h-36 object-cover"
+                                />
+                              )}
+                              <div className="p-4">
+                                <div className="text-xs uppercase tracking-widest text-slate-500 mb-1">
+                                  {linkPreview.site}
+                                </div>
+                                <h4 className="text-white font-semibold text-sm mb-1 line-clamp-2">
+                                  {linkPreview.title ?? "Contenido encontrado"}
+                                </h4>
+                                {linkPreview.description && (
+                                  <p className="text-slate-400 text-xs line-clamp-2">
+                                    {linkPreview.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {linkPreviewError && !linkPreviewLoading && (
+                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200">
+                              {linkPreviewError}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
 
-                    {!hasEnoughBalance && finalPrice > 0 && (
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-3">
-                        <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                        <p className="text-xs text-amber-300">
-                          Para confirmar, cargá saldo con MercadoPago. Necesitás{" "}
-                          {formatCurrency(finalPrice)} y tenés{" "}
-                          {formatCurrency(userBalance)}.
-                        </p>
-                        <button
-                          onClick={() => router.push(addFundsPath)}
-                          className="ml-auto text-xs font-semibold text-amber-400 hover:text-amber-300 whitespace-nowrap flex items-center gap-1"
-                        >
-                          <PlusCircle className="w-3.5 h-3.5" /> Cargar y volver
-                        </button>
-                      </div>
-                    )}
+                    {/* ── Email ── */}
+                    <div className="glass-card p-5">
+                      <label className="block text-sm font-semibold text-slate-300 mb-3">
+                        📧 Email para seguimiento del pedido
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="tu@email.com"
+                        className="input-field"
+                      />
+                    </div>
 
-                    <button
-                      onClick={handleCheckout}
-                      disabled={loading || !link.trim() || !email.trim()}
-                      className="w-full flex items-center justify-center gap-2 py-4 text-base btn-primary disabled:opacity-50"
-                    >
-                      {loading ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <>
-                          <Wallet className="w-5 h-5" />{" "}
-                          {hasEnoughBalance
-                            ? `Pagar con Saldo — ${formatCurrency(finalPrice)}`
-                            : "Cargar saldo con MercadoPago"}
-                        </>
+                    {/* ── Coupon accordion ── */}
+                    <div className="glass-card overflow-hidden">
+                      <button
+                        onClick={() => setCouponOpen(!couponOpen)}
+                        className="w-full flex items-center justify-between p-5 text-sm text-slate-400 hover:text-white transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Tag className="w-4 h-4 text-primary-400/60" />
+                          {couponApplied
+                            ? `✓ Cupón aplicado — ahorrás ${formatCurrency(couponDiscount)}`
+                            : "Tengo un cupón de descuento"}
+                        </span>
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform duration-200 ${couponOpen ? "rotate-180" : ""}`}
+                        />
+                      </button>
+                      {couponOpen && (
+                        <div className="px-5 pb-5">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={couponCode}
+                              onChange={(e) => {
+                                setCouponCode(e.target.value.toUpperCase());
+                                setCouponApplied(false);
+                                setCouponDiscount(0);
+                              }}
+                              placeholder="BOOST20"
+                              className="input-field flex-1 uppercase tracking-widest min-w-0"
+                              disabled={couponApplied}
+                            />
+                            <button
+                              onClick={handleApplyCoupon}
+                              disabled={!couponCode || validating || couponApplied}
+                              className={`px-4 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap ${
+                                couponApplied
+                                  ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                  : "bg-primary-500/20 text-primary-400 border border-primary-500/30 hover:bg-primary-500/30"
+                              }`}
+                            >
+                              {validating ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : couponApplied ? (
+                                "✓ Aplicado"
+                              ) : (
+                                "Aplicar"
+                              )}
+                            </button>
+                          </div>
+                        </div>
                       )}
-                    </button>
+                    </div>
 
-                    <p className="text-center text-slate-500 text-xs mt-3 flex items-center justify-center gap-1.5">
-                      🔒 Primero cargás saldo, después confirmás el pedido y
-                      seguimos la entrega desde tu panel
-                    </p>
+                    {/* ── Mobile: pay button ── */}
+                    <div className="lg:hidden glass-card p-5 space-y-3">
+                      <h3 className="text-white font-bold text-sm">
+                        Resumen del pedido
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Servicio</span>
+                          <span className="text-white text-right text-xs max-w-[180px] leading-snug">
+                            {selected.name}
+                          </span>
+                        </div>
+                        {quantity > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Cantidad</span>
+                            <span className="text-white font-semibold">
+                              {selected.category === "boost"
+                                ? selected.name.match(/x\d+/i)?.[0] ?? "Paquete"
+                                : `${formatNumber(quantity)} ${CATEGORY_LABELS[selected.category]?.label ?? ""}`}
+                            </span>
+                          </div>
+                        )}
+                        {couponApplied && (
+                          <div className="flex justify-between">
+                            <span className="text-green-400">
+                              Descuento ({couponCode})
+                            </span>
+                            <span className="text-green-400 font-semibold">
+                              −{formatCurrency(couponDiscount)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="border-t border-white/[0.08] pt-2 flex justify-between items-center">
+                          <span className="text-white font-bold">Total</span>
+                          <div className="text-right">
+                            {couponApplied && (
+                              <div className="text-slate-500 text-xs line-through">
+                                {formatCurrency(basePrice)}
+                              </div>
+                            )}
+                            <div className="text-primary-400 font-black text-xl">
+                              {formatCurrency(quantity > 0 ? finalPrice : 0)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-emerald-400">
+                            💰 Cashback (5%)
+                          </span>
+                          <span className="text-emerald-400 font-semibold">
+                            +{formatCurrency(quantity > 0 ? cashbackAmount : 0)}
+                          </span>
+                        </div>
+                        {loggedIn && (
+                          <div
+                            className={`flex justify-between text-xs ${hasEnoughBalance ? "text-green-400" : "text-slate-500"}`}
+                          >
+                            <span>Tu saldo</span>
+                            <span>
+                              {formatCurrency(userBalance)}{" "}
+                              {hasEnoughBalance ? "✓" : "(insuficiente)"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {!hasEnoughBalance && finalPrice > 0 && loggedIn && (
+                        <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
+                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                          <p className="text-amber-300 flex-1">
+                            Necesitás {formatCurrency(finalPrice)} · Tenés{" "}
+                            {formatCurrency(userBalance)}
+                          </p>
+                          <button
+                            onClick={() => router.push(addFundsPath)}
+                            className="text-amber-400 hover:text-amber-300 whitespace-nowrap font-semibold flex items-center gap-1"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5" /> Cargar
+                          </button>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleCheckout}
+                        disabled={
+                          loading || !link.trim() || !email.trim() || !quantity
+                        }
+                        className="w-full btn-primary py-4 text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {loading ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <>
+                            <Wallet className="w-5 h-5" />
+                            {hasEnoughBalance
+                              ? `Confirmar pedido — ${formatCurrency(finalPrice)}`
+                              : "Cargar saldo con MercadoPago"}
+                          </>
+                        )}
+                      </button>
+                      <p className="text-center text-slate-500 text-xs">
+                        🔒 Pagás con saldo de cuenta · Cashback automático
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* ── Right: sticky summary (desktop only) ── */}
+                  <div className="hidden lg:block">
+                    <div className="sticky top-24 glass-card p-6">
+                      <h3 className="text-white font-bold text-base mb-5">
+                        Resumen del pedido
+                      </h3>
+
+                      <div className="space-y-3 mb-5">
+                        <div className="flex justify-between gap-3 text-sm">
+                          <span className="text-slate-400 shrink-0">
+                            Servicio
+                          </span>
+                          <span className="text-white text-right text-xs leading-snug">
+                            {selected.name}
+                          </span>
+                        </div>
+                        {quantity > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Cantidad</span>
+                            <span className="text-white font-semibold">
+                              {selected.category === "boost"
+                                ? selected.name.match(/x\d+/i)?.[0] ?? "Paquete"
+                                : `${formatNumber(quantity)} ${CATEGORY_LABELS[selected.category]?.label ?? ""}`}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-400">Entrega</span>
+                          <span className="text-white">
+                            ⚡ {selected.delivery_speed}
+                          </span>
+                        </div>
+                        {couponApplied && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-green-400">
+                              Descuento ({couponCode})
+                            </span>
+                            <span className="text-green-400 font-semibold">
+                              −{formatCurrency(couponDiscount)}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="border-t border-white/[0.08] pt-3 flex justify-between items-center">
+                          <span className="text-white font-bold">Total</span>
+                          <div className="text-right">
+                            {couponApplied && (
+                              <div className="text-slate-500 text-xs line-through">
+                                {formatCurrency(basePrice)}
+                              </div>
+                            )}
+                            <div className="text-primary-400 font-black text-2xl">
+                              {formatCurrency(quantity > 0 ? finalPrice : 0)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between text-xs">
+                          <span className="text-emerald-400">
+                            💰 Cashback (5%)
+                          </span>
+                          <span className="text-emerald-400 font-semibold">
+                            +
+                            {formatCurrency(quantity > 0 ? cashbackAmount : 0)}
+                          </span>
+                        </div>
+
+                        {loggedIn && (
+                          <div
+                            className={`flex justify-between text-xs ${hasEnoughBalance && quantity > 0 ? "text-green-400" : "text-slate-500"}`}
+                          >
+                            <span>Tu saldo</span>
+                            <span>
+                              {formatCurrency(userBalance)}{" "}
+                              {hasEnoughBalance && quantity > 0
+                                ? "✓"
+                                : quantity > 0
+                                  ? "(insuficiente)"
+                                  : ""}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {!hasEnoughBalance && finalPrice > 0 && loggedIn && quantity > 0 && (
+                        <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-4">
+                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-amber-300 text-xs">
+                              Necesitás {formatCurrency(finalPrice)} · Tenés{" "}
+                              {formatCurrency(userBalance)}
+                            </p>
+                            <button
+                              onClick={() => router.push(addFundsPath)}
+                              className="mt-1 text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1"
+                            >
+                              <PlusCircle className="w-3 h-3" /> Cargar saldo y
+                              volver
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleCheckout}
+                        disabled={
+                          loading || !link.trim() || !email.trim() || !quantity
+                        }
+                        className="w-full btn-primary py-3.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {loading ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <>
+                            <Wallet className="w-5 h-5" />
+                            {hasEnoughBalance && quantity > 0
+                              ? `Confirmar — ${formatCurrency(finalPrice)}`
+                              : "Confirmar pedido"}
+                          </>
+                        )}
+                      </button>
+                      <p className="text-center text-slate-500 text-xs mt-3">
+                        🔒 Saldo seguro · Cashback automático
+                      </p>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -1654,48 +1518,8 @@ function OrderContent() {
           </AnimatePresence>
         </div>
       </div>
-      <Footer />
 
-      {/* ── Sticky price bar ─────────────────────────────────────────── */}
-      <AnimatePresence>
-        {quantity > 0 && step >= 4 && (
-          <motion.div
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            className="fixed bottom-0 left-0 right-0 z-40 bg-dark-300/95 backdrop-blur-xl border-t border-white/[0.08] px-4 py-3 md:hidden pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
-          >
-            <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-              <div>
-                <div className="text-xs text-slate-400">{selected?.name}</div>
-                <div className="text-white font-bold">
-                  {selected?.category === "boost"
-                    ? selected.name.match(/x\d+/i)?.[0] ?? "Paquete"
-                    : formatNumber(quantity)}{" "}·{" "}
-                  <span className="text-primary-400">
-                    {formatCurrency(finalPrice)}
-                  </span>
-                </div>
-              </div>
-              {step === 5 && (
-                <button
-                  onClick={handleCheckout}
-                  disabled={loading || !link.trim() || !email.trim()}
-                  className="btn-primary py-2.5 px-5 text-sm flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Wallet className="w-4 h-4" /> Pagar
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Footer />
 
       {/* ── Insufficient funds modal ─────────────────────────────────── */}
       <AnimatePresence>
@@ -1704,14 +1528,14 @@ function OrderContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm md:backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={() => setShowFundsModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card p-5 sm:p-8 max-w-sm w-full text-center rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="glass-card p-5 sm:p-8 max-w-sm w-full text-center rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto relative"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -1720,7 +1544,7 @@ function OrderContent() {
               >
                 <X className="w-5 h-5" />
               </button>
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-5">
+              <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-5">
                 <Wallet className="w-8 h-8 text-amber-400" />
               </div>
               <h2 className="text-lg sm:text-xl font-bold text-white mb-2">
@@ -1744,9 +1568,7 @@ function OrderContent() {
                 conservamos el servicio y tus datos cargados.
               </p>
               <button
-                onClick={() =>
-                  router.push(addFundsPath)
-                }
+                onClick={() => router.push(addFundsPath)}
                 className="btn-primary w-full flex items-center justify-center gap-2"
               >
                 <PlusCircle className="w-5 h-5" /> Cargar saldo con MercadoPago
