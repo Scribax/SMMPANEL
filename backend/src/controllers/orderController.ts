@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { query } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
+import { requestRefillFromProvider } from '../services/providerService';
 import { logger } from '../utils/logger';
 
 interface OrderRow {
@@ -23,6 +24,21 @@ interface OrderRow {
   updated_at: string;
 }
 
+const isHqPremium365Service = (serviceName: string | null | undefined): boolean => {
+  if (!serviceName) return false;
+  const normalized = serviceName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+
+  return (
+    normalized.includes('HQ') &&
+    normalized.includes('PREMIUM') &&
+    normalized.includes('365') &&
+    normalized.includes('DIAS')
+  );
+};
+
 export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void> => {
   const userId = req.user!.id;
   const page = parseInt(String(req.query.page ?? '1'), 10);
@@ -33,6 +49,7 @@ export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void
     query<OrderRow>(
       `SELECT o.id, o.link, o.quantity, o.price, o.status,
               o.provider_order_id, o.start_count, o.remains,
+              o.refill_requested_at,
               o.created_at, o.updated_at,
               s.name AS service_name, s.platform
        FROM orders o
@@ -85,8 +102,12 @@ export const requestRefill = async (req: AuthRequest, res: Response): Promise<vo
   const { id } = req.params;
   const userId = req.user!.id;
 
-  const result = await query<OrderRow>(
-    `SELECT id, status FROM orders WHERE id = $1 AND user_id = $2`,
+  const result = await query<OrderRow & { provider_id: string | null; refill_requested_at: string | null }>(
+    `SELECT o.id, o.status, o.provider_order_id, o.refill_requested_at,
+            s.name AS service_name, s.provider_id
+     FROM orders o
+     LEFT JOIN services s ON o.service_id = s.id
+     WHERE o.id = $1 AND o.user_id = $2`,
     [id, userId]
   );
 
@@ -101,13 +122,50 @@ export const requestRefill = async (req: AuthRequest, res: Response): Promise<vo
     return;
   }
 
-  await query(
-    `UPDATE orders SET refill_requested_at = NOW(), status = 'processing', updated_at = NOW() WHERE id = $1`,
-    [id]
-  );
+  if (!isHqPremium365Service(order.service_name)) {
+    res.status(403).json({
+      success: false,
+      message: 'La reposición gratuita solo está disponible para el paquete HQ PREMIUM 365 DÍAS.',
+    });
+    return;
+  }
 
-  logger.info('Refill requested', { orderId: id, userId });
-  res.json({ success: true, message: 'Refill request submitted. It will be processed shortly.' });
+  if (!order.provider_id || !order.provider_order_id) {
+    res.status(400).json({
+      success: false,
+      message: 'Este pedido todavía no tiene un ID válido del proveedor para solicitar reposición.',
+    });
+    return;
+  }
+
+  try {
+    const refill = await requestRefillFromProvider(order.provider_id, order.provider_order_id);
+
+    await query(
+      `UPDATE orders
+       SET refill_requested_at = NOW(),
+           status = 'processing',
+           notes = CONCAT_WS(E'\n', notes, $2),
+           updated_at = NOW()
+       WHERE id = $1`,
+      [id, `Refill requested at ${new Date().toISOString()} (provider refill ID: ${refill.refillId})`]
+    );
+
+    logger.info('Refill requested from provider', {
+      orderId: id,
+      userId,
+      providerOrderId: order.provider_order_id,
+      refillId: refill.refillId,
+    });
+
+    res.json({ success: true, message: 'Reposición solicitada correctamente al proveedor.' });
+  } catch (err) {
+    logger.warn('Provider refill request failed', { orderId: id, userId, error: String(err) });
+    res.status(502).json({
+      success: false,
+      message: 'El proveedor no aceptó la reposición en este momento. Contactá soporte.',
+    });
+  }
 };
 
 export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void> => {
