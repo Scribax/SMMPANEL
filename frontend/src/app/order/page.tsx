@@ -543,11 +543,15 @@ function OrderContent() {
 
   const hasEnoughBalance =
     loggedIn && userBalance >= finalPrice && finalPrice > 0;
+  const orderReturnPath = selectedId
+    ? `/order?service=${encodeURIComponent(selectedId)}`
+    : "/order";
+  const addFundsPath = `/add-funds?amount=${Math.ceil(Math.max(finalPrice - userBalance, 100))}&redirect=${encodeURIComponent(orderReturnPath)}`;
 
   const handleCheckout = async () => {
     if (!loggedIn) {
-      toast.error("Necesitás una cuenta para hacer pedidos");
-      router.push("/register?redirect=/order");
+      toast.error("Creá tu cuenta gratis para guardar el pedido y seguir la entrega");
+      router.push(`/register?redirect=${encodeURIComponent(orderReturnPath)}`);
       return;
     }
     if (!link.trim()) {
@@ -653,6 +657,7 @@ function OrderContent() {
     }
 
     if (!hasEnoughBalance) {
+      toast.error("Cargá saldo con MercadoPago para confirmar este pedido");
       setShowFundsModal(true);
       return;
     }
@@ -1282,6 +1287,22 @@ function OrderContent() {
                     ← Volver al paquete
                   </button>
 
+                  <div className="glass-card p-4 sm:p-5 border-primary-500/20 bg-primary-500/5">
+                    <div className="flex items-start gap-3">
+                      <ShieldCheck className="w-5 h-5 text-primary-400 shrink-0 mt-0.5" />
+                      <div>
+                        <h2 className="text-white font-bold text-base">
+                          Último paso: confirmá tu pedido
+                        </h2>
+                        <p className="text-slate-400 text-sm mt-1 leading-relaxed">
+                          Creá tu cuenta gratis para guardar el seguimiento. Si
+                          no tenés saldo, lo cargás con MercadoPago y volvés a
+                          este pedido.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Username / Link */}
                   <div className="glass-card p-4 sm:p-6">
                     <label className="block text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
@@ -1592,15 +1613,15 @@ function OrderContent() {
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-3">
                         <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
                         <p className="text-xs text-amber-300">
-                          Saldo insuficiente. Necesitás{" "}
+                          Para confirmar, cargá saldo con MercadoPago. Necesitás{" "}
                           {formatCurrency(finalPrice)} y tenés{" "}
                           {formatCurrency(userBalance)}.
                         </p>
                         <button
-                          onClick={() => router.push("/add-funds")}
+                          onClick={() => router.push(addFundsPath)}
                           className="ml-auto text-xs font-semibold text-amber-400 hover:text-amber-300 whitespace-nowrap flex items-center gap-1"
                         >
-                          <PlusCircle className="w-3.5 h-3.5" /> Cargar saldo
+                          <PlusCircle className="w-3.5 h-3.5" /> Cargar y volver
                         </button>
                       </div>
                     )}
@@ -1617,14 +1638,14 @@ function OrderContent() {
                           <Wallet className="w-5 h-5" />{" "}
                           {hasEnoughBalance
                             ? `Pagar con Saldo — ${formatCurrency(finalPrice)}`
-                            : "Saldo insuficiente — Cargar saldo"}
+                            : "Cargar saldo con MercadoPago"}
                         </>
                       )}
                     </button>
 
                     <p className="text-center text-slate-500 text-xs mt-3 flex items-center justify-center gap-1.5">
-                      🔒 Pago 100% seguro · Los seguidores se entregan
-                      automáticamente
+                      🔒 Primero cargás saldo, después confirmás el pedido y
+                      seguimos la entrega desde tu panel
                     </p>
                   </div>
                 </div>
@@ -1703,7 +1724,7 @@ function OrderContent() {
                 <Wallet className="w-8 h-8 text-amber-400" />
               </div>
               <h2 className="text-lg sm:text-xl font-bold text-white mb-2">
-                Saldo insuficiente
+                Cargá saldo para confirmar
               </h2>
               <p className="text-slate-400 text-sm mb-1">
                 Necesitás{" "}
@@ -1719,18 +1740,16 @@ function OrderContent() {
                 </span>
               </p>
               <p className="text-slate-500 text-xs mb-6">
-                Cargá saldo a tu cuenta vía MercadoPago y volvé a hacer el
-                pedido.
+                Te llevamos a MercadoPago por el monto sugerido. Al volver,
+                conservamos el servicio y tus datos cargados.
               </p>
               <button
                 onClick={() =>
-                  router.push(
-                    `/add-funds?amount=${Math.ceil(finalPrice - userBalance)}`,
-                  )
+                  router.push(addFundsPath)
                 }
                 className="btn-primary w-full flex items-center justify-center gap-2"
               >
-                <PlusCircle className="w-5 h-5" /> Cargar saldo ahora
+                <PlusCircle className="w-5 h-5" /> Cargar saldo con MercadoPago
               </button>
               <button
                 onClick={() => setShowFundsModal(false)}

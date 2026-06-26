@@ -13,6 +13,11 @@ import { formatCurrency } from '@/lib/utils';
 
 const PRESETS = [500, 1000, 2000, 5000, 10000];
 
+function safeRedirect(value: string | null) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+  return value;
+}
+
 function AddFundsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -21,9 +26,15 @@ function AddFundsContent() {
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState(0);
   const draftKey = 'followarg_add_funds_amount';
+  const redirectTo = safeRedirect(searchParams.get('redirect'));
 
   useEffect(() => {
-    if (!isAuthenticated()) { router.push('/login?redirect=/add-funds'); return; }
+    if (!isAuthenticated()) {
+      const query = searchParams.toString();
+      const currentPath = `/add-funds${query ? `?${query}` : ''}`;
+      router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
     const u = getStoredUser();
     setBalance(parseFloat(String(u?.balance ?? 0)));
     try {
@@ -136,6 +147,14 @@ function AddFundsContent() {
                 </p>
               ))}
             </div>
+            {redirectTo && (
+              <button
+                onClick={() => router.push(redirectTo)}
+                className="mt-4 w-full text-sm text-slate-400 hover:text-white transition-colors"
+              >
+                Volver al pedido
+              </button>
+            )}
           </motion.div>
         </div>
       </div>

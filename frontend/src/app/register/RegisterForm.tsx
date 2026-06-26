@@ -10,6 +10,11 @@ import toast from 'react-hot-toast';
 import { authApi } from '@/lib/api';
 import { setAuth } from '@/lib/auth';
 
+function safeRedirect(value: string | null, fallback = '/dashboard') {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return fallback;
+  return value;
+}
+
 function RegisterContent() {
   const [form, setForm] = useState({ name: '', email: '', password: '', referralCode: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +22,9 @@ function RegisterContent() {
   const router = useRouter();
   const params = useSearchParams();
   const ref = params.get('ref') ?? '';
+  const redirectTo = safeRedirect(params.get('redirect'));
+  const loginHref = `/login?redirect=${encodeURIComponent(redirectTo)}`;
+  const isContinuingOrder = redirectTo.startsWith('/order');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +35,7 @@ function RegisterContent() {
       const res = await authApi.register({ ...form, referralCode: form.referralCode || ref });
       setAuth(res.data.token, res.data.user);
       toast.success('¡Cuenta creada! Bienvenido a FollowArg 🚀');
-      router.push('/dashboard');
+      router.push(redirectTo);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al registrarse';
       toast.error(msg);
@@ -54,8 +62,14 @@ function RegisterContent() {
             <Image src="/logo.jpeg" alt="FollowArg" width={40} height={40} className="rounded-xl shadow-lg shadow-primary-500/30" />
             <span className="text-xl sm:text-2xl font-bold gradient-text">FollowArg</span>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-black text-white">Creá tu cuenta</h1>
-          <p className="text-slate-400 mt-2">Empezá a crecer en redes sociales hoy mismo</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-white">
+            {isContinuingOrder ? 'Creá tu cuenta para continuar' : 'Creá tu cuenta'}
+          </h1>
+          <p className="text-slate-400 mt-2">
+            {isContinuingOrder
+              ? 'Guardamos tu pedido y te llevamos de vuelta para confirmarlo.'
+              : 'Empezá a crecer en redes sociales hoy mismo'}
+          </p>
         </div>
 
         <div className="glass-card p-5 sm:p-8">
@@ -107,7 +121,7 @@ function RegisterContent() {
 
           <p className="text-center text-slate-400 text-sm mt-6">
             ¿Ya tenés cuenta?{' '}
-            <Link href="/login" className="text-primary-400 hover:text-primary-300 font-medium">Iniciá sesión</Link>
+            <Link href={loginHref} className="text-primary-400 hover:text-primary-300 font-medium">Iniciá sesión</Link>
           </p>
         </div>
       </motion.div>

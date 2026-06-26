@@ -69,8 +69,8 @@ const HOW_IT_WORKS = [
   },
   {
     step: "03",
-    title: "Completá el pago",
-    desc: "Pagá de forma segura vía MercadoPago — tarjeta de crédito, débito o transferencia.",
+    title: "Cargá saldo seguro",
+    desc: "Acreditá saldo con MercadoPago y usalo para confirmar el pedido sin suscripciones.",
   },
   {
     step: "04",
@@ -615,7 +615,7 @@ export default function HomePage() {
               </h2>
               <p className="text-slate-400 text-xs sm:text-lg mb-7 sm:mb-8 max-w-xl mx-auto">
                 Seguidores, likes, vistas y más para Instagram, TikTok, YouTube, Discord y Telegram.
-                Pagás con MercadoPago, entrega instantánea.
+                Cargás saldo con MercadoPago y confirmás tu pedido al instante.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                 <Link
