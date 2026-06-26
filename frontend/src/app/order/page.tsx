@@ -877,6 +877,9 @@ function OrderContent() {
                                   svc.price_per_unit * svc.min_quantity
                                 ).toFixed(2),
                               );
+                              const isRecommended =
+                                svc.platform === "instagram" &&
+                                svc.name.toLowerCase().includes("premium 365");
                               return (
                                 <button
                                   key={svc.id}
@@ -887,15 +890,25 @@ function OrderContent() {
                                       behavior: "smooth",
                                     });
                                   }}
-                                  className="glass-card-hover p-5 text-left group transition-all hover:-translate-y-0.5 flex flex-col"
+                                  className={`glass-card-hover p-5 text-left group transition-all hover:-translate-y-0.5 flex flex-col ${
+                                    isRecommended
+                                      ? "border-amber-500/30 bg-gradient-to-b from-amber-500/[0.03] to-transparent shadow-lg shadow-amber-500/5 hover:border-amber-500/50"
+                                      : ""
+                                  }`}
                                 >
                                   {/* Badge + speed */}
                                   <div className="flex items-start justify-between gap-2 mb-3">
-                                    <span
-                                      className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${badge.colorClass}`}
-                                    >
-                                      {badge.label}
-                                    </span>
+                                    {isRecommended ? (
+                                      <span className="inline-flex items-center text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 text-black shadow-sm shadow-amber-500/20">
+                                        ⭐ RECOMENDADO (Ahorra Dinero)
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${badge.colorClass}`}
+                                      >
+                                        {badge.label}
+                                      </span>
+                                    )}
                                     <span className="text-[11px] text-slate-500 shrink-0">
                                       ⚡ {svc.delivery_speed}
                                     </span>
@@ -923,7 +936,11 @@ function OrderContent() {
                                         {formatCurrency(minPrice)}
                                       </div>
                                     </div>
-                                    <span className="flex items-center gap-1 bg-primary-500 hover:bg-primary-400 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors group-hover:bg-primary-400">
+                                    <span className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl transition-colors ${
+                                      isRecommended
+                                        ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-extrabold group-hover:from-amber-400 group-hover:to-orange-400 shadow-md shadow-amber-500/10"
+                                        : "bg-primary-500 hover:bg-primary-400 text-white group-hover:bg-primary-400"
+                                    }`}>
                                       Elegir{" "}
                                       <ChevronRight className="w-3 h-3" />
                                     </span>
