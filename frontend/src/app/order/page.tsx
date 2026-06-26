@@ -1605,7 +1605,7 @@ function OrderContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={() => setShowFundsModal(false)}
           >
             <motion.div
@@ -1613,7 +1613,7 @@ function OrderContent() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 15 }}
               transition={{ duration: 0.2 }}
-              className="glass-card p-5 sm:p-8 max-w-md w-full text-center rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto relative bg-dark-200"
+              className="bg-[#0e0e1c] border border-white/[0.10] shadow-2xl shadow-black/60 p-5 sm:p-8 max-w-md w-full text-center rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto relative"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -1635,7 +1635,7 @@ function OrderContent() {
               </p>
 
               {/* Detalle de Cuenta */}
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 mb-5 text-left space-y-2.5">
+              <div className="bg-white/[0.07] border border-white/[0.10] rounded-2xl p-4 mb-5 text-left space-y-2.5">
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-400">Total del pedido:</span>
                   <span className="text-white font-semibold">{formatCurrency(finalPrice)}</span>
