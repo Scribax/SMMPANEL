@@ -29,6 +29,9 @@ import {
   MessageCircle,
   Mail,
   Send,
+  Shield,
+  Search,
+  UserX,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { adminApi } from "@/lib/api";
@@ -143,6 +146,14 @@ export default function AdminPage() {
   const [couponForm, setCouponForm] = useState(emptyCouponForm);
   const [savingCoupon, setSavingCoupon] = useState(false);
 
+  // Estados para gestión avanzada de usuarios
+  const [userSearch, setUserSearch] = useState("");
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<Record<string, unknown> | null>(null);
+  const [confirmDeleteText, setConfirmDeleteText] = useState("");
+  const [deletingUser, setDeletingUser] = useState(false);
+  const [changingRole, setChangingRole] = useState<string | null>(null);
+  const [deletingOrder, setDeletingOrder] = useState(false);
+
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/login");
@@ -194,10 +205,10 @@ export default function AdminPage() {
     }
   };
 
-  const loadUsers = async () => {
+  const loadUsers = async (search?: string) => {
     setLoading(true);
     try {
-      const res = await adminApi.getUsers(1, 200);
+      const res = await adminApi.getUsers(1, 200, search);
       setUsers(res.data.users ?? []);
     } catch {
       toast.error("Failed to load users");
@@ -377,10 +388,66 @@ export default function AdminPage() {
   const toggleUserStatus = async (userId: string) => {
     try {
       await adminApi.toggleUser(userId);
-      toast.success("User status updated");
-      loadUsers();
+      toast.success("Estado actualizado");
+      loadUsers(userSearch || undefined);
     } catch {
       toast.error("Failed to update user");
+    }
+  };
+
+  const handleChangeUserRole = async (userId: string, currentRole: string) => {
+    const newRole = currentRole === "admin" ? "user" : "admin";
+    setChangingRole(userId);
+    try {
+      await adminApi.changeUserRole(userId, newRole);
+      toast.success(`Rol cambiado a ${newRole}`);
+      loadUsers(userSearch || undefined);
+      // Actualizar selectedUser si está abierto
+      if (selectedUser && String(selectedUser.id) === userId) {
+        setSelectedUser({ ...selectedUser, role: newRole });
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error al cambiar rol";
+      toast.error(msg);
+    } finally {
+      setChangingRole(null);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!confirmDeleteUser) return;
+    if (confirmDeleteText !== "ELIMINAR") {
+      toast.error('Escribe "ELIMINAR" para confirmar');
+      return;
+    }
+    setDeletingUser(true);
+    try {
+      await adminApi.deleteUser(String(confirmDeleteUser.id));
+      toast.success("✅ Usuario eliminado");
+      setConfirmDeleteUser(null);
+      setConfirmDeleteText("");
+      setShowUserDetail(false);
+      loadUsers(userSearch || undefined);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error al eliminar usuario";
+      toast.error(msg);
+    } finally {
+      setDeletingUser(false);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    setDeletingOrder(true);
+    try {
+      await adminApi.deleteOrder(orderId);
+      toast.success("Pedido eliminado");
+      setShowOrderModal(false);
+      loadOrders(ordersPage, statusFilter);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error al eliminar pedido";
+      toast.error(msg);
+    } finally {
+      setDeletingOrder(false);
     }
   };
 
@@ -1518,9 +1585,24 @@ export default function AdminPage() {
         {/* Users Tab */}
         {tab === "users" && !loading && (
           <div>
-            <h1 className="text-2xl font-black text-white mb-6">
-              Users ({users.length})
-            </h1>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+              <h1 className="text-2xl font-black text-white">
+                Usuarios ({users.length})
+              </h1>
+              <div className="sm:ml-auto relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre o email..."
+                  value={userSearch}
+                  onChange={(e) => {
+                    setUserSearch(e.target.value);
+                    loadUsers(e.target.value || undefined);
+                  }}
+                  className="input-field pl-9 w-full sm:w-72"
+                />
+              </div>
+            </div>
             <div className="space-y-2">
               {users.map((u) => (
                 <div
@@ -1528,33 +1610,30 @@ export default function AdminPage() {
                   className="glass-card p-4 flex items-center gap-4"
                 >
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {String(u.name ?? "?")
-                      .charAt(0)
-                      .toUpperCase()}
+                    {String(u.name ?? "?").charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-white text-sm font-medium">
                         {String(u.name)}
                       </span>
                       {String(u.role) === "admin" && (
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-primary-500/20 text-primary-400">
-                          Admin
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-primary-500/20 text-primary-400 flex items-center gap-1">
+                          <Shield className="w-3 h-3" /> Admin
                         </span>
                       )}
                       {u.is_active === false && (
                         <span className="text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">
-                          Banned
+                          Baneado
                         </span>
                       )}
                     </div>
                     <div className="text-slate-400 text-xs">
-                      {String(u.email)} • Joined{" "}
-                      {u.created_at ? formatDate(String(u.created_at)) : "—"}
+                      {String(u.email)} • {u.created_at ? formatDate(String(u.created_at)) : "—"}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-right flex-shrink-0">
-                    <div className="text-right mr-2">
+                  <div className="flex items-center gap-1.5 text-right flex-shrink-0">
+                    <div className="text-right mr-2 hidden sm:block">
                       <div className="text-primary-400 text-sm font-semibold">
                         {formatCurrency(Number(u.balance ?? 0))}
                       </div>
@@ -1570,16 +1649,47 @@ export default function AdminPage() {
                       <Eye className="w-3.5 h-3.5" />
                     </button>
                     {String(u.role) !== "admin" && (
-                      <button
-                        onClick={() => toggleUserStatus(String(u.id))}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium ${u.is_active !== false ? "bg-red-500/10 text-red-400" : "bg-green-500/10 text-green-400"}`}
-                      >
-                        {u.is_active !== false ? "Ban" : "Unban"}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => toggleUserStatus(String(u.id))}
+                          className={`p-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                            u.is_active !== false
+                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+                              : "bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20"
+                          }`}
+                          title={u.is_active !== false ? "Banear" : "Desbanear"}
+                        >
+                          <UserX className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleChangeUserRole(String(u.id), String(u.role))}
+                          disabled={changingRole === String(u.id)}
+                          className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 border border-purple-500/20 transition-colors disabled:opacity-50"
+                          title="Cambiar rol (user ↔ admin)"
+                        >
+                          {changingRole === String(u.id)
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : <Shield className="w-3.5 h-3.5" />
+                          }
+                        </button>
+                        <button
+                          onClick={() => { setConfirmDeleteUser(u); setConfirmDeleteText(""); }}
+                          className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors"
+                          title="Eliminar cuenta"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
               ))}
+              {users.length === 0 && (
+                <div className="glass-card p-10 text-center">
+                  <Users className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                  <p className="text-slate-500">No se encontraron usuarios.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -2339,6 +2449,14 @@ export default function AdminPage() {
                   >
                     <RotateCcw className="w-4 h-4" /> Reintentar
                   </button>
+                  <button
+                    onClick={() => handleDeleteOrder(selectedOrder.id)}
+                    disabled={deletingOrder}
+                    className="btn-primary bg-red-500/20 text-red-400 hover:bg-red-500/30 border-red-500/30 px-3"
+                    title="Eliminar pedido permanentemente"
+                  >
+                    {deletingOrder ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -2555,6 +2673,92 @@ export default function AdminPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Acciones del usuario */}
+                <div className="border-t border-white/[0.06] pt-4 flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => handleChangeUserRole(String(selectedUser.id), String(selectedUser.role))}
+                    disabled={changingRole === String(selectedUser.id)}
+                    className="flex-1 btn-secondary flex items-center justify-center gap-2"
+                  >
+                    {changingRole === String(selectedUser.id)
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <Shield className="w-4 h-4" />
+                    }
+                    {String(selectedUser.role) === "admin" ? "Quitar Admin" : "Hacer Admin"}
+                  </button>
+                  {String(selectedUser.role) !== "admin" && (
+                    <button
+                      onClick={() => {
+                        setShowUserDetail(false);
+                        setConfirmDeleteUser(selectedUser);
+                        setConfirmDeleteText("");
+                      }}
+                      className="flex-1 btn-primary bg-red-500/20 text-red-400 hover:bg-red-500/30 border-red-500/30 flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Eliminar cuenta
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Delete User Confirmation Modal */}
+        {confirmDeleteUser && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="glass-card w-full max-w-md"
+            >
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <Trash2 className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold">¿Eliminar usuario?</h3>
+                    <p className="text-slate-400 text-sm">{String(confirmDeleteUser.name)} • {String(confirmDeleteUser.email)}</p>
+                  </div>
+                </div>
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-5">
+                  <p className="text-red-300 text-sm">
+                    Esta acción es <strong>permanente</strong>. Se eliminará la cuenta y todos sus datos.
+                    Los pedidos históricos quedarán registrados en el sistema sin asociar a ningún usuario.
+                  </p>
+                </div>
+                <p className="text-slate-400 text-sm mb-3">
+                  Escribe <span className="text-red-400 font-mono font-bold">ELIMINAR</span> para confirmar:
+                </p>
+                <input
+                  type="text"
+                  value={confirmDeleteText}
+                  onChange={(e) => setConfirmDeleteText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleDeleteUser()}
+                  placeholder="ELIMINAR"
+                  className="input-field w-full mb-4 font-mono"
+                  autoFocus
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setConfirmDeleteUser(null); setConfirmDeleteText(""); }}
+                    className="flex-1 btn-secondary"
+                    disabled={deletingUser}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleDeleteUser}
+                    disabled={deletingUser || confirmDeleteText !== "ELIMINAR"}
+                    className="flex-1 btn-primary bg-red-500/20 text-red-400 hover:bg-red-500/30 border-red-500/30 disabled:opacity-40"
+                  >
+                    {deletingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    Eliminar
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

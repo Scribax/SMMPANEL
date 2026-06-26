@@ -613,17 +613,27 @@ export const adminGetUsers = async (
   const page = parseInt(String(req.query.page ?? "1"), 10);
   const limit = parseInt(String(req.query.limit ?? "20"), 10);
   const offset = (page - 1) * limit;
+  const search = req.query.search ? String(req.query.search).trim() : null;
+
+  const searchClause = search
+    ? `WHERE (LOWER(email) LIKE $3 OR LOWER(name) LIKE $3)`
+    : "";
+  const searchParam = search ? `%${search.toLowerCase()}%` : null;
+  const params = search ? [limit, offset, searchParam] : [limit, offset];
+  const countParams = search ? [searchParam] : [];
+  const countWhere = search ? `WHERE (LOWER(email) LIKE $1 OR LOWER(name) LIKE $1)` : "";
 
   const [users, count] = await Promise.all([
     query(
       `SELECT id, email, name, role, balance, is_active, created_at,
               (SELECT COUNT(*) FROM orders WHERE user_id = users.id) AS order_count
        FROM users
+       ${searchClause}
        ORDER BY created_at DESC
        LIMIT $1 OFFSET $2`,
-      [limit, offset],
+      params,
     ),
-    query<{ count: string }>("SELECT COUNT(*) FROM users"),
+    query<{ count: string }>(`SELECT COUNT(*) FROM users ${countWhere}`, countParams),
   ]);
 
   res.json({
@@ -749,6 +759,93 @@ export const adminAdjustUserBalance = async (
     newBalance,
     adjustment: amount,
   });
+};
+
+export const adminDeleteUser = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { id } = req.params;
+
+  const userResult = await query<{ id: string; role: string; email: string }>(
+    "SELECT id, role, email FROM users WHERE id = $1",
+    [id],
+  );
+
+  if (!userResult.rows.length) {
+    res.status(404).json({ success: false, message: "User not found" });
+    return;
+  }
+
+  const user = userResult.rows[0];
+  if (user.role === "admin") {
+    res.status(400).json({
+      success: false,
+      message: "No se puede eliminar una cuenta de administrador",
+    });
+    return;
+  }
+
+  // Desasociar pedidos (preservar historial financiero)
+  await query("UPDATE orders SET user_id = NULL WHERE user_id = $1", [id]);
+  // Eliminar pagos asociados
+  await query("DELETE FROM payments WHERE user_id = $1", [id]);
+  // Eliminar tickets
+  await query("DELETE FROM tickets WHERE user_id = $1", [id]);
+  // Eliminar el usuario
+  await query("DELETE FROM users WHERE id = $1", [id]);
+
+  logger.info("User deleted by admin", { userId: id, email: user.email });
+  res.json({ success: true, message: "Usuario eliminado correctamente" });
+};
+
+export const adminChangeUserRole = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { id } = req.params;
+  const { role } = req.body;
+
+  if (!role || !['user', 'admin'].includes(role)) {
+    res.status(400).json({ success: false, message: "Rol inválido. Debe ser 'user' o 'admin'" });
+    return;
+  }
+
+  const result = await query(
+    "UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, email, role",
+    [role, id],
+  );
+
+  if (!result.rows.length) {
+    res.status(404).json({ success: false, message: "User not found" });
+    return;
+  }
+
+  logger.info("User role changed by admin", { userId: id, newRole: role });
+  res.json({ success: true, user: result.rows[0] });
+};
+
+export const adminDeleteOrder = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { id } = req.params;
+
+  const orderResult = await query<{ id: string; status: string; user_id: string; price: number }>(
+    "SELECT id, status, user_id, price FROM orders WHERE id = $1",
+    [id],
+  );
+
+  if (!orderResult.rows.length) {
+    res.status(404).json({ success: false, message: "Order not found" });
+    return;
+  }
+
+  await query("DELETE FROM payments WHERE order_id = $1", [id]);
+  await query("DELETE FROM orders WHERE id = $1", [id]);
+
+  logger.info("Order deleted by admin", { orderId: id });
+  res.json({ success: true, message: "Pedido eliminado correctamente" });
 };
 
 export const adminCreateOrder = async (
