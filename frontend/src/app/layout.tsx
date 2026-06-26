@@ -183,7 +183,27 @@ export default function RootLayout({
         {children}
 
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex items-end group">
-          {/* Mascot character sitting on top of the button - hidden until proper transparent PNG is provided */}
+          {/* Mascot character sitting on top of the button */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 'calc(100% - 12px)',
+              right: '-4px',
+              width: '120px',
+              height: '120px',
+              pointerEvents: 'none',
+              transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              filter: 'drop-shadow(0 -4px 12px rgba(99,102,241,0.5))',
+              zIndex: 41,
+            }}
+            className="group-hover:[transform:translateY(-8px)_scale(1.08)]"
+          >
+            <img
+              src="/mascot.png"
+              alt="Mascota de FollowArg"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          </div>
 
           <a
             href="https://wa.me/5492604221790?text=Hola%20FollowArg!%20Necesito%20ayuda%20con..."
