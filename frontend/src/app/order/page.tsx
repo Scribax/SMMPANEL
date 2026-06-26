@@ -908,7 +908,7 @@ function OrderContent() {
 
                                   {/* Description */}
                                   {svc.description && (
-                                    <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 flex-1">
+                                    <p className="text-slate-400 text-xs leading-relaxed flex-1">
                                       {svc.description}
                                     </p>
                                   )}
@@ -965,24 +965,33 @@ function OrderContent() {
                   <div className="space-y-4">
 
                     {/* Selected service chip */}
-                    <div className="glass-card p-4 flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">
-                          Servicio elegido
-                        </p>
-                        <p className="text-white font-semibold text-sm leading-snug truncate">
-                          {selected.name}
-                        </p>
-                        <p className="text-slate-500 text-xs mt-0.5">
-                          ⚡ {selected.delivery_speed}
-                        </p>
+                    <div className="glass-card p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">
+                            Servicio elegido
+                          </p>
+                          <p className="text-white font-semibold text-sm leading-snug">
+                            {selected.name}
+                          </p>
+                          <p className="text-slate-500 text-xs mt-0.5">
+                            ⚡ {selected.delivery_speed}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setSelectedId("")}
+                          className="text-xs text-primary-400 hover:text-primary-300 font-semibold transition-colors whitespace-nowrap shrink-0 mt-0.5"
+                        >
+                          Cambiar
+                        </button>
                       </div>
-                      <button
-                        onClick={() => setSelectedId("")}
-                        className="text-xs text-primary-400 hover:text-primary-300 font-semibold transition-colors whitespace-nowrap"
-                      >
-                        Cambiar
-                      </button>
+                      {selected.description && (
+                        <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                          <p className="text-slate-400 text-xs leading-relaxed">
+                            {selected.description}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {/* ── Quantity ── */}
