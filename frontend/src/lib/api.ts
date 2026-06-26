@@ -150,3 +150,10 @@ export const adminApi = {
     customHtml?: string;
   }) => apiClient.post('/admin/marketing-email/send', data),
 };
+
+export const pushApi = {
+  getVapidKey: () => apiClient.get<{ success: boolean; publicKey: string }>('/push/vapid-key'),
+  subscribe: (subscription: any) => apiClient.post('/push/subscribe', subscription),
+  unsubscribe: (endpoint: string) => apiClient.delete('/push/unsubscribe', { data: { endpoint } }),
+};
+

@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { query } from '../config/database';
 import { getBulkOrderStatus, normalizeProviderStatus } from '../services/providerService';
 import { sendOrderStatusUpdate } from '../services/emailService';
+import { sendPushToUser } from '../services/pushService';
 import { logger } from '../utils/logger';
 
 interface PendingOrder {
@@ -95,6 +96,30 @@ const checkOrderStatuses = async (): Promise<void> => {
               order.id,
               normalizedStatus
             ).catch(() => {});
+          }
+
+          // Push notification when order reaches terminal status
+          if (hasStatusChange && TERMINAL_STATUSES.has(normalizedStatus) && order.user_id) {
+            const pushTitles: Record<string, string> = {
+              completed: '✅ Pedido completado',
+              partial: '⚡ Pedido parcial',
+              failed: '❌ Pedido fallido',
+              cancelled: '🚫 Pedido cancelado',
+              refunded: '💰 Reembolso procesado',
+            };
+            const pushBodies: Record<string, string> = {
+              completed: 'Tu pedido fue entregado correctamente. ¡Seguí creciendo!',
+              partial: 'Tu pedido fue entregado parcialmente. Revisá los detalles.',
+              failed: 'Tu pedido no pudo completarse. Se procesó el reembolso automático.',
+              cancelled: 'Tu pedido fue cancelado. Se procesó el reembolso automático.',
+              refunded: 'Tu saldo fue reintegrado correctamente.',
+            };
+            sendPushToUser(order.user_id, {
+              title: pushTitles[normalizedStatus] ?? 'Actualización de pedido',
+              body: pushBodies[normalizedStatus] ?? `Tu pedido cambió a estado: ${normalizedStatus}`,
+              url: '/dashboard',
+              tag: `order-${order.id}`,
+            }).catch(() => {});
           }
 
           logger.info('Order status updated', { orderId: order.id, from: order.status, to: normalizedStatus });

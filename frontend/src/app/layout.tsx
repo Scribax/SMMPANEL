@@ -15,16 +15,25 @@ export const metadata: Metadata = {
     "vistas youtube",
     "comprar seguidores argentina",
   ],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "FollowArg",
+  },
   icons: {
-    icon: "/logo.jpeg",
-    apple: "/logo.jpeg",
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icon-192.png",
   },
   openGraph: {
     title: "FollowArg — Crecé en redes sociales",
     description:
       "Seguidores, likes y vistas reales. Entrega instantánea, pagás con MercadoPago.",
     type: "website",
-    images: [{ url: "/logo.jpeg" }],
+    images: [{ url: "/icon-512.png" }],
   },
 };
 
@@ -35,6 +44,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="#6366f1" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className="min-h-screen bg-dark-300 text-white antialiased">
         {children}
 
@@ -73,6 +88,17 @@ export default function RootLayout({
             },
             success: { iconTheme: { primary: "#6366f1", secondary: "#fff" } },
             error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function() {});
+                });
+              }
+            `,
           }}
         />
       </body>

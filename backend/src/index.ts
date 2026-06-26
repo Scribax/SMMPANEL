@@ -16,6 +16,7 @@ import adminRoutes from './routes/admin';
 import couponRoutes from './routes/coupons';
 import ticketRoutes from './routes/tickets';
 import utilsRoutes from './routes/utils';
+import pushRoutes from './routes/push';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/utils', utilsRoutes);
+app.use('/api/push', pushRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });

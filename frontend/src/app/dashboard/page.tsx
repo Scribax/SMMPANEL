@@ -25,9 +25,12 @@ import {
   Gift,
   TrendingUp,
   MessageCircle,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { ordersApi, paymentsApi, authApi, ticketsApi } from "@/lib/api";
 import { Order, User as UserType } from "@/types";
 import type { Ticket } from "@/types/tickets";
@@ -66,6 +69,14 @@ const isHqPremium365Service = (serviceName?: string | null) => {
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserType | null>(null);
+  const {
+    isSupported,
+    permission,
+    isSubscribed,
+    loading: pushLoading,
+    subscribe,
+    unsubscribe,
+  } = usePushNotifications();
   const [orders, setOrders] = useState<Order[]>([]);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [total, setTotal] = useState(0);
@@ -1128,7 +1139,56 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              <div className="glass-card p-4 sm:p-6 md:col-span-2">
+              <div className="glass-card p-4 sm:p-6">
+                <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-primary-400" /> Notificaciones Push
+                </h3>
+                <p className="text-slate-400 text-sm mb-4">
+                  Recibí avisos en tiempo real en tu celular o computadora cuando tus pedidos cambien de estado.
+                </p>
+                {!isSupported ? (
+                  <div className="text-amber-400 text-xs bg-amber-400/10 border border-amber-400/20 rounded-xl p-3">
+                    Tu navegador o dispositivo no soporta notificaciones push.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between py-2 border-b border-white/[0.06]">
+                      <span className="text-slate-400 text-sm">Estado</span>
+                      <span className={`text-sm font-semibold ${isSubscribed ? "text-green-400" : "text-slate-400"}`}>
+                        {isSubscribed ? "Activadas" : "Desactivadas"}
+                      </span>
+                    </div>
+                    {permission === 'denied' && (
+                      <div className="text-red-400 text-xs bg-red-400/10 border border-red-400/20 rounded-xl p-3">
+                        Bloqueado en el navegador. Habilitá los permisos de notificación para poder activarlas.
+                      </div>
+                    )}
+                    <button
+                      onClick={isSubscribed ? unsubscribe : subscribe}
+                      disabled={pushLoading}
+                      className={`btn-secondary text-sm py-2.5 px-4 flex items-center justify-center gap-2 w-full transition-all ${
+                        isSubscribed 
+                          ? "hover:border-red-500/30 hover:text-red-400" 
+                          : "btn-primary"
+                      }`}
+                    >
+                      {pushLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : isSubscribed ? (
+                        <>
+                          <BellOff className="w-4 h-4" /> Desactivar Notificaciones
+                        </>
+                      ) : (
+                        <>
+                          <Bell className="w-4 h-4" /> Activar Notificaciones
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="glass-card p-4 sm:p-6">
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                   <Lock className="w-5 h-5 text-primary-400" /> Cambiar
                   contraseña

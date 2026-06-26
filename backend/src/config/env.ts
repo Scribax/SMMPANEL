@@ -47,4 +47,9 @@ export const env = {
   ),
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || "admin@followarg.com",
   CASHBACK_PERCENT: parseFloat(process.env.CASHBACK_PERCENT ?? "5"),
+
+  // Web Push (VAPID)
+  VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY || "BCXDc6orrtJdtMKhPKoTHIcwyIE5aotjsBJGhgZVIDIA7kRFRP3gQpxZOBOwLw1J8h763uzPTYnGsyPo-a2AI6Y",
+  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || "k_nTcakiyrKZ1btWkYliSokKF_Jykr7Z9E26g_3-5i4",
+  VAPID_EMAIL: process.env.VAPID_EMAIL || "mailto:admin@followarg.com",
 };
