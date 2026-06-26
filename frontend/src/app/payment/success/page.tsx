@@ -18,6 +18,21 @@ function PaymentSuccessContent() {
   const [order, setOrder] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [depositCredited, setDepositCredited] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem('followarg_order_draft');
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        if (parsed.link && parsed.email) {
+          setHasDraft(true);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     if (isDeposit && paymentId) {
@@ -71,7 +86,7 @@ function PaymentSuccessContent() {
 
         <h1 className="text-4xl font-black text-white mb-3">¡Pago confirmado!</h1>
         <p className="text-slate-400 text-lg mb-8">
-          Tu pedido fue recibido y está siendo procesado. Recibirás una actualización por email en breve.
+          {isDeposit ? 'Tu recarga de saldo fue recibida con éxito.' : 'Tu pedido fue recibido y está siendo procesado.'}
         </p>
 
         {loading ? (
@@ -80,10 +95,23 @@ function PaymentSuccessContent() {
             <span className="text-slate-400">{isDeposit ? 'Acreditando saldo...' : 'Cargando detalles del pedido...'}</span>
           </div>
         ) : isDeposit ? (
-          <div className="glass-card p-6 mb-8 text-center">
+          <div className="glass-card p-6 mb-8 text-center space-y-4">
             <p className="text-green-400 font-semibold text-lg">
               {depositCredited ? '¡Saldo acreditado en tu cuenta!' : 'El saldo será acreditado en breve.'}
             </p>
+            {hasDraft && (
+              <div className="pt-4 border-t border-white/[0.06] text-center">
+                <p className="text-slate-400 text-sm mb-3">
+                  Tenés un pedido pendiente de confirmación.
+                </p>
+                <Link
+                  href="/order"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-400 hover:to-purple-500 text-white font-bold text-sm transition-all shadow-lg shadow-primary-500/20"
+                >
+                  ✓ Completar mi pedido pendiente
+                </Link>
+              </div>
+            )}
           </div>
         ) : order ? (
           <div className="glass-card p-6 mb-8 text-left space-y-3">
@@ -104,12 +132,25 @@ function PaymentSuccessContent() {
         ) : null}
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link href="/dashboard" className="btn-primary flex items-center justify-center gap-2">
-            <Package className="w-4 h-4" /> Ver mis pedidos
-          </Link>
-          <Link href="/order" className="btn-secondary flex items-center justify-center gap-2">
-            Nuevo pedido <ArrowRight className="w-4 h-4" />
-          </Link>
+          {isDeposit && hasDraft ? (
+            <>
+              <Link href="/order" className="btn-primary flex items-center justify-center gap-2">
+                <ArrowRight className="w-4 h-4" /> Completar mi pedido
+              </Link>
+              <Link href="/dashboard" className="btn-secondary flex items-center justify-center gap-2">
+                Ir al Dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/dashboard" className="btn-primary flex items-center justify-center gap-2">
+                <Package className="w-4 h-4" /> Ver mis pedidos
+              </Link>
+              <Link href="/order" className="btn-secondary flex items-center justify-center gap-2">
+                Nuevo pedido <ArrowRight className="w-4 h-4" />
+              </Link>
+            </>
+          )}
         </div>
       </motion.div>
     </div>

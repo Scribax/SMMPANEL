@@ -461,16 +461,18 @@ export default function DashboardPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm"
             onClick={(e) => {
               if (e.target === e.currentTarget) setShowDepositModal(false);
             }}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="glass-card p-5 sm:p-8 w-full max-w-md relative"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 15 }}
+              transition={{ duration: 0.2 }}
+              className="glass-card p-5 sm:p-8 w-full max-w-md rounded-t-3xl sm:rounded-2xl relative bg-dark-200 max-h-[92vh] overflow-y-auto"
             >
               <button
                 onClick={() => setShowDepositModal(false)}
@@ -478,16 +480,17 @@ export default function DashboardPage() {
               >
                 <X className="w-5 h-5" />
               </button>
+              
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center shrink-0">
                   <Wallet className="w-5 h-5 text-primary-400" />
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-lg">
+                  <h3 className="text-white font-bold text-base leading-none">
                     Agregar saldo
                   </h3>
-                  <p className="text-slate-400 text-sm">
-                    Saldo actual:{" "}
+                  <p className="text-slate-400 text-xs mt-1.5">
+                    Saldo disponible:{" "}
                     <span className="text-primary-400 font-semibold">
                       {formatCurrency(user?.balance ?? 0)}
                     </span>
@@ -500,10 +503,10 @@ export default function DashboardPage() {
                   <button
                     key={p}
                     onClick={() => setDepositAmount(String(p))}
-                    className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                    className={`py-3 rounded-xl text-sm font-semibold border transition-all text-center min-h-[44px] ${
                       depositAmount === String(p)
                         ? "bg-primary-500/20 border-primary-500/50 text-primary-300"
-                        : "border-white/[0.08] text-slate-400 hover:border-white/20 hover:text-white"
+                        : "border-white/[0.08] text-slate-400 hover:border-white/20 hover:text-white bg-white/[0.02]"
                     }`}
                   >
                     {formatCurrency(p)}
@@ -512,7 +515,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-xs font-semibold text-slate-400 mb-2">
                   Monto personalizado (ARS)
                 </label>
                 <div className="relative">
@@ -520,31 +523,33 @@ export default function DashboardPage() {
                     $
                   </span>
                   <input
-                    type="number"
-                    min="100"
-                    step="100"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      setDepositAmount(val);
+                    }}
                     placeholder="1000"
-                    className="input-field pl-7"
+                    className="input-field pl-7 py-3 text-sm"
                   />
                 </div>
-                <p className="text-slate-500 text-xs mt-1.5">
+                <p className="text-slate-500 text-[10px] mt-1.5">
                   Mínimo: $100 ARS
                 </p>
               </div>
 
               <button
                 onClick={handleDeposit}
-                disabled={depositLoading || !depositAmount}
-                className="btn-primary w-full flex items-center justify-center gap-2"
+                disabled={depositLoading || !depositAmount || parseInt(depositAmount, 10) < 100}
+                className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 text-base font-semibold disabled:opacity-50"
               >
                 {depositLoading ? (
-                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    <ArrowUpRight className="w-4 h-4" /> Ir a pagar con
-                    MercadoPago
+                    <ArrowUpRight className="w-5 h-5" /> Cargar con MercadoPago
                   </>
                 )}
               </button>

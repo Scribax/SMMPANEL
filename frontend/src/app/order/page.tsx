@@ -17,6 +17,7 @@ import {
   X,
   ShieldCheck,
   ArrowLeft,
+  CreditCard,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
@@ -335,6 +336,10 @@ function OrderContent() {
   const [userBalance, setUserBalance] = useState(0);
   const [loggedIn, setLoggedIn] = useState(false);
   const [showFundsModal, setShowFundsModal] = useState(false);
+  const [modalDepositLoading, setModalDepositLoading] = useState(false);
+  const [modalDepositAmount, setModalDepositAmount] = useState(100);
+  const [modalCustomAmount, setModalCustomAmount] = useState("");
+  const [showCustomAmountInput, setShowCustomAmountInput] = useState(false);
   const [linkPreview, setLinkPreview] = useState<LinkPreview | null>(null);
   const [linkPreviewLoading, setLinkPreviewLoading] = useState(false);
   const [linkPreviewError, setLinkPreviewError] = useState<string | null>(null);
@@ -371,6 +376,36 @@ function OrderContent() {
   ] as string[];
   const platformServices = services.filter((s) => s.platform === platform);
   const categories = [...new Set(platformServices.map((s) => s.category))];
+
+  // ── Balance modal calculations ──────────────────────────────────────────
+  useEffect(() => {
+    if (showFundsModal) {
+      const missing = Math.max(finalPrice - userBalance, 0);
+      const minAmt = Math.max(Math.ceil(missing), 100);
+      setModalDepositAmount(minAmt);
+      setModalCustomAmount("");
+      setShowCustomAmountInput(false);
+    }
+  }, [showFundsModal, finalPrice, userBalance]);
+
+  const handleModalDeposit = async (depositAmt: number) => {
+    if (!depositAmt || depositAmt < 100) {
+      toast.error("El monto mínimo es $100 ARS");
+      return;
+    }
+    setModalDepositLoading(true);
+    try {
+      const res = await paymentsApi.createDeposit(depositAmt);
+      window.location.href = res.data.initPoint;
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Error al procesar la recarga";
+      toast.error(msg);
+    } finally {
+      setModalDepositLoading(false);
+    }
+  };
 
   // ── Link validation ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1528,57 +1563,130 @@ function OrderContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={() => setShowFundsModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="glass-card p-5 sm:p-8 max-w-sm w-full text-center rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto relative"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 15 }}
+              transition={{ duration: 0.2 }}
+              className="glass-card p-5 sm:p-8 max-w-md w-full text-center rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto relative bg-dark-200"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setShowFundsModal(false)}
-                className="absolute top-4 right-4 text-slate-500 hover:text-white"
+                className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
-              <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-5">
-                <Wallet className="w-8 h-8 text-amber-400" />
+              
+              <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                <Wallet className="w-6 h-6 text-amber-400" />
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-white mb-2">
-                Cargá saldo para confirmar
+              
+              <h2 className="text-lg sm:text-xl font-bold text-white mb-1">
+                Falta saldo para confirmar
               </h2>
-              <p className="text-slate-400 text-sm mb-1">
-                Necesitás{" "}
-                <span className="text-white font-semibold">
-                  {formatCurrency(finalPrice)}
-                </span>{" "}
-                para este pedido.
+              <p className="text-slate-400 text-xs mb-5">
+                Cargá saldo rápido para completar tu pedido al instante.
               </p>
-              <p className="text-slate-400 text-sm mb-6">
-                Tu saldo actual:{" "}
-                <span className="text-amber-400 font-semibold">
-                  {formatCurrency(userBalance)}
-                </span>
-              </p>
-              <p className="text-slate-500 text-xs mb-6">
-                Te llevamos a MercadoPago por el monto sugerido. Al volver,
-                conservamos el servicio y tus datos cargados.
-              </p>
+
+              {/* Detalle de Cuenta */}
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 mb-5 text-left space-y-2.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Total del pedido:</span>
+                  <span className="text-white font-semibold">{formatCurrency(finalPrice)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Tu saldo actual:</span>
+                  <span className="text-amber-400 font-semibold">{formatCurrency(userBalance)}</span>
+                </div>
+                <div className="border-t border-white/[0.06] pt-2.5 flex justify-between text-sm font-bold">
+                  <span className="text-white">Faltante:</span>
+                  <span className="text-primary-300">{formatCurrency(Math.max(finalPrice - userBalance, 0))}</span>
+                </div>
+              </div>
+
+              {/* Botón Principal: Pagar Faltante Exacto */}
               <button
-                onClick={() => router.push(addFundsPath)}
-                className="btn-primary w-full flex items-center justify-center gap-2"
+                onClick={() => handleModalDeposit(modalDepositAmount)}
+                disabled={modalDepositLoading || modalDepositAmount < 100}
+                className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 text-base font-semibold disabled:opacity-50"
               >
-                <PlusCircle className="w-5 h-5" /> Cargar saldo con MercadoPago
+                {modalDepositLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <CreditCard className="w-5 h-5" />
+                    Pagar ${modalDepositAmount.toLocaleString()} con MercadoPago
+                  </>
+                )}
               </button>
-              <button
-                onClick={() => setShowFundsModal(false)}
-                className="mt-3 text-slate-500 hover:text-slate-300 text-sm w-full"
-              >
-                Cancelar
-              </button>
+              <p className="text-center text-slate-500 text-[10px] mt-2 mb-4">
+                🔒 Pagás de forma segura · Acreditación inmediata
+              </p>
+
+              {/* Acordeón para elegir otro monto */}
+              <div className="border-t border-white/[0.06] pt-4 text-left">
+                <button
+                  onClick={() => setShowCustomAmountInput(!showCustomAmountInput)}
+                  className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-white transition-colors"
+                >
+                  <span>¿Querés cargar otro monto?</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showCustomAmountInput ? "rotate-180" : ""}`} />
+                </button>
+                
+                {showCustomAmountInput && (
+                  <div className="mt-3 space-y-4">
+                    {/* Pills rápidos */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {[500, 1000, 2000, 5000].map((presetAmt) => (
+                        <button
+                          key={presetAmt}
+                          onClick={() => {
+                            setModalDepositAmount(presetAmt);
+                            setModalCustomAmount("");
+                          }}
+                          className={`py-2 rounded-xl text-xs font-semibold border transition-all text-center ${
+                            modalDepositAmount === presetAmt && !modalCustomAmount
+                              ? "bg-primary-500/20 border-primary-500/50 text-primary-300"
+                              : "border-white/[0.08] text-slate-400 hover:border-white/20 hover:text-white bg-white/[0.02]"
+                          }`}
+                        >
+                          ${presetAmt}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Input personalizado */}
+                    <div>
+                      <label className="text-[10px] text-slate-500 mb-1.5 block">
+                        Ingresá un monto personalizado (mín. $100)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
+                        <input
+                          type="number"
+                          min="100"
+                          value={modalCustomAmount}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setModalCustomAmount(val);
+                            const num = parseInt(val, 10);
+                            if (!isNaN(num) && num >= 100) {
+                              setModalDepositAmount(num);
+                            }
+                          }}
+                          placeholder="Ej: 1500"
+                          className="input-field pl-7 py-2.5 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
