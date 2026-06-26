@@ -157,14 +157,33 @@ export default function PreciosPage() {
                 ).slice(0, 5);
                 const popularIdx = Math.floor(qtys.length / 2);
 
+                const isRecommended = active === 'instagram' && cat === 'followers';
+
                 return (
                   <motion.div
                     key={cat}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.08 }}
-                    className="glass-card p-6 flex flex-col"
+                    className={`relative flex flex-col ${
+                      isRecommended
+                        ? 'rounded-2xl p-[2px] bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 shadow-xl shadow-purple-500/30'
+                        : 'glass-card p-6'
+                    }`}
                   >
+                    {isRecommended && (
+                      <>
+                        {/* Glow effect */}
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-indigo-500/10 blur-xl -z-10" />
+                        {/* Recommended badge */}
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/40 whitespace-nowrap">
+                            ⭐ MÁS RECOMENDADO
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    <div className={isRecommended ? 'bg-[#0d0d1a] rounded-xl p-6 flex flex-col flex-1' : 'flex flex-col flex-1'}>
                     {/* Header */}
                     <div className="flex items-center gap-3 mb-6">
                       <span className="text-3xl">{meta.emoji}</span>
@@ -240,11 +259,16 @@ export default function PreciosPage() {
                     {/* CTA */}
                     <Link
                       href={`/order?platform=${active}&category=${cat}`}
-                      className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-3"
+                      className={`w-full flex items-center justify-center gap-2 text-sm py-3 rounded-xl font-semibold transition-all ${
+                        isRecommended
+                          ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-400 hover:to-purple-500 shadow-lg shadow-purple-500/30'
+                          : 'btn-primary'
+                      }`}
                     >
                       Pedir {meta.label.toLowerCase()}{" "}
                       <ChevronRight className="w-4 h-4" />
                     </Link>
+                    </div>
                   </motion.div>
                 );
               })}

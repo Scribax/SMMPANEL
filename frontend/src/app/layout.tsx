@@ -182,13 +182,26 @@ export default function RootLayout({
 
         {children}
 
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex items-center group">
-          {/* Mascot character resting on the left side of the button */}
-          <div className="absolute -top-9 -left-2.5 w-14 h-14 sm:-top-11 sm:-left-2 sm:w-16 sm:h-16 pointer-events-none transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1.5 z-40">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex items-end group">
+          {/* Mascot character sitting on top of the button */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '100%',
+              right: '-8px',
+              width: '110px',
+              height: '110px',
+              pointerEvents: 'none',
+              transition: 'transform 0.3s ease',
+              mixBlendMode: 'screen',
+              filter: 'drop-shadow(0 -4px 8px rgba(99,102,241,0.4))',
+            }}
+            className="group-hover:[transform:translateY(-6px)_scale(1.05)]"
+          >
             <img 
               src="/mascot.png" 
               alt="Mascota de FollowArg" 
-              className="w-full h-full object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           </div>
 
@@ -196,7 +209,7 @@ export default function RootLayout({
             href="https://wa.me/5492604221790?text=Hola%20FollowArg!%20Necesito%20ayuda%20con..."
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 sm:gap-3 rounded-full bg-gradient-to-br from-emerald-500 via-emerald-400 to-lime-400 pl-11 pr-4 py-2 sm:py-2.5 shadow-lg shadow-emerald-500/40 text-sm font-semibold text-white transition-all duration-200 hover:scale-105"
+            className="flex items-center gap-2 sm:gap-3 rounded-full bg-gradient-to-br from-emerald-500 via-emerald-400 to-lime-400 pl-4 pr-4 py-2 sm:py-2.5 shadow-lg shadow-emerald-500/40 text-sm font-semibold text-white transition-all duration-200 hover:scale-105"
           >
             <span className="sr-only">Escribinos por WhatsApp</span>
             <span className="inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/10">
