@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireAdmin } from '../middleware/admin';
+import { ticketLimiter } from '../middleware/rateLimiter';
 import {
   createTicket,
   getUserTickets,
@@ -16,7 +17,7 @@ const router = Router();
 router.use(authenticate);
 
 // Crear nuevo ticket
-router.post('/', createTicket);
+router.post('/', ticketLimiter, createTicket);
 
 // Obtener tickets del usuario
 router.get('/my-tickets', getUserTickets);
@@ -25,7 +26,7 @@ router.get('/my-tickets', getUserTickets);
 router.get('/:ticketId/messages', getTicketMessages);
 
 // Agregar mensaje a un ticket
-router.post('/:ticketId/messages', addTicketMessage);
+router.post('/:ticketId/messages', ticketLimiter, addTicketMessage);
 
 // Admin: obtener todos los tickets
 router.get('/admin/all', requireAdmin, adminGetAllTickets);

@@ -238,10 +238,14 @@ export const createCheckout = async (
     return;
   }
 
-  // Wrap balance deduction + order creation in a transaction to prevent
-  // race conditions (e.g. concurrent requests draining the same balance).
+  // Wrap balance deduction, order creation, coupon count update, and cashback credit
+  // in a single SQL transaction to guarantee absolute data integrity.
   const client = await getClient();
   let orderId: string;
+  const cashbackAmount = parseFloat(
+    (finalPrice * (env.CASHBACK_PERCENT / 100)).toFixed(2),
+  );
+
   try {
     await client.query("BEGIN");
 
@@ -279,19 +283,28 @@ export const createCheckout = async (
     );
     orderId = orderResult.rows[0].id;
 
+    // Increment coupon used count (inside transaction)
+    if (couponId) {
+      await client.query(
+        "UPDATE coupons SET used_count = used_count + 1 WHERE id = $1",
+        [couponId],
+      );
+    }
+
+    // Credit cashback to user balance (inside transaction)
+    if (cashbackAmount > 0) {
+      await client.query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
+        cashbackAmount,
+        userId,
+      ]);
+    }
+
     await client.query("COMMIT");
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
   } finally {
     client.release();
-  }
-
-  if (couponId) {
-    await query(
-      "UPDATE coupons SET used_count = used_count + 1 WHERE id = $1",
-      [couponId],
-    ).catch(() => {});
   }
 
   // Provider API call happens OUTSIDE the transaction — it cannot be rolled back.
@@ -340,19 +353,6 @@ export const createCheckout = async (
       error: String(err),
     }),
   );
-
-  // Credit cashback to user balance
-  const cashbackAmount = parseFloat(
-    (finalPrice * (env.CASHBACK_PERCENT / 100)).toFixed(2),
-  );
-  if (cashbackAmount > 0) {
-    await query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
-      cashbackAmount,
-      userId,
-    ]).catch((err) =>
-      logger.warn("Cashback credit failed", { orderId, error: String(err) }),
-    );
-  }
 
   logger.info("Order paid with balance", {
     orderId,

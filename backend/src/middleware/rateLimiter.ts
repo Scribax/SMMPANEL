@@ -24,3 +24,21 @@ export const orderLimiter = rateLimit({
   legacyHeaders: false,
   message: { success: false, message: 'Too many order requests, please try again later.' },
 });
+
+export const refillLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 5,
+  keyGenerator: (req: any) => req.user?.id || req.ip,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiadas solicitudes de recarga. Por favor, intentá de nuevo en un minuto.' },
+});
+
+export const ticketLimiter = rateLimit({
+  windowMs: 2 * 60 * 1000, // 2 minutos
+  max: 5,
+  keyGenerator: (req: any) => req.user?.id || req.ip,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiadas solicitudes de soporte. Por favor, intentá de nuevo en un par de minutos.' },
+});
