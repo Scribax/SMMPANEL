@@ -349,7 +349,42 @@
 
 ---
 
+---
+
+## 🔄 Flujo de Compra Rediseñado (2 Pasos + Recuperación)
+
+El siguiente grafo representa la arquitectura del nuevo flujo de compra simplificado de 5 a 2 pasos, junto con la persistencia del borrador de pedido y recarga directa:
+
+```mermaid
+graph TD
+    Start[Cliente entra a /order] --> Step1[Paso 1: Seleccionar Plataforma y Servicio]
+    Step1 --> Step2[Paso 2: Seleccionar Cantidad, link, email y cupón]
+    Step2 --> SaveDraft[Borrador guardado automáticamente en LocalStorage]
+    SaveDraft --> ClickConfirm[Clic en 'Confirmar pedido']
+    ClickConfirm --> CheckAuth{¿Inició sesión?}
+    
+    CheckAuth -- No --> RedirectRegister[Redirigir a /register con retorno en URL]
+    RedirectRegister --> RegisterComplete[Completar registro]
+    RegisterComplete --> ReturnOrder[Retornar a /order y restaurar borrador]
+    ReturnOrder --> ClickConfirm
+    
+    CheckAuth -- Sí --> CheckBalance{¿Tiene saldo suficiente?}
+    
+    CheckBalance -- Sí --> CreateOrder[Procesar pedido, descontar saldo y otorgar Cashback]
+    CreateOrder --> SuccessPage[Pantalla de éxito: Pedido en procesamiento]
+    
+    CheckBalance -- No --> ShowModal[Modal: 'Falta saldo para confirmar']
+    ShowModal --> PayExact[Clic en 'Pagar faltante exacto' / 'Cargar saldo']
+    PayExact --> DirectMP[Generar depósito y abrir MercadoPago]
+    DirectMP --> ReturnSuccess[Retornar a /payment/success]
+    ReturnSuccess --> CheckDraft{¿Hay borrador?}
+    CheckDraft -- Sí --> ReturnToCheckout[Botón: 'Completar pedido' y restaurar datos]
+    ReturnToCheckout --> ClickConfirm
+```
+
+---
+
 **Próximos pasos:**
-1. ¿Quieres que implemente alguna de estas mejoras?
+1. ¿Quieres que implemente alguna de estas mejoras de seguridad/performance?
 2. ¿Tienes presupuesto para infraestructura avanzada?
 3. ¿Cuál es tu prioridad: seguridad, performance o escalabilidad?
