@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Instagram, Twitter, Youtube } from 'lucide-react';
+import { Instagram, Facebook } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -16,14 +16,21 @@ export default function Footer() {
               Seguidores, likes y vistas reales para Instagram, TikTok y YouTube. Pagás con MercadoPago, sin contraseña.
             </p>
             <div className="flex items-center gap-3 mt-6 flex-wrap">
-              <a href="#" className="w-9 h-9 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-white transition-all">
+              <a
+                href="https://www.instagram.com/followargok/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-pink-400 transition-all"
+              >
                 <Instagram className="w-4 h-4" />
               </a>
-              <a href="#" className="w-9 h-9 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-white transition-all">
-                <Twitter className="w-4 h-4" />
-              </a>
-              <a href="#" className="w-9 h-9 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-white transition-all">
-                <Youtube className="w-4 h-4" />
+              <a
+                href="https://www.facebook.com/profile.php?id=61591227128374"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-blue-400 transition-all"
+              >
+                <Facebook className="w-4 h-4" />
               </a>
             </div>
           </div>
