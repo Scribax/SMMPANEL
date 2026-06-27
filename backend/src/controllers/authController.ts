@@ -6,6 +6,7 @@ import { query } from "../config/database";
 import { env } from "../config/env";
 import { sendWelcomeEmail } from "../services/emailService";
 import { logger } from "../utils/logger";
+import { getResellerPricingProfile } from "../services/resellerService";
 
 interface UserRow {
   id: string;
@@ -165,7 +166,10 @@ export const getMe = async (
   }
 
   const result = await query<Omit<UserRow, "password_hash">>(
-    "SELECT id, email, name, role, balance, referral_code, created_at FROM users WHERE id = $1",
+    `SELECT id, email, name, role, balance, referral_code,
+            reseller_enabled, reseller_discount_percent, reseller_min_deposit,
+            created_at
+     FROM users WHERE id = $1`,
     [userId],
   );
 
@@ -174,7 +178,14 @@ export const getMe = async (
     return;
   }
 
-  res.json({ success: true, user: result.rows[0] });
+  const resellerProfile = await getResellerPricingProfile(userId);
+  res.json({
+    success: true,
+    user: {
+      ...result.rows[0],
+      reseller: resellerProfile,
+    },
+  });
 };
 
 export const getMyReferrals = async (

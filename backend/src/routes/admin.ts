@@ -7,7 +7,7 @@ import {
   adminGetProviders, adminCreateProvider, adminUpdateProvider,
   adminGetProviderBalance, adminSyncProviderServices,
   adminGetOrders, adminUpdateOrderStatus, adminRefundOrder, adminRetryOrder, adminCreateOrder, adminDeleteOrder,
-  adminGetUsers, adminToggleUser, adminGetUserDetail, adminAdjustUserBalance, adminDeleteUser, adminChangeUserRole,
+  adminGetUsers, adminToggleUser, adminGetUserDetail, adminAdjustUserBalance, adminDeleteUser, adminChangeUserRole, adminUpdateUserReseller,
   adminGetCoupons, adminCreateCoupon, adminUpdateCoupon, adminDeleteCoupon,
   adminPreviewMarketingEmail, adminSendMarketingEmail,
 } from '../controllers/adminController';
@@ -41,6 +41,7 @@ router.get('/users/:id', adminGetUserDetail);
 router.post('/users/:id/toggle', adminToggleUser);
 router.post('/users/:id/balance', adminAdjustUserBalance);
 router.put('/users/:id/role', adminChangeUserRole);
+router.put('/users/:id/reseller', adminUpdateUserReseller);
 router.delete('/users/:id', adminDeleteUser);
 
 router.delete('/orders/:id', adminDeleteOrder);

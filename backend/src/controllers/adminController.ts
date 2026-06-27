@@ -7,6 +7,7 @@ import {
 } from "../services/emailService";
 import { logger } from "../utils/logger";
 import { invalidateServicesCache } from "./serviceController";
+import { getResellerPricingProfile } from "../services/resellerService";
 
 // ─── DASHBOARD STATS ─────────────────────────────────────────────────────────
 
@@ -626,6 +627,8 @@ export const adminGetUsers = async (
   const [users, count] = await Promise.all([
     query(
       `SELECT id, email, name, role, balance, is_active, created_at,
+              reseller_enabled, reseller_discount_percent, reseller_min_deposit,
+              (SELECT COALESCE(SUM(amount), 0) FROM deposits WHERE user_id = users.id AND status = 'approved') AS approved_deposits,
               (SELECT COUNT(*) FROM orders WHERE user_id = users.id) AS order_count
        FROM users
        ${searchClause}
@@ -672,7 +675,9 @@ export const adminGetUserDetail = async (
   const { id } = req.params;
 
   const userResult = await query(
-    `SELECT id, email, name, role, balance, is_active, created_at
+    `SELECT id, email, name, role, balance, is_active, created_at,
+            reseller_enabled, reseller_discount_percent, reseller_min_deposit,
+            (SELECT COALESCE(SUM(amount), 0) FROM deposits WHERE user_id = users.id AND status = 'approved') AS approved_deposits
      FROM users WHERE id = $1`,
     [id],
   );
@@ -705,7 +710,10 @@ export const adminGetUserDetail = async (
 
   res.json({
     success: true,
-    user: userResult.rows[0],
+    user: {
+      ...(userResult.rows[0] as Record<string, unknown>),
+      reseller: await getResellerPricingProfile(id),
+    },
     orders: ordersResult.rows,
     stats: statsResult.rows[0],
   });
@@ -823,6 +831,59 @@ export const adminChangeUserRole = async (
 
   logger.info("User role changed by admin", { userId: id, newRole: role });
   res.json({ success: true, user: result.rows[0] });
+};
+
+export const adminUpdateUserReseller = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { id } = req.params;
+  const enabled = Boolean(req.body.enabled ?? req.body.reseller_enabled);
+  const discountPercent = Number(
+    req.body.discountPercent ?? req.body.reseller_discount_percent ?? 0,
+  );
+  const minDeposit = Number(
+    req.body.minDeposit ?? req.body.reseller_min_deposit ?? 5000,
+  );
+
+  if (!Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 80) {
+    res.status(400).json({ success: false, message: "El descuento debe estar entre 0 y 80%" });
+    return;
+  }
+
+  if (!Number.isFinite(minDeposit) || minDeposit < 0) {
+    res.status(400).json({ success: false, message: "El depósito mínimo es inválido" });
+    return;
+  }
+
+  const result = await query(
+    `UPDATE users
+     SET reseller_enabled = $1,
+         reseller_discount_percent = $2,
+         reseller_min_deposit = $3,
+         updated_at = NOW()
+     WHERE id = $4
+     RETURNING id, name, email, role, reseller_enabled, reseller_discount_percent, reseller_min_deposit`,
+    [enabled, discountPercent, minDeposit, id],
+  );
+
+  if (!result.rows.length) {
+    res.status(404).json({ success: false, message: "User not found" });
+    return;
+  }
+
+  logger.info("User reseller settings updated by admin", {
+    userId: id,
+    enabled,
+    discountPercent,
+    minDeposit,
+  });
+
+  res.json({
+    success: true,
+    user: result.rows[0],
+    reseller: await getResellerPricingProfile(id),
+  });
 };
 
 export const adminDeleteOrder = async (

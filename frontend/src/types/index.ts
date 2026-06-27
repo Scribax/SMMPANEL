@@ -6,6 +6,17 @@ export interface User {
   balance: number;
   referral_code: string;
   created_at: string;
+  reseller_enabled?: boolean;
+  reseller_discount_percent?: number;
+  reseller_min_deposit?: number;
+  reseller?: {
+    enabled: boolean;
+    active: boolean;
+    discountPercent: number;
+    minDeposit: number;
+    approvedDeposits: number;
+    remainingToActivate: number;
+  } | null;
 }
 
 export interface Service {

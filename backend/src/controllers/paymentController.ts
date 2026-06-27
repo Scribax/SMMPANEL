@@ -12,6 +12,10 @@ import {
 } from "../services/emailService";
 import { env } from "../config/env";
 import { logger } from "../utils/logger";
+import {
+  applyResellerDiscount,
+  getResellerPricingProfile,
+} from "../services/resellerService";
 
 interface ServiceRow {
   id: string;
@@ -178,9 +182,11 @@ export const createCheckout = async (
     return;
   }
 
-  let originalPrice = parseFloat((service.price_per_unit * qty).toFixed(2));
+  const publicPrice = parseFloat((service.price_per_unit * qty).toFixed(2));
+  let originalPrice = publicPrice;
   let finalPrice = originalPrice;
   let couponId: string | null = null;
+  const userId = req.user?.id ?? null;
 
   if (couponCode) {
     const couponResult = await query<CouponRow>(
@@ -210,7 +216,9 @@ export const createCheckout = async (
     }
   }
 
-  const userId = req.user?.id ?? null;
+  const resellerProfile = await getResellerPricingProfile(userId);
+  const resellerPricing = applyResellerDiscount(finalPrice, resellerProfile);
+  finalPrice = resellerPricing.price;
 
   // ── Balance-only checkout ──
   if (!userId || !req.user) {
@@ -366,6 +374,18 @@ export const createCheckout = async (
     paidWithBalance: true,
     price: finalPrice,
     originalPrice,
+    publicPrice,
+    reseller:
+      resellerProfile?.enabled
+        ? {
+            active: resellerProfile.active,
+            discountPercent: resellerProfile.discountPercent,
+            discountAmount: resellerPricing.discountAmount,
+            minDeposit: resellerProfile.minDeposit,
+            approvedDeposits: resellerProfile.approvedDeposits,
+            remainingToActivate: resellerProfile.remainingToActivate,
+          }
+        : null,
     cashback:
       cashbackAmount > 0
         ? { amount: cashbackAmount, percent: env.CASHBACK_PERCENT }

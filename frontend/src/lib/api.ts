@@ -124,6 +124,10 @@ export const adminApi = {
   deleteUser: (id: string) => apiClient.delete(`/admin/users/${id}`),
   changeUserRole: (id: string, role: 'user' | 'admin') =>
     apiClient.put(`/admin/users/${id}/role`, { role }),
+  updateUserReseller: (
+    id: string,
+    data: { enabled: boolean; discountPercent: number; minDeposit: number },
+  ) => apiClient.put(`/admin/users/${id}/reseller`, data),
   deleteOrder: (id: string) => apiClient.delete(`/admin/orders/${id}`),
   getCoupons: () => apiClient.get('/admin/coupons'),
   createCoupon: (data: object) => apiClient.post('/admin/coupons', data),
@@ -156,4 +160,3 @@ export const pushApi = {
   subscribe: (subscription: any) => apiClient.post('/push/subscribe', subscription),
   unsubscribe: (endpoint: string) => apiClient.delete('/push/unsubscribe', { data: { endpoint } }),
 };
-

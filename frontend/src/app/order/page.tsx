@@ -25,7 +25,7 @@ import Footer from "@/components/Footer";
 import { servicesApi, paymentsApi, couponsApi, utilsApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { getStoredUser, isAuthenticated } from "@/lib/auth";
-import { Service } from "@/types";
+import { Service, User as UserType } from "@/types";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 
 // ── Preset quantity packages ────────────────────────────────────────────────
@@ -339,6 +339,7 @@ function OrderContent() {
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
   const [userBalance, setUserBalance] = useState(0);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
   const [showFundsModal, setShowFundsModal] = useState(false);
   const [modalDepositLoading, setModalDepositLoading] = useState(false);
@@ -360,7 +361,13 @@ function OrderContent() {
     selected && quantity
       ? parseFloat((selected.price_per_unit * quantity).toFixed(2))
       : 0;
-  const finalPrice = Math.max(basePrice - couponDiscount, 0.01);
+  const afterCouponPrice = Math.max(basePrice - couponDiscount, 0.01);
+  const resellerDiscountPercent =
+    currentUser?.reseller?.active ? currentUser.reseller.discountPercent : 0;
+  const resellerDiscount = parseFloat(
+    (afterCouponPrice * (resellerDiscountPercent / 100)).toFixed(2),
+  );
+  const finalPrice = Math.max(afterCouponPrice - resellerDiscount, 0.01);
   const CASHBACK_PERCENT = 5;
   const cashbackAmount = parseFloat(
     (finalPrice * (CASHBACK_PERCENT / 100)).toFixed(2),
@@ -513,6 +520,7 @@ function OrderContent() {
     if (isAuthenticated()) {
       const u = getStoredUser();
       setLoggedIn(true);
+      setCurrentUser(u);
       setUserBalance(parseFloat(String(u?.balance ?? 0)));
       if (u?.email) setEmail(u.email);
     }

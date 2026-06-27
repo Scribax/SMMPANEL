@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
 import { query } from "../config/database";
+import { AuthRequest } from "../middleware/auth";
+import {
+  applyResellerDiscount,
+  getResellerPricingProfile,
+} from "../services/resellerService";
 
 // ─── In-memory services cache ────────────────────────────────────────────────
 let servicesCache: { data: unknown; expiresAt: number } | null = null;
@@ -85,7 +90,7 @@ export const getServicesByPlatform = async (
 };
 
 export const calculatePrice = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
 ): Promise<void> => {
   const { serviceId, quantity } = req.body;
@@ -118,6 +123,25 @@ export const calculatePrice = async (
     return;
   }
 
-  const price = parseFloat((price_per_unit * qty).toFixed(2));
-  res.json({ success: true, price, pricePerUnit: price_per_unit });
+  const publicPrice = parseFloat((price_per_unit * qty).toFixed(2));
+  const resellerProfile = await getResellerPricingProfile(req.user?.id);
+  const resellerPricing = applyResellerDiscount(publicPrice, resellerProfile);
+
+  res.json({
+    success: true,
+    price: resellerPricing.price,
+    publicPrice,
+    pricePerUnit: price_per_unit,
+    reseller:
+      resellerProfile?.enabled
+        ? {
+            active: resellerProfile.active,
+            discountPercent: resellerProfile.discountPercent,
+            discountAmount: resellerPricing.discountAmount,
+            minDeposit: resellerProfile.minDeposit,
+            approvedDeposits: resellerProfile.approvedDeposits,
+            remainingToActivate: resellerProfile.remainingToActivate,
+          }
+        : null,
+  });
 };

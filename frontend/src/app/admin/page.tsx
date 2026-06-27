@@ -113,6 +113,7 @@ export default function AdminPage() {
   const [balanceAdjustment, setBalanceAdjustment] = useState("");
   const [adjustmentReason, setAdjustmentReason] = useState("");
   const [adjustingBalance, setAdjustingBalance] = useState(false);
+  const [savingReseller, setSavingReseller] = useState(false);
   const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [userStats, setUserStats] = useState<Record<string, unknown> | null>(null);
   const [emailForm, setEmailForm] = useState({
@@ -581,6 +582,33 @@ export default function AdminPage() {
       toast.error(msg);
     } finally {
       setAdjustingBalance(false);
+    }
+  };
+
+  const updateResellerSettings = async (enabled: boolean) => {
+    if (!selectedUser) return;
+    setSavingReseller(true);
+    try {
+      const discountPercent = Number(selectedUser.reseller_discount_percent ?? 10);
+      const minDeposit = Number(selectedUser.reseller_min_deposit ?? 5000);
+      const res = await adminApi.updateUserReseller(String(selectedUser.id), {
+        enabled,
+        discountPercent,
+        minDeposit,
+      });
+      const userRes = await adminApi.getUserDetail(String(selectedUser.id));
+      setSelectedUser(userRes.data.user ?? res.data.user);
+      setUserOrders(userRes.data.orders ?? []);
+      setUserStats(userRes.data.stats ?? null);
+      loadUsers(userSearch || undefined);
+      toast.success(enabled ? "Revendedor activado" : "Revendedor desactivado");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Error al actualizar revendedor";
+      toast.error(msg);
+    } finally {
+      setSavingReseller(false);
     }
   };
 
@@ -2647,6 +2675,83 @@ export default function AdminPage() {
                   <p className="text-slate-500 text-xs mt-2">
                     Usar valor positivo para agregar saldo, negativo para deducir.
                   </p>
+                </div>
+
+                <div className="border-t border-white/[0.06] pt-4">
+                  <h4 className="text-white font-medium mb-3">Revendedor</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-1">
+                      <label className="text-slate-400 text-xs mb-1 block">
+                        Descuento (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="80"
+                        value={String(selectedUser.reseller_discount_percent ?? 10)}
+                        onChange={(e) =>
+                          setSelectedUser({
+                            ...selectedUser,
+                            reseller_discount_percent: e.target.value,
+                          })
+                        }
+                        className="input-field w-full"
+                      />
+                    </div>
+                    <div className="sm:col-span-1">
+                      <label className="text-slate-400 text-xs mb-1 block">
+                        Mínimo de carga
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={String(selectedUser.reseller_min_deposit ?? 5000)}
+                        onChange={(e) =>
+                          setSelectedUser({
+                            ...selectedUser,
+                            reseller_min_deposit: e.target.value,
+                          })
+                        }
+                        className="input-field w-full"
+                      />
+                    </div>
+                    <div className="sm:col-span-1 flex items-end">
+                      <button
+                        onClick={() =>
+                          updateResellerSettings(
+                            !Boolean(selectedUser.reseller_enabled),
+                          )
+                        }
+                        disabled={savingReseller}
+                        className="btn-primary w-full flex items-center justify-center gap-2"
+                      >
+                        {savingReseller ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : Boolean(selectedUser.reseller_enabled) ? (
+                          "Desactivar"
+                        ) : (
+                          "Activar"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-3 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-xs text-slate-400">
+                    <div className="flex justify-between gap-3">
+                      <span>Estado</span>
+                      <span className={Boolean(selectedUser.reseller_enabled) ? "text-green-400" : "text-slate-500"}>
+                        {Boolean(selectedUser.reseller_enabled) ? "Aprobado" : "No aprobado"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3 mt-1">
+                      <span>Cargas aprobadas</span>
+                      <span className="text-white">
+                        {formatCurrency(Number(selectedUser.approved_deposits ?? 0))}
+                      </span>
+                    </div>
+                    <p className="text-slate-500 mt-2">
+                      El descuento solo se aplica cuando el usuario está aprobado y sus cargas aprobadas alcanzan el mínimo.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Recent Orders */}

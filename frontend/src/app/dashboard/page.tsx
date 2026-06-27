@@ -1011,6 +1011,45 @@ export default function DashboardPage() {
                 </div>
               </div>
 
+              {user.reseller?.enabled && (
+                <div className="glass-card p-4 sm:p-6">
+                  <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+                    <Wallet className="w-5 h-5 text-primary-400" /> Cuenta revendedor
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between py-3 border-b border-white/[0.06]">
+                      <span className="text-slate-400 text-sm">Estado</span>
+                      <span className={`text-sm font-semibold ${user.reseller.active ? "text-green-400" : "text-amber-400"}`}>
+                        {user.reseller.active ? "Activa" : "Pendiente de carga"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-white/[0.06]">
+                      <span className="text-slate-400 text-sm">Descuento</span>
+                      <span className="text-white text-sm font-semibold">
+                        {user.reseller.discountPercent}% OFF
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-white/[0.06]">
+                      <span className="text-slate-400 text-sm">Cargas aprobadas</span>
+                      <span className="text-white text-sm">
+                        {formatCurrency(user.reseller.approvedDeposits)} / {formatCurrency(user.reseller.minDeposit)}
+                      </span>
+                    </div>
+                    {!user.reseller.active && (
+                      <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-300">
+                        Te faltan {formatCurrency(user.reseller.remainingToActivate)} en cargas aprobadas para desbloquear precios de revendedor.
+                      </div>
+                    )}
+                    <button
+                      onClick={() => setShowDepositModal(true)}
+                      className="btn-primary w-full text-sm flex items-center justify-center gap-2"
+                    >
+                      <PlusCircle className="w-4 h-4" /> Cargar saldo
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="glass-card p-4 sm:p-6">
                 <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
                   <Gift className="w-5 h-5 text-primary-400" /> Programa de
