@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from "react";
 import {
   BadgePercent,
   CheckCircle,
   Edit,
+  Eye,
+  Image as ImageIcon,
   Loader2,
   Plus,
   RefreshCw,
+  Upload,
   Trash2,
   X,
 } from "lucide-react";
@@ -36,6 +39,8 @@ type PromotionForm = {
   sortOrder: string;
   items: PromotionFormItem[];
 };
+
+type PromotionFormSetter = Dispatch<SetStateAction<PromotionForm>>;
 
 const emptyItem = (): PromotionFormItem => ({ serviceId: "", quantity: "1000" });
 
@@ -76,6 +81,7 @@ export default function AdminPromotionsTab() {
   const [newPromotion, setNewPromotion] = useState<PromotionForm>(emptyPromotionForm());
   const [editingPromotion, setEditingPromotion] = useState<string | null>(null);
   const [promotionForm, setPromotionForm] = useState<PromotionForm>(emptyPromotionForm());
+  const [uploadingImageFor, setUploadingImageFor] = useState<"new" | "edit" | null>(null);
 
   const serviceOptions = useMemo(
     () => services.filter((service) => service.is_active !== false),
@@ -104,6 +110,51 @@ export default function AdminPromotionsTab() {
 
   const serviceById = (serviceId: string) =>
     services.find((service) => service.id === serviceId);
+
+  const getFormItemsPreview = (form: PromotionForm) =>
+    form.items.map((item) => ({
+      ...item,
+      service: serviceById(item.serviceId),
+    }));
+
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("No se pudo leer la imagen"));
+      reader.readAsDataURL(file);
+    });
+
+  const uploadPromotionImage = async (
+    file: File | undefined,
+    formKey: "new" | "edit",
+    setForm: PromotionFormSetter,
+  ) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecciona una imagen valida");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen debe pesar hasta 5MB");
+      return;
+    }
+
+    setUploadingImageFor(formKey);
+    try {
+      const image = await readFileAsDataUrl(file);
+      const res = await adminApi.uploadPromotionImage({ image, filename: file.name });
+      setForm((current) => ({ ...current, imageUrl: res.data.imageUrl }));
+      toast.success("Imagen subida");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "No se pudo subir la imagen";
+      toast.error(msg);
+    } finally {
+      setUploadingImageFor(null);
+    }
+  };
 
   const promotionPayload = (form: PromotionForm) => {
     const items = form.items.map((item, index) => ({
@@ -252,7 +303,7 @@ export default function AdminPromotionsTab() {
 
   const updateFormItem = (
     form: PromotionForm,
-    setForm: (form: PromotionForm) => void,
+    setForm: PromotionFormSetter,
     index: number,
     patch: Partial<PromotionFormItem>,
   ) => {
@@ -264,13 +315,13 @@ export default function AdminPromotionsTab() {
     });
   };
 
-  const addFormItem = (form: PromotionForm, setForm: (form: PromotionForm) => void) => {
+  const addFormItem = (form: PromotionForm, setForm: PromotionFormSetter) => {
     setForm({ ...form, items: [...form.items, emptyItem()] });
   };
 
   const removeFormItem = (
     form: PromotionForm,
-    setForm: (form: PromotionForm) => void,
+    setForm: PromotionFormSetter,
     index: number,
   ) => {
     if (form.items.length <= 1) {
@@ -284,10 +335,12 @@ export default function AdminPromotionsTab() {
     form,
     setForm,
     compact = false,
+    formKey,
   }: {
     form: PromotionForm;
-    setForm: (form: PromotionForm) => void;
+    setForm: PromotionFormSetter;
     compact?: boolean;
+    formKey: "new" | "edit";
   }) => (
     <div className="space-y-3">
       <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 sm:p-4 space-y-3">
@@ -442,13 +495,37 @@ export default function AdminPromotionsTab() {
           />
         </div>
         <div className="lg:col-span-2">
-          <label className="text-slate-400 text-sm mb-1.5 block">Imagen pública</label>
-          <input
-            value={form.imageUrl}
-            onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
-            className="input-field"
-            placeholder="/seguidores.png"
-          />
+          <label className="text-slate-400 text-sm mb-1.5 block">Imagen publica</label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              value={form.imageUrl}
+              onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
+              className="input-field"
+              placeholder="/seguidores.png"
+            />
+            <label className="btn-secondary px-3 py-3 text-sm flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap">
+              {uploadingImageFor === formKey ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Upload className="w-4 h-4" />
+              )}
+              Subir
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                disabled={uploadingImageFor !== null}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  uploadPromotionImage(file, formKey, setForm);
+                  event.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+          <p className="text-slate-500 text-[11px] mt-1.5">
+            PNG, JPG, WEBP o GIF hasta 5MB.
+          </p>
         </div>
         <label className="flex items-center gap-2 text-slate-300 text-sm pt-7">
           <input
@@ -461,6 +538,57 @@ export default function AdminPromotionsTab() {
         </label>
       </div>
 
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3 sm:p-4">
+        <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold mb-3">
+          <Eye className="w-4 h-4 text-emerald-300" /> Previsualizacion
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4 items-start">
+          <div className="aspect-[16/10] rounded-xl overflow-hidden bg-black/25 border border-white/[0.08] flex items-center justify-center">
+            {form.imageUrl ? (
+              <img src={form.imageUrl} alt="Preview promocion" className="w-full h-full object-cover" />
+            ) : (
+              <ImageIcon className="w-8 h-8 text-slate-600" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              {form.badge && (
+                <span className="text-[11px] px-2.5 py-1 rounded-full bg-amber-300/15 border border-amber-300/25 text-amber-200 font-bold">
+                  {form.badge}
+                </span>
+              )}
+              <span className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-300 font-semibold">
+                {form.items.length > 1 ? "Combo" : "Promo"}
+              </span>
+            </div>
+            <h3 className="text-white font-bold text-base leading-snug truncate">
+              {form.title || "Titulo de la promocion"}
+            </h3>
+            {form.description && (
+              <p className="text-slate-400 text-xs leading-relaxed mt-1 line-clamp-2">
+                {form.description}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-1.5 my-3">
+              {getFormItemsPreview(form).map((item, index) => (
+                <span key={index} className="text-[11px] px-2 py-1 rounded-full bg-white/[0.05] text-slate-300 border border-white/[0.08]">
+                  {Number(item.quantity || 0).toLocaleString("es-AR")} · {item.service?.name ?? "Servicio"}
+                </span>
+              ))}
+            </div>
+            <div className="flex items-end gap-2">
+              {form.compareAtPrice && (
+                <span className="text-slate-500 text-sm line-through">
+                  {formatCurrency(Number(form.compareAtPrice || 0))}
+                </span>
+              )}
+              <span className="text-white text-2xl font-black">
+                {formatCurrency(Number(form.promoPrice || 0))}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-slate-400 text-sm mb-1.5 block">Inicia</label>
@@ -529,7 +657,7 @@ export default function AdminPromotionsTab() {
 
       <div className="glass-card p-4 sm:p-5 mb-6">
         <h2 className="text-white font-semibold mb-4">Crear promoción</h2>
-        <PromotionFormFields form={newPromotion} setForm={setNewPromotion} />
+        {PromotionFormFields({ form: newPromotion, setForm: setNewPromotion, formKey: "new" })}
         <div className="flex justify-end mt-4">
           <button
             onClick={createPromotion}
@@ -561,11 +689,12 @@ export default function AdminPromotionsTab() {
           <div key={promotion.id} className="glass-card p-4 sm:p-5">
             {editingPromotion === promotion.id ? (
               <div className="space-y-4">
-                <PromotionFormFields
-                  form={promotionForm}
-                  setForm={setPromotionForm}
-                  compact
-                />
+                {PromotionFormFields({
+                  form: promotionForm,
+                  setForm: setPromotionForm,
+                  compact: true,
+                  formKey: "edit",
+                })}
                 <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                   <button
                     onClick={() => setEditingPromotion(null)}

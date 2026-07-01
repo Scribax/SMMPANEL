@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import { env } from './config/env';
@@ -38,6 +39,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(globalLimiter);
+
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+  maxAge: '30d',
+  immutable: true,
+}));
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), service: 'FollowArg-api' });

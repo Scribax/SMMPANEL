@@ -9,7 +9,7 @@ import {
   adminGetOrders, adminUpdateOrderStatus, adminRefundOrder, adminRetryOrder, adminCreateOrder, adminDeleteOrder,
   adminGetUsers, adminToggleUser, adminGetUserDetail, adminAdjustUserBalance, adminDeleteUser, adminChangeUserRole, adminUpdateUserReseller,
   adminGetCoupons, adminCreateCoupon, adminUpdateCoupon, adminDeleteCoupon,
-  adminPreviewMarketingEmail, adminSendMarketingEmail,
+  adminPreviewMarketingEmail, adminSendMarketingEmail, adminUploadPromotionImage,
 } from '../controllers/adminController';
 import {
   adminGetPromotions,
@@ -57,6 +57,7 @@ router.post('/coupons', adminCreateCoupon);
 router.put('/coupons/:id', adminUpdateCoupon);
 router.delete('/coupons/:id', adminDeleteCoupon);
 
+router.post('/promotions/upload-image', adminUploadPromotionImage);
 router.get('/promotions', adminGetPromotions);
 router.post('/promotions', adminCreatePromotion);
 router.put('/promotions/:id', adminUpdatePromotion);

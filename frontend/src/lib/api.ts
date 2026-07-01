@@ -141,6 +141,8 @@ export const adminApi = {
   ) => apiClient.put(`/admin/users/${id}/reseller`, data),
   deleteOrder: (id: string) => apiClient.delete(`/admin/orders/${id}`),
   getPromotions: () => apiClient.get('/admin/promotions'),
+  uploadPromotionImage: (data: { image: string; filename: string }) =>
+    apiClient.post('/admin/promotions/upload-image', data),
   createPromotion: (data: object) => apiClient.post('/admin/promotions', data),
   updatePromotion: (id: string, data: object) => apiClient.put(`/admin/promotions/${id}`, data),
   deletePromotion: (id: string) => apiClient.delete(`/admin/promotions/${id}`),
