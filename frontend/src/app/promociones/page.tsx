@@ -33,7 +33,85 @@ const BENEFITS = [
   { label: "Entrega progresiva", icon: Clock },
   { label: "Seguimiento en tu cuenta", icon: User },
 ];
+type TargetCopy = {
+  label: string;
+  placeholder: string;
+  help: string;
+  emptyError: string;
+  invalidError?: string;
+};
 
+const getPromotionTargetCopy = (promotion: Promotion): TargetCopy => {
+  const category = promotion.service_category;
+  const platform = promotion.service_platform;
+
+  if (platform === "discord" && category === "boost") {
+    return {
+      label: "Link de invitación del servidor",
+      placeholder: "https://discord.gg/tuservidor",
+      help: "Usá una invitación activa del servidor donde querés aplicar la promoción.",
+      emptyError: "Ingresá el link de invitación de Discord",
+      invalidError: "El link debe ser una invitación válida de Discord",
+    };
+  }
+
+  if (platform === "telegram" && category === "reactions") {
+    return {
+      label: "Link del post de Telegram",
+      placeholder: "https://t.me/tucanal/123",
+      help: "Pegá el link exacto del post donde querés recibir las reacciones.",
+      emptyError: "Ingresá el link del post de Telegram",
+      invalidError: "El link debe incluir el canal y número de post de Telegram",
+    };
+  }
+
+  if (["likes", "views", "comments"].includes(String(category))) {
+    return {
+      label: "Link de la publicación",
+      placeholder: "https://www.instagram.com/p/... o /reel/...",
+      help: "Pegá el link exacto del post o reel donde querés aplicar la promoción.",
+      emptyError: "Ingresá el link de la publicación",
+      invalidError: "Para esta promo necesitás pegar el link de un post o reel, no el perfil.",
+    };
+  }
+
+  return {
+    label: "Usuario o link del perfil",
+    placeholder: "@tuusuario o https://www.instagram.com/tuusuario",
+    help: "No pedimos contraseña. El perfil debe estar público durante la entrega.",
+    emptyError: "Ingresá tu usuario o link del perfil",
+    invalidError: "Para seguidores usá el @usuario o link del perfil, no una publicación.",
+  };
+};
+
+const validatePromotionTarget = (promotion: Promotion, value: string) => {
+  const category = promotion.service_category;
+  const platform = promotion.service_platform;
+  const target = value.trim().toLowerCase();
+
+  if (!target) return false;
+
+  if (platform === "discord" && category === "boost") {
+    return target.includes("discord.gg/") || target.includes("discord.com/invite/");
+  }
+
+  if (platform === "telegram" && category === "reactions") {
+    return /t\.me\/[^/]+\/\d+/.test(target) || /telegram\.me\/[^/]+\/\d+/.test(target);
+  }
+
+  if (["likes", "views", "comments"].includes(String(category))) {
+    if (platform === "instagram") {
+      return ["/p/", "/reel/", "/reels/", "/tv/"].some((pattern) => target.includes(pattern));
+    }
+    return target.startsWith("http");
+  }
+
+  if (category === "followers") {
+    return !["/p/", "/reel/", "/reels/", "/stories/", "/tv/"].some((pattern) => target.includes(pattern));
+  }
+
+  return true;
+};
 export default function PromocionesPage() {
   const router = useRouter();
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -78,8 +156,13 @@ export default function PromocionesPage() {
 
   const handleCheckout = async () => {
     if (!selectedPromotion) return;
+    const targetCopy = getPromotionTargetCopy(selectedPromotion);
     if (!link.trim()) {
-      toast.error("Ingresá tu usuario o link del perfil");
+      toast.error(targetCopy.emptyError);
+      return;
+    }
+    if (!validatePromotionTarget(selectedPromotion, link)) {
+      toast.error(targetCopy.invalidError ?? "Revisá el dato ingresado");
       return;
     }
     if (!email.trim()) {
@@ -257,10 +340,13 @@ export default function PromocionesPage() {
                         {promotion.title}
                       </h3>
                       {promotion.description && (
-                        <p className="text-slate-400 text-sm leading-relaxed mb-5">
+                        <p className="text-slate-400 text-sm leading-relaxed mb-4">
                           {promotion.description}
                         </p>
                       )}
+                      <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-slate-300 mb-5">
+                        Vas a necesitar: {getPromotionTargetCopy(promotion).label.toLowerCase()}
+                      </div>
 
                       <div className="flex items-end justify-between gap-3 mb-5">
                         <div>
@@ -340,16 +426,16 @@ export default function PromocionesPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-slate-400 text-sm mb-1.5 block">
-                    Usuario o link del perfil
+                    {getPromotionTargetCopy(selectedPromotion).label}
                   </label>
                   <input
                     value={link}
                     onChange={(event) => setLink(event.target.value)}
                     className="input-field"
-                    placeholder="@tuusuario"
+                    placeholder={getPromotionTargetCopy(selectedPromotion).placeholder}
                   />
                   <p className="text-slate-500 text-xs mt-1.5">
-                    No pedimos contraseña. El perfil debe estar público durante la entrega.
+                    {getPromotionTargetCopy(selectedPromotion).help}
                   </p>
                 </div>
 
