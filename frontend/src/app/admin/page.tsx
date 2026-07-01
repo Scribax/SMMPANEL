@@ -1025,15 +1025,31 @@ export default function AdminPage() {
                         {STATUS_LABELS[order.status]}
                       </span>
                     </div>
-                    <div className="text-white text-sm font-medium">
-                      {order.service_name}
-                    </div>
+                    {order.promotion_title ? (
+                      <>
+                        <div className="text-white text-sm font-semibold">
+                          {order.user_name ?? order.user_email ?? "Cliente"} compro la promocion {order.promotion_title}
+                        </div>
+                        <div className="text-slate-400 text-xs mt-0.5">
+                          Servicio del combo: {order.service_name}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-white text-sm font-medium">
+                        {order.service_name}
+                      </div>
+                    )}
                     <div className="text-slate-400 text-xs flex flex-col sm:flex-row gap-1 sm:gap-3 mt-1">
                       <span className="break-all">🔗 {order.link}</span>
                       <span>📦 {order.quantity?.toLocaleString()}</span>
                       <span className="text-primary-400">
                         {formatCurrency(order.price)}
                       </span>
+                      {order.promotion_title && order.promotion_price != null && (
+                        <span className="text-emerald-300">
+                          Total promo: {formatCurrency(Number(order.promotion_price))}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -2403,6 +2419,19 @@ export default function AdminPage() {
                     {STATUS_LABELS[selectedOrder.status]}
                   </span>
                 </div>
+
+                {selectedOrder.promotion_title && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
+                    <div className="text-emerald-300 text-xs mb-1">Promocion</div>
+                    <div className="text-white font-semibold">
+                      {selectedOrder.promotion_title}
+                    </div>
+                    <div className="text-slate-400 text-xs mt-1">
+                      Total promo: {formatCurrency(Number(selectedOrder.promotion_price ?? selectedOrder.price))}
+                      {selectedOrder.promotion_item_count ? ` · ${selectedOrder.promotion_item_count} servicios` : ""}
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-dark-200/50 p-4 rounded-xl">
                   <div className="text-slate-400 text-xs mb-1">Servicio</div>

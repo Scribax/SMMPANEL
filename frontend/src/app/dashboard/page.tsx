@@ -763,6 +763,11 @@ export default function DashboardPage() {
                             <span className="text-white font-semibold truncate">
                               {order.service_name}
                             </span>
+                            {order.promotion_title && (
+                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300 border border-emerald-400/20">
+                                Promo: {order.promotion_title}
+                              </span>
+                            )}
                             <span
                               className={`status-badge ${STATUS_COLORS[order.status]}`}
                             >
@@ -777,6 +782,11 @@ export default function DashboardPage() {
                             <span className="text-primary-400 font-semibold">
                               {formatCurrency(order.price)}
                             </span>
+                            {order.promotion_title && order.promotion_price != null && (
+                              <span className="text-emerald-300 font-semibold">
+                                Total promo: {formatCurrency(Number(order.promotion_price))}
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-slate-600 mt-1.5">
                             {formatDate(order.created_at)}

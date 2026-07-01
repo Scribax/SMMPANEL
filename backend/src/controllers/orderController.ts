@@ -10,6 +10,10 @@ interface OrderRow {
   service_id: string;
   service_name: string;
   platform: string;
+  promotion_id: string | null;
+  promotion_title: string | null;
+  promotion_price: number | null;
+  promotion_item_count: number | null;
   link: string;
   quantity: number;
   price: number;
@@ -49,11 +53,19 @@ export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void
     query<OrderRow>(
       `SELECT o.id, o.link, o.quantity, o.price, o.status,
               o.provider_order_id, o.start_count, o.remains,
-              o.refill_requested_at,
+              o.refill_requested_at, o.promotion_id,
+              p.title AS promotion_title, p.promo_price AS promotion_price,
+              promo_items.item_count AS promotion_item_count,
               o.created_at, o.updated_at,
               s.name AS service_name, s.platform
        FROM orders o
        LEFT JOIN services s ON o.service_id = s.id
+       LEFT JOIN promotions p ON o.promotion_id = p.id
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*)::int AS item_count
+         FROM promotion_items pi
+         WHERE pi.promotion_id = p.id
+       ) promo_items ON true
        WHERE o.user_id = $1
        ORDER BY o.created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -83,9 +95,17 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
   const params = isAdmin ? [id] : [id, userId];
 
   const result = await query<OrderRow>(
-    `SELECT o.*, s.name AS service_name, s.platform
+    `SELECT o.*, s.name AS service_name, s.platform,
+            p.title AS promotion_title, p.promo_price AS promotion_price,
+            promo_items.item_count AS promotion_item_count
      FROM orders o
      LEFT JOIN services s ON o.service_id = s.id
+     LEFT JOIN promotions p ON o.promotion_id = p.id
+     LEFT JOIN LATERAL (
+       SELECT COUNT(*)::int AS item_count
+       FROM promotion_items pi
+       WHERE pi.promotion_id = p.id
+     ) promo_items ON true
      ${whereClause}`,
     params
   );

@@ -395,11 +395,17 @@ export default function AdminDashboard() {
               {data.recentOrders.slice(0, 6).map((order: any, i) => (
                 <div key={i} className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="text-white text-xs font-medium truncate">{order.service_name ?? 'Servicio'}</div>
-                    <div className="text-slate-500 text-[11px] truncate">{order.user_email ?? '—'}</div>
+                    <div className="text-white text-xs font-medium truncate">
+                      {order.promotion_title ? `Promo: ${order.promotion_title}` : (order.service_name ?? 'Servicio')}
+                    </div>
+                    <div className="text-slate-500 text-[11px] truncate">
+                      {order.user_email ?? '—'}{order.promotion_title ? ` · ${order.service_name ?? 'Servicio'}` : ''}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-primary-400 text-xs font-semibold">{formatCurrency(Number(order.price))}</span>
+                    <span className="text-primary-400 text-xs font-semibold">
+                      {formatCurrency(Number(order.promotion_price ?? order.price))}
+                    </span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
                       order.status === 'completed' ? 'bg-emerald-500/15 text-emerald-400' :
                       order.status === 'processing' || order.status === 'in_progress' ? 'bg-primary-500/15 text-primary-400' :

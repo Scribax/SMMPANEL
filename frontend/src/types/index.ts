@@ -81,6 +81,10 @@ export interface Order {
   id: string;
   service_id: string;
   service_name: string;
+  promotion_id?: string | null;
+  promotion_title?: string | null;
+  promotion_price?: number | null;
+  promotion_item_count?: number | null;
   platform: string;
   link: string;
   quantity: number;
@@ -91,6 +95,8 @@ export interface Order {
   start_count: number | null;
   remains: number | null;
   email: string | null;
+  user_name?: string | null;
+  user_email?: string | null;
   created_at: string;
   updated_at: string;
 }

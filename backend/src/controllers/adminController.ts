@@ -32,10 +32,18 @@ export const getDashboardStats = async (
       ),
       query(
         `SELECT o.id, o.link, o.quantity, o.price, o.status, o.created_at,
+              o.promotion_id, p.title AS promotion_title, p.promo_price AS promotion_price,
+              promo_items.item_count AS promotion_item_count,
               s.name AS service_name, s.platform,
               u.name AS user_name, u.email AS user_email
        FROM orders o
        LEFT JOIN services s ON o.service_id = s.id
+       LEFT JOIN promotions p ON o.promotion_id = p.id
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*)::int AS item_count
+         FROM promotion_items pi
+         WHERE pi.promotion_id = p.id
+       ) promo_items ON true
        LEFT JOIN users u ON o.user_id = u.id
        ORDER BY o.created_at DESC LIMIT 10`,
       ),
@@ -367,11 +375,19 @@ export const adminGetOrders = async (
   const [orders, count] = await Promise.all([
     query(
       `SELECT o.id, o.link, o.quantity, o.price, o.status,
-              o.provider_order_id, o.created_at,
+              o.provider_order_id, o.created_at, o.promotion_id,
+              p.title AS promotion_title, p.promo_price AS promotion_price,
+              promo_items.item_count AS promotion_item_count,
               s.name AS service_name, s.platform,
               u.name AS user_name, u.email AS user_email
        FROM orders o
        LEFT JOIN services s ON o.service_id = s.id
+       LEFT JOIN promotions p ON o.promotion_id = p.id
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*)::int AS item_count
+         FROM promotion_items pi
+         WHERE pi.promotion_id = p.id
+       ) promo_items ON true
        LEFT JOIN users u ON o.user_id = u.id
        ${whereClause}
        ORDER BY o.created_at DESC
@@ -690,9 +706,17 @@ export const adminGetUserDetail = async (
   const [ordersResult, statsResult] = await Promise.all([
     query(
       `SELECT o.id, o.link, o.quantity, o.price, o.status, o.provider_order_id,
-              o.created_at, s.name as service_name, s.platform
+              o.created_at, o.promotion_id, p.title AS promotion_title,
+              p.promo_price AS promotion_price, promo_items.item_count AS promotion_item_count,
+              s.name as service_name, s.platform
        FROM orders o
        LEFT JOIN services s ON o.service_id = s.id
+       LEFT JOIN promotions p ON o.promotion_id = p.id
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*)::int AS item_count
+         FROM promotion_items pi
+         WHERE pi.promotion_id = p.id
+       ) promo_items ON true
        WHERE o.user_id = $1
        ORDER BY o.created_at DESC
        LIMIT 10`,
