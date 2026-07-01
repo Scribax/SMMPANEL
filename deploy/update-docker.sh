@@ -73,18 +73,37 @@ rollback_deploy() {
   echo "✅ Rollback aplicado."
 }
 
-echo "=== [1/4] Actualizando código desde ${REMOTE}/${BRANCH} ==="
+echo "=== [1/6] Actualizando código desde ${REMOTE}/${BRANCH} ==="
 git fetch "$REMOTE" "$BRANCH"
 git checkout "$BRANCH" >/dev/null 2>&1 || true
 git reset --hard "$REMOTE/$BRANCH"
 
-echo "=== [2/4] Construyendo y recreando servicios Docker ==="
+echo "=== [2/6] Aplicando migraciones de base de datos ==="
+"${COMPOSE_CMD[@]}" up -d postgres
+for attempt in $(seq 1 20); do
+  if "${COMPOSE_CMD[@]}" exec -T postgres sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"' >/dev/null 2>&1; then
+    break
+  fi
+  if [ "$attempt" = "20" ]; then
+    echo "❌ PostgreSQL no está listo para aplicar migraciones."
+    exit 1
+  fi
+  sleep 2
+done
+
+for migration in "$ROOT_DIR"/database/migrations/*.sql; do
+  [ -f "$migration" ] || continue
+  echo "   → $(basename "$migration")"
+  "${COMPOSE_CMD[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$migration"
+done
+
+echo "=== [3/6] Construyendo y recreando servicios Docker ==="
 "${COMPOSE_CMD[@]}" up -d --build --force-recreate --remove-orphans
 
-echo "=== [3/4] Verificando estado de contenedores ==="
+echo "=== [4/6] Verificando estado de contenedores ==="
 "${COMPOSE_CMD[@]}" ps
 
-echo "=== [4/5] Validando salud pública ==="
+echo "=== [5/6] Validando salud pública ==="
 health_ok=false
 for attempt in $(seq 1 "$HEALTHCHECK_RETRIES"); do
   if curl -fsS --max-time 15 -I "$HEALTHCHECK_URL" >/dev/null 2>&1; then
@@ -100,7 +119,7 @@ if [ "$health_ok" != "true" ]; then
   exit 1
 fi
 
-echo "=== [5/5] Estado final ==="
+echo "=== [6/6] Estado final ==="
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 echo ""

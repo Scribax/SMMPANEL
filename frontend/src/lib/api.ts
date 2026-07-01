@@ -51,6 +51,10 @@ export const servicesApi = {
     apiClient.post('/services/calculate-price', { serviceId, quantity }),
 };
 
+export const promotionsApi = {
+  getAll: () => apiClient.get('/promotions'),
+};
+
 export const ordersApi = {
   getMyOrders: (page = 1, limit = 10) =>
     apiClient.get('/orders', { params: { page, limit } }),
@@ -69,6 +73,12 @@ export const paymentsApi = {
   }) => apiClient.post('/payments/checkout', data),
   getStatus: (orderId: string) => apiClient.get(`/payments/status/${orderId}`),
   createDeposit: (amount: number) => apiClient.post('/payments/deposit', { amount }),
+  createPromoCheckout: (data: {
+    promotionId: string;
+    link: string;
+    email: string;
+    paymentMethod: 'balance' | 'mercadopago';
+  }) => apiClient.post('/payments/promo-checkout', data),
   getDeposits: () => apiClient.get('/payments/deposits'),
   verifyDeposit: (paymentId: string) => apiClient.post('/payments/verify-deposit', { paymentId }),
 };
@@ -129,6 +139,10 @@ export const adminApi = {
     data: { enabled: boolean; discountPercent: number; minDeposit: number },
   ) => apiClient.put(`/admin/users/${id}/reseller`, data),
   deleteOrder: (id: string) => apiClient.delete(`/admin/orders/${id}`),
+  getPromotions: () => apiClient.get('/admin/promotions'),
+  createPromotion: (data: object) => apiClient.post('/admin/promotions', data),
+  updatePromotion: (id: string, data: object) => apiClient.put(`/admin/promotions/${id}`, data),
+  deletePromotion: (id: string) => apiClient.delete(`/admin/promotions/${id}`),
   getCoupons: () => apiClient.get('/admin/coupons'),
   createCoupon: (data: object) => apiClient.post('/admin/coupons', data),
   updateCoupon: (id: string, data: object) => apiClient.put(`/admin/coupons/${id}`, data),

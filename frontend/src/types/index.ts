@@ -35,6 +35,33 @@ export interface Service {
   provider_id?: string | null;
 }
 
+
+export interface Promotion {
+  id: string;
+  service_id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  badge: string | null;
+  quantity: number;
+  promo_price: number;
+  compare_at_price: number | null;
+  max_uses: number | null;
+  used_count: number;
+  starts_at: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  service_name?: string;
+  service_platform?: string;
+  service_category?: string;
+  service_delivery_speed?: string | null;
+  service_min_quantity?: number;
+  service_max_quantity?: number;
+}
 export interface Order {
   id: string;
   service_id: string;

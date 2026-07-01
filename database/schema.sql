@@ -75,6 +75,31 @@ CREATE TABLE IF NOT EXISTS coupons (
 );
 
 CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code);
+-- ─── PROMOTIONS ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS promotions (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  service_id       UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  slug             VARCHAR(120) UNIQUE NOT NULL,
+  title            VARCHAR(255) NOT NULL,
+  description      TEXT,
+  image_url        VARCHAR(500),
+  badge            VARCHAR(80),
+  quantity         INTEGER NOT NULL,
+  promo_price      DECIMAL(10,2) NOT NULL,
+  compare_at_price DECIMAL(10,2),
+  max_uses         INTEGER,
+  used_count       INTEGER NOT NULL DEFAULT 0,
+  starts_at        TIMESTAMPTZ,
+  expires_at       TIMESTAMPTZ,
+  is_active        BOOLEAN NOT NULL DEFAULT true,
+  sort_order       INTEGER NOT NULL DEFAULT 0,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_promotions_active     ON promotions(is_active);
+CREATE INDEX IF NOT EXISTS idx_promotions_service_id ON promotions(service_id);
+CREATE INDEX IF NOT EXISTS idx_promotions_sort_order ON promotions(sort_order);
 
 -- ─── ORDERS ─────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS orders (
@@ -86,6 +111,7 @@ CREATE TABLE IF NOT EXISTS orders (
   price               DECIMAL(10,2) NOT NULL,
   original_price      DECIMAL(10,2),
   coupon_id           UUID REFERENCES coupons(id) ON DELETE SET NULL,
+  promotion_id        UUID REFERENCES promotions(id) ON DELETE SET NULL,
   provider_order_id   VARCHAR(255),
   status              VARCHAR(50) NOT NULL DEFAULT 'pending',
   -- pending | awaiting_payment | processing | in_progress | completed | partial | failed | refunded | cancelled
@@ -101,6 +127,7 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE INDEX IF NOT EXISTS idx_orders_user_id    ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status     ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
+CREATE INDEX IF NOT EXISTS idx_orders_promotion_id ON orders(promotion_id);
 
 -- ─── PAYMENTS ───────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS payments (

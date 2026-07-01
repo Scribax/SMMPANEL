@@ -11,6 +11,12 @@ import {
   adminGetCoupons, adminCreateCoupon, adminUpdateCoupon, adminDeleteCoupon,
   adminPreviewMarketingEmail, adminSendMarketingEmail,
 } from '../controllers/adminController';
+import {
+  adminGetPromotions,
+  adminCreatePromotion,
+  adminUpdatePromotion,
+  adminDeletePromotion,
+} from '../controllers/promotionController';
 
 const router = Router();
 
@@ -50,6 +56,11 @@ router.get('/coupons', adminGetCoupons);
 router.post('/coupons', adminCreateCoupon);
 router.put('/coupons/:id', adminUpdateCoupon);
 router.delete('/coupons/:id', adminDeleteCoupon);
+
+router.get('/promotions', adminGetPromotions);
+router.post('/promotions', adminCreatePromotion);
+router.put('/promotions/:id', adminUpdatePromotion);
+router.delete('/promotions/:id', adminDeletePromotion);
 
 router.post('/marketing-email/preview', adminPreviewMarketingEmail);
 router.post('/marketing-email/send', adminSendMarketingEmail);

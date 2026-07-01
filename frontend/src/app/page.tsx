@@ -39,7 +39,7 @@ const FAQS = [
   },
   {
     q: "¿Los seguidores son reales?",
-    a: "Trabajamos con proveedores que ofrecen cuentas reales con publicaciones activas y bajo drop. Tenemos opciones con reposición automática si alguno cae.",
+    a: "Trabajamos con servicios pensados para crecimiento gradual, bajo drop y opciones con reposición automática si algún seguidor cae.",
   },
   {
     q: "¿Cómo pago?",
@@ -314,8 +314,7 @@ export default function HomePage() {
                   Packs especiales de seguidores Instagram
                 </h2>
                 <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                  Nueva sección para vender la promo con una página dedicada,
-                  creativa propia y acceso directo al pedido de seguidores.
+                  Ofertas especiales por tiempo limitado, con pago seguro y acceso rápido para impulsar tu perfil.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 shrink-0">

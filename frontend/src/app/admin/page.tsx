@@ -32,6 +32,7 @@ import {
   Shield,
   Search,
   UserX,
+  BadgePercent,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { adminApi } from "@/lib/api";
@@ -43,6 +44,7 @@ import {
   STATUS_COLORS,
 } from "@/lib/utils";
 import { Order, Service, OrderStatus } from "@/types";
+import AdminPromotionsTab from "@/components/admin/AdminPromotionsTab";
 
 type AdminTab =
   | "dashboard"
@@ -50,6 +52,7 @@ type AdminTab =
   | "services"
   | "users"
   | "coupons"
+  | "promotions"
   | "emails";
 
 interface Stats {
@@ -740,6 +743,7 @@ export default function AdminPage() {
       { id: "services", label: "Services", icon: Package },
       { id: "users", label: "Users", icon: Users },
       { id: "coupons", label: "Coupons", icon: Tag },
+      { id: "promotions", label: "Promociones", icon: BadgePercent },
       { id: "emails", label: "Correos", icon: Mail },
     ];
 
@@ -2002,6 +2006,8 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Promotions Tab */}
+        {tab === "promotions" && !loading && <AdminPromotionsTab />}
         {/* Coupons Tab */}
         {tab === "coupons" && !loading && (
           <div>

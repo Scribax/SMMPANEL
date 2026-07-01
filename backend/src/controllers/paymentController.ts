@@ -534,8 +534,9 @@ export const handleWebhook = async (
         user_id: string;
         user_name: string;
         service_name: string;
+        promotion_id: string | null;
       }>(
-        `SELECT o.id, o.service_id, o.link, o.quantity, o.price, o.email, o.status, o.user_id,
+        `SELECT o.id, o.service_id, o.link, o.quantity, o.price, o.email, o.status, o.user_id, o.promotion_id,
                 s.provider_id, s.provider_service_id, s.name AS service_name,
                 u.name AS user_name
          FROM orders o
@@ -572,6 +573,15 @@ export const handleWebhook = async (
            WHERE id = $2`,
           [String(providerResult.orderId), orderId],
         );
+
+        if (order.promotion_id) {
+          await query(
+            `UPDATE promotions
+             SET used_count = used_count + 1, updated_at = NOW()
+             WHERE id = $1`,
+            [order.promotion_id],
+          );
+        }
 
         sendOrderConfirmation(
           order.email,
