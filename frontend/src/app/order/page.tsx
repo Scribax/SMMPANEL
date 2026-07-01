@@ -566,6 +566,7 @@ function OrderContent() {
         setServices(all);
         const preselect = searchParams.get("service");
         const preplatform = searchParams.get("platform");
+        const precategory = searchParams.get("category");
         if (preselect) {
           const svc = all.find((s) => s.id === preselect);
           if (svc) {
@@ -574,6 +575,12 @@ function OrderContent() {
           }
         } else if (preplatform) {
           setPlatform(preplatform);
+          if (precategory) {
+            const svc = all.find(
+              (s) => s.platform === preplatform && s.category === precategory,
+            );
+            if (svc) setSelectedId(svc.id);
+          }
         } else {
           const firstPlatform = all[0]?.platform ?? "instagram";
           setPlatform(firstPlatform);

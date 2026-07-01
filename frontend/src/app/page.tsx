@@ -14,7 +14,6 @@ import {
   ChevronRight,
   CheckCircle,
   ArrowRight,
-  Play,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -295,6 +294,48 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ─── PROMOCIONES ───────────────────────────────────────────────────── */}
+      <section className="py-14 sm:py-16 border-b border-white/[0.06]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={sectionViewport}
+            className="relative overflow-hidden rounded-2xl border border-amber-300/20 bg-gradient-to-br from-amber-300/[0.08] via-pink-500/[0.07] to-emerald-400/[0.06] p-5 sm:p-8"
+          >
+            <div className="absolute inset-0 bg-grid opacity-20" />
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="max-w-3xl">
+                <span className="inline-flex items-center gap-2 text-amber-200 text-xs sm:text-sm font-bold mb-3">
+                  <TrendingUp className="w-4 h-4" /> PROMOCIONES
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">
+                  Packs especiales de seguidores Instagram
+                </h2>
+                <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+                  Nueva sección para vender la promo con una página dedicada,
+                  creativa propia y acceso directo al pedido de seguidores.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+                <Link
+                  href="/promociones"
+                  className="btn-secondary flex items-center justify-center gap-2"
+                >
+                  Ver promociones <ChevronRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  href="/order?platform=instagram&category=followers"
+                  className="btn-primary flex items-center justify-center gap-2"
+                >
+                  Comprar ahora <Zap className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
       {/* ─── SERVICES PREVIEW ──────────────────────────────────────────────── */}
       <section className="py-20 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
