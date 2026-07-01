@@ -64,6 +64,10 @@ cd "$ROOT_DIR"
 COMPOSE_CMD=(docker compose -f "$DEPLOY_COMPOSE_FILE")
 PREVIOUS_SHA="$(git rev-parse HEAD)"
 
+mkdir -p "$ROOT_DIR/backend/uploads/promotions" "$ROOT_DIR/backend/logs"
+chown -R 1001:1001 "$ROOT_DIR/backend/uploads" "$ROOT_DIR/backend/logs" 2>/dev/null || true
+chmod -R u+rwX,g+rwX "$ROOT_DIR/backend/uploads" "$ROOT_DIR/backend/logs" 2>/dev/null || true
+
 rollback_deploy() {
   local reason="${1:-Desconocido}"
   echo "❌ Deploy fallido: $reason"

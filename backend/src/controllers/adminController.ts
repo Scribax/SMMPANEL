@@ -24,45 +24,53 @@ export const adminUploadPromotionImage = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const image = String(req.body.image ?? "");
-  const filename = String(req.body.filename ?? "promotion");
-  const match = image.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/);
+  try {
+    const image = String(req.body.image ?? "");
+    const filename = String(req.body.filename ?? "promotion");
+    const match = image.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/);
 
-  if (!match) {
-    res.status(400).json({ success: false, message: "Imagen invalida" });
-    return;
+    if (!match) {
+      res.status(400).json({ success: false, message: "Imagen invalida" });
+      return;
+    }
+
+    const mimeType = match[1];
+    const extension = PROMOTION_IMAGE_TYPES[mimeType];
+    if (!extension) {
+      res.status(400).json({ success: false, message: "Formato de imagen no permitido" });
+      return;
+    }
+
+    const buffer = Buffer.from(match[2], "base64");
+    if (!buffer.length || buffer.length > MAX_PROMOTION_IMAGE_BYTES) {
+      res.status(400).json({ success: false, message: "La imagen debe pesar hasta 5MB" });
+      return;
+    }
+
+    const safeName = filename
+      .replace(/\.[^.]+$/, "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "promotion";
+    const outputDir = path.join(process.cwd(), "uploads", "promotions");
+    const outputName = `${safeName}-${randomUUID()}.${extension}`;
+
+    await fs.mkdir(outputDir, { recursive: true });
+    await fs.writeFile(path.join(outputDir, outputName), buffer);
+
+    res.status(201).json({
+      success: true,
+      imageUrl: `/uploads/promotions/${outputName}`,
+    });
+  } catch (err) {
+    logger.error("Promotion image upload failed", { error: err });
+    res.status(500).json({
+      success: false,
+      message: "No se pudo guardar la imagen en el servidor",
+    });
   }
-
-  const mimeType = match[1];
-  const extension = PROMOTION_IMAGE_TYPES[mimeType];
-  if (!extension) {
-    res.status(400).json({ success: false, message: "Formato de imagen no permitido" });
-    return;
-  }
-
-  const buffer = Buffer.from(match[2], "base64");
-  if (!buffer.length || buffer.length > MAX_PROMOTION_IMAGE_BYTES) {
-    res.status(400).json({ success: false, message: "La imagen debe pesar hasta 5MB" });
-    return;
-  }
-
-  const safeName = filename
-    .replace(/\.[^.]+$/, "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9_-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "promotion";
-  const outputDir = path.join(process.cwd(), "uploads", "promotions");
-  const outputName = `${safeName}-${randomUUID()}.${extension}`;
-
-  await fs.mkdir(outputDir, { recursive: true });
-  await fs.writeFile(path.join(outputDir, outputName), buffer);
-
-  res.status(201).json({
-    success: true,
-    imageUrl: `/uploads/promotions/${outputName}`,
-  });
 };
 // ─── DASHBOARD STATS ─────────────────────────────────────────────────────────
 
