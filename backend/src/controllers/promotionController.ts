@@ -1,5 +1,19 @@
 import { Request, Response } from "express";
-import { query } from "../config/database";
+import { getClient, query } from "../config/database";
+
+interface PromotionItemRow {
+  id: string;
+  promotion_id: string;
+  service_id: string;
+  quantity: number;
+  sort_order: number;
+  service_name?: string;
+  service_platform?: string;
+  service_category?: string;
+  service_delivery_speed?: string | null;
+  service_min_quantity?: number;
+  service_max_quantity?: number;
+}
 
 interface PromotionRow {
   id: string;
@@ -26,6 +40,7 @@ interface PromotionRow {
   service_delivery_speed?: string | null;
   service_min_quantity?: number;
   service_max_quantity?: number;
+  items?: PromotionItemRow[];
 }
 
 const promotionSelect = `
@@ -35,10 +50,44 @@ const promotionSelect = `
          s.category AS service_category,
          s.delivery_speed AS service_delivery_speed,
          s.min_quantity AS service_min_quantity,
-         s.max_quantity AS service_max_quantity
+         s.max_quantity AS service_max_quantity,
+         COALESCE(items.items, '[]'::json) AS items
   FROM promotions p
   LEFT JOIN services s ON s.id = p.service_id
+  LEFT JOIN LATERAL (
+    SELECT json_agg(
+      json_build_object(
+        'id', pi.id,
+        'promotion_id', pi.promotion_id,
+        'service_id', pi.service_id,
+        'quantity', pi.quantity,
+        'sort_order', pi.sort_order,
+        'service_name', si.name,
+        'service_platform', si.platform,
+        'service_category', si.category,
+        'service_delivery_speed', si.delivery_speed,
+        'service_min_quantity', si.min_quantity,
+        'service_max_quantity', si.max_quantity
+      ) ORDER BY pi.sort_order ASC, pi.created_at ASC
+    ) AS items
+    FROM promotion_items pi
+    JOIN services si ON si.id = pi.service_id
+    WHERE pi.promotion_id = p.id
+  ) items ON true
 `;
+
+const normalizeItems = (items: unknown): PromotionItemRow[] => {
+  const parsed = Array.isArray(items) ? items : [];
+  return parsed.map((item: any) => ({
+    ...item,
+    quantity: Number(item.quantity),
+    sort_order: Number(item.sort_order ?? 0),
+    service_min_quantity:
+      item.service_min_quantity === undefined ? undefined : Number(item.service_min_quantity),
+    service_max_quantity:
+      item.service_max_quantity === undefined ? undefined : Number(item.service_max_quantity),
+  }));
+};
 
 const normalizePromotion = (row: PromotionRow) => ({
   ...row,
@@ -53,6 +102,7 @@ const normalizePromotion = (row: PromotionRow) => ({
     row.service_min_quantity === undefined ? undefined : Number(row.service_min_quantity),
   service_max_quantity:
     row.service_max_quantity === undefined ? undefined : Number(row.service_max_quantity),
+  items: normalizeItems(row.items),
 });
 
 const slugify = (value: string) =>
@@ -68,8 +118,33 @@ const slugify = (value: string) =>
 const hasOwn = (obj: unknown, key: string) =>
   Object.prototype.hasOwnProperty.call(obj, key);
 
-const readPayload = (body: any, existing?: PromotionRow) => {
+const parseItems = (body: any, existing?: PromotionRow) => {
+  const rawItems = Array.isArray(body.items) ? body.items : null;
+  if (rawItems && rawItems.length > 0) {
+    const items = rawItems.map((item: any, index: number) => ({
+      serviceId: String(item.serviceId ?? item.service_id ?? ""),
+      quantity: Number(item.quantity),
+      sortOrder: Number(item.sortOrder ?? item.sort_order ?? index),
+    }));
+    return items;
+  }
+
+  if (existing?.items?.length) {
+    return normalizeItems(existing.items).map((item) => ({
+      serviceId: item.service_id,
+      quantity: Number(item.quantity),
+      sortOrder: Number(item.sort_order ?? 0),
+    }));
+  }
+
   const serviceId = body.serviceId ?? body.service_id ?? existing?.service_id;
+  const quantity = Number(body.quantity ?? existing?.quantity);
+  return serviceId ? [{ serviceId: String(serviceId), quantity, sortOrder: 0 }] : [];
+};
+
+const readPayload = (body: any, existing?: PromotionRow) => {
+  const items = parseItems(body, existing);
+  const primaryItem = items[0];
   const title = body.title ?? existing?.title;
   const rawSlug = body.slug ?? existing?.slug ?? title;
   const slug = slugify(String(rawSlug ?? ""));
@@ -82,7 +157,6 @@ const readPayload = (body: any, existing?: PromotionRow) => {
   const badge = hasOwn(body, "badge")
     ? String(body.badge ?? "").trim() || null
     : existing?.badge ?? null;
-  const quantity = Number(body.quantity ?? existing?.quantity);
   const promoPrice = Number(body.promoPrice ?? body.promo_price ?? existing?.promo_price);
   const compareAtRaw = body.compareAtPrice ?? body.compare_at_price;
   const compareAtPrice = hasOwn(body, "compareAtPrice") || hasOwn(body, "compare_at_price")
@@ -109,12 +183,9 @@ const readPayload = (body: any, existing?: PromotionRow) => {
     : existing?.is_active ?? true;
   const sortOrder = Number(body.sortOrder ?? body.sort_order ?? existing?.sort_order ?? 0);
 
-  if (!serviceId) return { ok: false as const, message: "serviceId is required" };
+  if (!items.length) return { ok: false as const, message: "At least one promotion item is required" };
   if (!title || !String(title).trim()) return { ok: false as const, message: "title is required" };
   if (!slug) return { ok: false as const, message: "slug is required" };
-  if (!Number.isInteger(quantity) || quantity <= 0) {
-    return { ok: false as const, message: "quantity must be a positive integer" };
-  }
   if (!Number.isFinite(promoPrice) || promoPrice <= 0) {
     return { ok: false as const, message: "promoPrice must be greater than 0" };
   }
@@ -134,16 +205,27 @@ const readPayload = (body: any, existing?: PromotionRow) => {
     return { ok: false as const, message: "expiresAt must be a valid date" };
   }
 
+  for (const item of items) {
+    if (!item.serviceId) return { ok: false as const, message: "Every item needs a service" };
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+      return { ok: false as const, message: "Every item quantity must be a positive integer" };
+    }
+    if (!Number.isInteger(item.sortOrder)) {
+      return { ok: false as const, message: "Every item sortOrder must be an integer" };
+    }
+  }
+
   return {
     ok: true as const,
     data: {
-      serviceId: String(serviceId),
+      serviceId: primaryItem.serviceId,
+      quantity: primaryItem.quantity,
+      items,
       slug,
       title: String(title).trim(),
       description,
       imageUrl,
       badge,
-      quantity,
       promoPrice,
       compareAtPrice,
       maxUses,
@@ -153,6 +235,21 @@ const readPayload = (body: any, existing?: PromotionRow) => {
       sortOrder,
     },
   };
+};
+
+const validatePromotionItems = async (items: Array<{ serviceId: string; quantity: number }>) => {
+  for (const item of items) {
+    const service = await query<{ id: string; min_quantity: number; max_quantity: number }>(
+      "SELECT id, min_quantity, max_quantity FROM services WHERE id = $1",
+      [item.serviceId],
+    );
+    if (!service.rows.length) return "Service not found";
+    const row = service.rows[0];
+    if (item.quantity < row.min_quantity || item.quantity > row.max_quantity) {
+      return `Quantity must be between ${row.min_quantity} and ${row.max_quantity}`;
+    }
+  }
+  return null;
 };
 
 export const getPublicPromotions = async (
@@ -166,6 +263,11 @@ export const getPublicPromotions = async (
        AND (p.starts_at IS NULL OR p.starts_at <= NOW())
        AND (p.expires_at IS NULL OR p.expires_at > NOW())
        AND (p.max_uses IS NULL OR p.used_count < p.max_uses)
+       AND NOT EXISTS (
+         SELECT 1 FROM promotion_items pi
+         JOIN services item_service ON item_service.id = pi.service_id
+         WHERE pi.promotion_id = p.id AND item_service.is_active = false
+       )
      ORDER BY p.sort_order ASC, p.created_at DESC`,
   );
 
@@ -196,17 +298,16 @@ export const adminCreatePromotion = async (
     return;
   }
 
-  const service = await query(
-    "SELECT id, min_quantity, max_quantity FROM services WHERE id = $1",
-    [payload.data.serviceId],
-  );
-  if (!service.rows.length) {
-    res.status(404).json({ success: false, message: "Service not found" });
+  const itemError = await validatePromotionItems(payload.data.items);
+  if (itemError) {
+    res.status(400).json({ success: false, message: itemError });
     return;
   }
 
+  const client = await getClient();
   try {
-    const result = await query<PromotionRow>(
+    await client.query("BEGIN");
+    const result = await client.query<PromotionRow>(
       `INSERT INTO promotions
        (service_id, slug, title, description, image_url, badge, quantity,
         promo_price, compare_at_price, max_uses, starts_at, expires_at,
@@ -230,13 +331,28 @@ export const adminCreatePromotion = async (
         payload.data.sortOrder,
       ],
     );
-    res.status(201).json({ success: true, promotion: normalizePromotion(result.rows[0]) });
+
+    const promotionId = result.rows[0].id;
+    for (const item of payload.data.items) {
+      await client.query(
+        `INSERT INTO promotion_items (promotion_id, service_id, quantity, sort_order)
+         VALUES ($1, $2, $3, $4)`,
+        [promotionId, item.serviceId, item.quantity, item.sortOrder],
+      );
+    }
+    await client.query("COMMIT");
+
+    const full = await query<PromotionRow>(`${promotionSelect} WHERE p.id = $1`, [promotionId]);
+    res.status(201).json({ success: true, promotion: normalizePromotion(full.rows[0]) });
   } catch (err: any) {
+    await client.query("ROLLBACK");
     if (err?.code === "23505") {
       res.status(409).json({ success: false, message: "Promotion slug already exists" });
       return;
     }
     throw err;
+  } finally {
+    client.release();
   }
 };
 
@@ -245,26 +361,28 @@ export const adminUpdatePromotion = async (
   res: Response,
 ): Promise<void> => {
   const { id } = req.params;
-  const existingResult = await query<PromotionRow>("SELECT * FROM promotions WHERE id = $1", [id]);
+  const existingResult = await query<PromotionRow>(`${promotionSelect} WHERE p.id = $1`, [id]);
   if (!existingResult.rows.length) {
     res.status(404).json({ success: false, message: "Promotion not found" });
     return;
   }
 
-  const payload = readPayload(req.body, existingResult.rows[0]);
+  const payload = readPayload(req.body, normalizePromotion(existingResult.rows[0]) as PromotionRow);
   if (!payload.ok) {
     res.status(400).json({ success: false, message: payload.message });
     return;
   }
 
-  const service = await query("SELECT id FROM services WHERE id = $1", [payload.data.serviceId]);
-  if (!service.rows.length) {
-    res.status(404).json({ success: false, message: "Service not found" });
+  const itemError = await validatePromotionItems(payload.data.items);
+  if (itemError) {
+    res.status(400).json({ success: false, message: itemError });
     return;
   }
 
+  const client = await getClient();
   try {
-    const result = await query<PromotionRow>(
+    await client.query("BEGIN");
+    await client.query(
       `UPDATE promotions SET
          service_id = $1,
          slug = $2,
@@ -281,8 +399,7 @@ export const adminUpdatePromotion = async (
          is_active = $13,
          sort_order = $14,
          updated_at = NOW()
-       WHERE id = $15
-       RETURNING *`,
+       WHERE id = $15`,
       [
         payload.data.serviceId,
         payload.data.slug,
@@ -301,13 +418,28 @@ export const adminUpdatePromotion = async (
         id,
       ],
     );
-    res.json({ success: true, promotion: normalizePromotion(result.rows[0]) });
+
+    await client.query("DELETE FROM promotion_items WHERE promotion_id = $1", [id]);
+    for (const item of payload.data.items) {
+      await client.query(
+        `INSERT INTO promotion_items (promotion_id, service_id, quantity, sort_order)
+         VALUES ($1, $2, $3, $4)`,
+        [id, item.serviceId, item.quantity, item.sortOrder],
+      );
+    }
+    await client.query("COMMIT");
+
+    const full = await query<PromotionRow>(`${promotionSelect} WHERE p.id = $1`, [id]);
+    res.json({ success: true, promotion: normalizePromotion(full.rows[0]) });
   } catch (err: any) {
+    await client.query("ROLLBACK");
     if (err?.code === "23505") {
       res.status(409).json({ success: false, message: "Promotion slug already exists" });
       return;
     }
     throw err;
+  } finally {
+    client.release();
   }
 };
 

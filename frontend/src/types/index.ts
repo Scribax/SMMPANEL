@@ -36,6 +36,20 @@ export interface Service {
 }
 
 
+export interface PromotionItem {
+  id: string;
+  promotion_id: string;
+  service_id: string;
+  quantity: number;
+  sort_order: number;
+  service_name?: string;
+  service_platform?: string;
+  service_category?: string;
+  service_delivery_speed?: string | null;
+  service_min_quantity?: number;
+  service_max_quantity?: number;
+}
+
 export interface Promotion {
   id: string;
   service_id: string;
@@ -61,6 +75,7 @@ export interface Promotion {
   service_delivery_speed?: string | null;
   service_min_quantity?: number;
   service_max_quantity?: number;
+  items?: PromotionItem[];
 }
 export interface Order {
   id: string;

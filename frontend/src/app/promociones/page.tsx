@@ -23,16 +23,17 @@ import Footer from "@/components/Footer";
 import { paymentsApi, promotionsApi } from "@/lib/api";
 import { getStoredUser, isAuthenticated } from "@/lib/auth";
 import { formatCurrency } from "@/lib/utils";
-import { Promotion, User as UserType } from "@/types";
+import { Promotion, PromotionItem, User as UserType } from "@/types";
 
 const DEFAULT_IMAGE = "/seguidores.png";
 
 const BENEFITS = [
-  { label: "Sin contraseña", icon: ShieldCheck },
+  { label: "Sin contrasena", icon: ShieldCheck },
   { label: "Pago seguro", icon: CreditCard },
   { label: "Entrega progresiva", icon: Clock },
   { label: "Seguimiento en tu cuenta", icon: User },
 ];
+
 type TargetCopy = {
   label: string;
   placeholder: string;
@@ -41,17 +42,58 @@ type TargetCopy = {
   invalidError?: string;
 };
 
-const getPromotionTargetCopy = (promotion: Promotion): TargetCopy => {
-  const category = promotion.service_category;
-  const platform = promotion.service_platform;
+type PromotionTarget = {
+  id: string;
+  quantity: number;
+  service_name?: string;
+  service_platform?: string | null;
+  service_category?: string | null;
+  service_delivery_speed?: string | null;
+};
+
+const getPromotionItems = (promotion: Promotion): PromotionTarget[] => {
+  if (promotion.items?.length) {
+    return promotion.items.map((item: PromotionItem) => ({
+      id: item.id,
+      quantity: Number(item.quantity),
+      service_name: item.service_name,
+      service_platform: item.service_platform,
+      service_category: item.service_category,
+      service_delivery_speed: item.service_delivery_speed,
+    }));
+  }
+
+  return [
+    {
+      id: promotion.id,
+      quantity: Number(promotion.quantity),
+      service_name: promotion.service_name,
+      service_platform: promotion.service_platform,
+      service_category: promotion.service_category,
+      service_delivery_speed: promotion.service_delivery_speed,
+    },
+  ];
+};
+
+const formatPromotionItems = (promotion: Promotion) =>
+  getPromotionItems(promotion)
+    .map((item) => `${item.quantity.toLocaleString("es-AR")} ${item.service_name ?? "servicio"}`)
+    .join(" + ");
+
+const getPromotionDeliverySpeed = (promotion: Promotion) =>
+  getPromotionItems(promotion).find((item) => item.service_delivery_speed)?.service_delivery_speed;
+
+const getPromotionTargetCopy = (target: PromotionTarget): TargetCopy => {
+  const category = target.service_category;
+  const platform = target.service_platform;
 
   if (platform === "discord" && category === "boost") {
     return {
-      label: "Link de invitación del servidor",
+      label: "Link de invitacion del servidor",
       placeholder: "https://discord.gg/tuservidor",
-      help: "Usá una invitación activa del servidor donde querés aplicar la promoción.",
-      emptyError: "Ingresá el link de invitación de Discord",
-      invalidError: "El link debe ser una invitación válida de Discord",
+      help: "Usa una invitacion activa del servidor donde queres aplicar la promocion.",
+      emptyError: "Ingresa el link de invitacion de Discord",
+      invalidError: "El link debe ser una invitacion valida de Discord",
     };
   }
 
@@ -59,34 +101,41 @@ const getPromotionTargetCopy = (promotion: Promotion): TargetCopy => {
     return {
       label: "Link del post de Telegram",
       placeholder: "https://t.me/tucanal/123",
-      help: "Pegá el link exacto del post donde querés recibir las reacciones.",
-      emptyError: "Ingresá el link del post de Telegram",
-      invalidError: "El link debe incluir el canal y número de post de Telegram",
+      help: "Pega el link exacto del post donde queres recibir las reacciones.",
+      emptyError: "Ingresa el link del post de Telegram",
+      invalidError: "El link debe incluir el canal y numero de post de Telegram",
     };
   }
 
   if (["likes", "views", "comments"].includes(String(category))) {
     return {
-      label: "Link de la publicación",
+      label: "Link de la publicacion",
       placeholder: "https://www.instagram.com/p/... o /reel/...",
-      help: "Pegá el link exacto del post o reel donde querés aplicar la promoción.",
-      emptyError: "Ingresá el link de la publicación",
-      invalidError: "Para esta promo necesitás pegar el link de un post o reel, no el perfil.",
+      help: "Pega el link exacto del post o reel donde queres aplicar la promocion.",
+      emptyError: "Ingresa el link de la publicacion",
+      invalidError: "Para esta promo necesitas pegar el link de un post o reel, no el perfil.",
     };
   }
 
   return {
     label: "Usuario o link del perfil",
     placeholder: "@tuusuario o https://www.instagram.com/tuusuario",
-    help: "No pedimos contraseña. El perfil debe estar público durante la entrega.",
-    emptyError: "Ingresá tu usuario o link del perfil",
-    invalidError: "Para seguidores usá el @usuario o link del perfil, no una publicación.",
+    help: "No pedimos contrasena. El perfil debe estar publico durante la entrega.",
+    emptyError: "Ingresa tu usuario o link del perfil",
+    invalidError: "Para seguidores usa el @usuario o link del perfil, no una publicacion.",
   };
 };
 
-const validatePromotionTarget = (promotion: Promotion, value: string) => {
-  const category = promotion.service_category;
-  const platform = promotion.service_platform;
+const getNeededTargetsText = (promotion: Promotion) => {
+  const labels = getPromotionItems(promotion).map((item) =>
+    getPromotionTargetCopy(item).label.toLowerCase(),
+  );
+  return Array.from(new Set(labels)).join(" y ");
+};
+
+const validatePromotionTarget = (targetItem: PromotionTarget, value: string) => {
+  const category = targetItem.service_category;
+  const platform = targetItem.service_platform;
   const target = value.trim().toLowerCase();
 
   if (!target) return false;
@@ -112,13 +161,14 @@ const validatePromotionTarget = (promotion: Promotion, value: string) => {
 
   return true;
 };
+
 export default function PromocionesPage() {
   const router = useRouter();
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
-  const [link, setLink] = useState("");
+  const [targetLinks, setTargetLinks] = useState<Record<string, string>>({});
   const [email, setEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"balance" | "mercadopago">("balance");
   const [submitting, setSubmitting] = useState(false);
@@ -139,12 +189,14 @@ export default function PromocionesPage() {
 
   const openCheckout = (promotion: Promotion) => {
     if (!isAuthenticated()) {
-      toast.error("Ingresá a tu cuenta para comprar esta promoción");
+      toast.error("Ingresa a tu cuenta para comprar esta promocion");
       router.push("/login");
       return;
     }
     setSelectedPromotion(promotion);
-    setLink("");
+    setTargetLinks(
+      Object.fromEntries(getPromotionItems(promotion).map((item) => [item.id, ""])),
+    );
     setEmail(currentUser?.email ?? "");
     setPaymentMethod("balance");
   };
@@ -156,17 +208,27 @@ export default function PromocionesPage() {
 
   const handleCheckout = async () => {
     if (!selectedPromotion) return;
-    const targetCopy = getPromotionTargetCopy(selectedPromotion);
-    if (!link.trim()) {
-      toast.error(targetCopy.emptyError);
-      return;
+
+    const targets = getPromotionItems(selectedPromotion).map((item) => ({
+      promotionItemId: item.id,
+      link: targetLinks[item.id]?.trim() ?? "",
+      item,
+    }));
+
+    for (const target of targets) {
+      const targetCopy = getPromotionTargetCopy(target.item);
+      if (!target.link) {
+        toast.error(targetCopy.emptyError);
+        return;
+      }
+      if (!validatePromotionTarget(target.item, target.link)) {
+        toast.error(targetCopy.invalidError ?? "Revisa el dato ingresado");
+        return;
+      }
     }
-    if (!validatePromotionTarget(selectedPromotion, link)) {
-      toast.error(targetCopy.invalidError ?? "Revisá el dato ingresado");
-      return;
-    }
+
     if (!email.trim()) {
-      toast.error("Ingresá tu email");
+      toast.error("Ingresa tu email");
       return;
     }
 
@@ -174,7 +236,8 @@ export default function PromocionesPage() {
     try {
       const res = await paymentsApi.createPromoCheckout({
         promotionId: selectedPromotion.id,
-        link: link.trim(),
+        link: targets[0]?.link ?? "",
+        targets: targets.map(({ promotionItemId, link }) => ({ promotionItemId, link })),
         email: email.trim(),
         paymentMethod,
       });
@@ -196,7 +259,7 @@ export default function PromocionesPage() {
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { message?: string; insufficientBalance?: boolean } } })?.response?.data;
       if (data?.insufficientBalance) {
-        toast.error("No tenés saldo suficiente. Elegí MercadoPago o cargá saldo.");
+        toast.error("No tenes saldo suficiente. Elegi MercadoPago o carga saldo.");
       } else {
         toast.error(data?.message ?? "No pudimos iniciar la compra");
       }
@@ -226,7 +289,7 @@ export default function PromocionesPage() {
                 </span>
 
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight mb-5">
-                  Aprovechá ofertas especiales para impulsar tus redes
+                  Aprovecha ofertas especiales para impulsar tus redes
                 </h1>
 
                 <p className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-2xl mb-8">
@@ -273,11 +336,11 @@ export default function PromocionesPage() {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
               <div>
                 <span className="inline-flex items-center gap-2 text-emerald-300 text-sm font-semibold mb-3">
-                  <Sparkles className="w-4 h-4" /> Elegí tu promo
+                  <Sparkles className="w-4 h-4" /> Elegi tu promo
                 </span>
                 <h2 className="section-title">Promociones disponibles</h2>
                 <p className="section-subtitle">
-                  Seleccioná un pack, ingresá tu perfil y pagá con saldo o MercadoPago.
+                  Selecciona un pack, indica donde aplicarlo y paga con saldo o MercadoPago.
                 </p>
               </div>
               <Link href="/order" className="btn-secondary inline-flex items-center justify-center gap-2">
@@ -301,7 +364,7 @@ export default function PromocionesPage() {
                 <BadgePercent className="w-10 h-10 text-slate-600 mx-auto mb-3" />
                 <h3 className="text-white font-bold mb-2">No hay promociones activas</h3>
                 <p className="text-slate-400 text-sm mb-6">
-                  Mientras tanto podés comprar cualquier servicio desde el catálogo.
+                  Mientras tanto podes comprar cualquier servicio desde el catalogo.
                 </p>
                 <Link href="/order" className="btn-primary inline-flex items-center justify-center gap-2">
                   Hacer pedido <ArrowRight className="w-4 h-4" />
@@ -309,73 +372,88 @@ export default function PromocionesPage() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {promotions.map((promotion, index) => (
-                  <motion.div
-                    key={promotion.id}
-                    initial={{ opacity: 0, y: 18 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.06 }}
-                    className="group rounded-2xl border border-white/[0.08] bg-white/[0.035] overflow-hidden hover:border-primary-400/35 transition-all"
-                  >
-                    <div className="aspect-[16/10] bg-black/20 overflow-hidden">
-                      <img
-                        src={promotion.image_url || DEFAULT_IMAGE}
-                        alt={promotion.title}
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                      />
-                    </div>
-                    <div className="p-5">
-                      <div className="flex flex-wrap items-center gap-2 mb-3">
-                        {promotion.badge && (
-                          <span className="text-[11px] px-2.5 py-1 rounded-full bg-amber-300/15 border border-amber-300/25 text-amber-200 font-bold">
-                            {promotion.badge}
+                {promotions.map((promotion, index) => {
+                  const items = getPromotionItems(promotion);
+                  const deliverySpeed = getPromotionDeliverySpeed(promotion);
+
+                  return (
+                    <motion.div
+                      key={promotion.id}
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.06 }}
+                      className="group rounded-2xl border border-white/[0.08] bg-white/[0.035] overflow-hidden hover:border-primary-400/35 transition-all"
+                    >
+                      <div className="aspect-[16/10] bg-black/20 overflow-hidden">
+                        <img
+                          src={promotion.image_url || DEFAULT_IMAGE}
+                          alt={promotion.title}
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="p-5">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          {promotion.badge && (
+                            <span className="text-[11px] px-2.5 py-1 rounded-full bg-amber-300/15 border border-amber-300/25 text-amber-200 font-bold">
+                              {promotion.badge}
+                            </span>
+                          )}
+                          <span className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-300 font-semibold">
+                            {items.length > 1 ? "Combo" : `${items[0].quantity.toLocaleString("es-AR")} unidades`}
                           </span>
+                        </div>
+
+                        <h3 className="text-white font-bold text-lg mb-2 leading-snug">
+                          {promotion.title}
+                        </h3>
+                        {promotion.description && (
+                          <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                            {promotion.description}
+                          </p>
                         )}
-                        <span className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-300 font-semibold">
-                          {promotion.quantity.toLocaleString("es-AR")} unidades
-                        </span>
-                      </div>
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {items.map((item) => (
+                            <span
+                              key={item.id}
+                              className="text-[11px] px-2.5 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-slate-300"
+                            >
+                              {item.quantity.toLocaleString("es-AR")} · {item.service_name ?? "Servicio"}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-slate-300 mb-5">
+                          Vas a necesitar: {getNeededTargetsText(promotion)}
+                        </div>
 
-                      <h3 className="text-white font-bold text-lg mb-2 leading-snug">
-                        {promotion.title}
-                      </h3>
-                      {promotion.description && (
-                        <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                          {promotion.description}
-                        </p>
-                      )}
-                      <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-slate-300 mb-5">
-                        Vas a necesitar: {getPromotionTargetCopy(promotion).label.toLowerCase()}
-                      </div>
-
-                      <div className="flex items-end justify-between gap-3 mb-5">
-                        <div>
-                          {promotion.compare_at_price && (
-                            <div className="text-slate-500 text-sm line-through">
-                              {formatCurrency(Number(promotion.compare_at_price))}
+                        <div className="flex items-end justify-between gap-3 mb-5">
+                          <div>
+                            {promotion.compare_at_price && (
+                              <div className="text-slate-500 text-sm line-through">
+                                {formatCurrency(Number(promotion.compare_at_price))}
+                              </div>
+                            )}
+                            <div className="text-3xl font-black text-white">
+                              {formatCurrency(Number(promotion.promo_price))}
+                            </div>
+                          </div>
+                          {deliverySpeed && (
+                            <div className="text-right text-xs text-slate-400">
+                              <Clock className="w-4 h-4 ml-auto mb-1 text-primary-300" />
+                              {deliverySpeed}
                             </div>
                           )}
-                          <div className="text-3xl font-black text-white">
-                            {formatCurrency(Number(promotion.promo_price))}
-                          </div>
                         </div>
-                        {promotion.service_delivery_speed && (
-                          <div className="text-right text-xs text-slate-400">
-                            <Clock className="w-4 h-4 ml-auto mb-1 text-primary-300" />
-                            {promotion.service_delivery_speed}
-                          </div>
-                        )}
-                      </div>
 
-                      <button
-                        onClick={() => openCheckout(promotion)}
-                        className="btn-primary w-full flex items-center justify-center gap-2"
-                      >
-                        Comprar promoción <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
+                        <button
+                          onClick={() => openCheckout(promotion)}
+                          className="btn-primary w-full flex items-center justify-center gap-2"
+                        >
+                          Comprar promocion <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -403,13 +481,13 @@ export default function PromocionesPage() {
               <div className="flex items-start justify-between gap-3 mb-5">
                 <div>
                   <div className="text-amber-200 text-xs font-bold mb-1">
-                    {selectedPromotion.badge || "PROMOCIÓN"}
+                    {selectedPromotion.badge || "PROMOCION"}
                   </div>
                   <h3 className="text-white font-black text-xl leading-tight">
                     {selectedPromotion.title}
                   </h3>
                   <p className="text-slate-400 text-sm mt-1">
-                    {selectedPromotion.quantity.toLocaleString("es-AR")} unidades por{" "}
+                    {formatPromotionItems(selectedPromotion)} por{" "}
                     <span className="text-white font-bold">
                       {formatCurrency(Number(selectedPromotion.promo_price))}
                     </span>
@@ -424,20 +502,39 @@ export default function PromocionesPage() {
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <label className="text-slate-400 text-sm mb-1.5 block">
-                    {getPromotionTargetCopy(selectedPromotion).label}
-                  </label>
-                  <input
-                    value={link}
-                    onChange={(event) => setLink(event.target.value)}
-                    className="input-field"
-                    placeholder={getPromotionTargetCopy(selectedPromotion).placeholder}
-                  />
-                  <p className="text-slate-500 text-xs mt-1.5">
-                    {getPromotionTargetCopy(selectedPromotion).help}
-                  </p>
-                </div>
+                {getPromotionItems(selectedPromotion).map((item, index) => {
+                  const targetCopy = getPromotionTargetCopy(item);
+                  const isCombo = getPromotionItems(selectedPromotion).length > 1;
+
+                  return (
+                    <div key={item.id}>
+                      <label className="text-slate-400 text-sm mb-1.5 block">
+                        {isCombo
+                          ? `${index + 1}. ${item.quantity.toLocaleString("es-AR")} · ${item.service_name ?? "Servicio"}`
+                          : targetCopy.label}
+                      </label>
+                      {isCombo && (
+                        <div className="text-slate-500 text-xs mb-1.5">
+                          {targetCopy.label}
+                        </div>
+                      )}
+                      <input
+                        value={targetLinks[item.id] ?? ""}
+                        onChange={(event) =>
+                          setTargetLinks((current) => ({
+                            ...current,
+                            [item.id]: event.target.value,
+                          }))
+                        }
+                        className="input-field"
+                        placeholder={targetCopy.placeholder}
+                      />
+                      <p className="text-slate-500 text-xs mt-1.5">
+                        {targetCopy.help}
+                      </p>
+                    </div>
+                  );
+                })}
 
                 <div>
                   <label className="text-slate-400 text-sm mb-1.5 block">Email</label>
@@ -450,7 +547,7 @@ export default function PromocionesPage() {
                 </div>
 
                 <div>
-                  <label className="text-slate-400 text-sm mb-2 block">Método de pago</label>
+                  <label className="text-slate-400 text-sm mb-2 block">Metodo de pago</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setPaymentMethod("balance")}

@@ -100,6 +100,18 @@ CREATE TABLE IF NOT EXISTS promotions (
 CREATE INDEX IF NOT EXISTS idx_promotions_active     ON promotions(is_active);
 CREATE INDEX IF NOT EXISTS idx_promotions_service_id ON promotions(service_id);
 CREATE INDEX IF NOT EXISTS idx_promotions_sort_order ON promotions(sort_order);
+CREATE TABLE IF NOT EXISTS promotion_items (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  promotion_id  UUID NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+  service_id    UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  quantity      INTEGER NOT NULL,
+  sort_order    INTEGER NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_promotion_items_promotion_id ON promotion_items(promotion_id);
+CREATE INDEX IF NOT EXISTS idx_promotion_items_service_id   ON promotion_items(service_id);
 
 -- ─── ORDERS ─────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS orders (

@@ -521,6 +521,104 @@ export const handleWebhook = async (
     if (!orderId) return;
 
     if (mpStatus === "approved") {
+      const paymentMetaResult = await query<{ metadata: any }>(
+        "SELECT metadata FROM payments WHERE order_id = $1",
+        [orderId],
+      );
+      const metadata = paymentMetaResult.rows[0]?.metadata ?? null;
+      const bundleOrderIds = Array.isArray(metadata?.orderIds)
+        ? metadata.orderIds.map(String).filter(Boolean)
+        : [];
+
+      if (bundleOrderIds.length > 1) {
+        const bundleOrders = await query<{
+          id: string;
+          service_id: string;
+          link: string;
+          quantity: number;
+          price: number;
+          email: string;
+          status: string;
+          provider_id: string;
+          provider_service_id: number;
+          user_id: string;
+          user_name: string;
+          service_name: string;
+          promotion_id: string | null;
+        }>(
+          `SELECT o.id, o.service_id, o.link, o.quantity, o.price, o.email, o.status, o.user_id, o.promotion_id,
+                  s.provider_id, s.provider_service_id, s.name AS service_name,
+                  u.name AS user_name
+           FROM orders o
+           LEFT JOIN services s ON o.service_id = s.id
+           LEFT JOIN users u ON o.user_id = u.id
+           WHERE o.id = ANY($1::uuid[]) AND o.status = 'awaiting_payment'`,
+          [bundleOrderIds],
+        );
+
+        await query(
+          `UPDATE payments SET external_id = $1, status = 'approved', updated_at = NOW()
+           WHERE order_id = $2`,
+          [String(data.id), orderId],
+        );
+
+        let promotionCounted = false;
+        for (const order of bundleOrders.rows) {
+          try {
+            const providerResult = await sendOrderToProvider({
+              providerId: order.provider_id,
+              serviceId: order.provider_service_id,
+              link: order.link,
+              quantity: order.quantity,
+            });
+
+            await query(
+              `UPDATE orders SET status = 'processing', provider_order_id = $1, updated_at = NOW()
+               WHERE id = $2`,
+              [String(providerResult.orderId), order.id],
+            );
+
+            if (order.promotion_id && !promotionCounted) {
+              await query(
+                `UPDATE promotions
+                 SET used_count = used_count + 1, updated_at = NOW()
+                 WHERE id = $1`,
+                [order.promotion_id],
+              );
+              promotionCounted = true;
+            }
+
+            sendOrderConfirmation(
+              order.email,
+              order.user_name ?? "Customer",
+              order.id,
+              order.service_name,
+              order.quantity,
+              order.price,
+            ).catch(() => {});
+          } catch (providerErr) {
+            logger.error("Failed to send bundled promo order to provider", {
+              orderId: order.id,
+              error: providerErr,
+            });
+            await query(
+              `UPDATE orders SET status = 'pending', notes = $1, updated_at = NOW() WHERE id = $2`,
+              [`Provider error: ${String(providerErr)}`, order.id],
+            );
+            sendAdminProviderFailAlert(
+              order.id,
+              order.service_name,
+              order.quantity,
+              order.link,
+              String(providerErr),
+            ).catch(() => {});
+          }
+        }
+
+        logger.info("Bundled promo payment processed", { orderIds: bundleOrderIds });
+        return;
+      }
+
       const orderResult = await query<{
         id: string;
         service_id: string;
@@ -620,10 +718,28 @@ export const handleWebhook = async (
         ).catch(() => {});
       }
     } else if (["rejected", "cancelled"].includes(mpStatus ?? "")) {
-      await query(
-        `UPDATE orders SET status = 'failed', updated_at = NOW() WHERE id = $1 AND status = 'awaiting_payment'`,
+      const paymentMetaResult = await query<{ metadata: any }>(
+        "SELECT metadata FROM payments WHERE order_id = $1",
         [orderId],
       );
+      const metadata = paymentMetaResult.rows[0]?.metadata ?? null;
+      const bundleOrderIds = Array.isArray(metadata?.orderIds)
+        ? metadata.orderIds.map(String).filter(Boolean)
+        : [];
+
+      if (bundleOrderIds.length > 1) {
+        await query(
+          `UPDATE orders SET status = 'failed', updated_at = NOW()
+           WHERE id = ANY($1::uuid[]) AND status = 'awaiting_payment'`,
+          [bundleOrderIds],
+        );
+      } else {
+        await query(
+          `UPDATE orders SET status = 'failed', updated_at = NOW() WHERE id = $1 AND status = 'awaiting_payment'`,
+          [orderId],
+        );
+      }
+
       await query(
         `UPDATE payments SET external_id = $1, status = $2, updated_at = NOW() WHERE order_id = $3`,
         [String(data.id), mpStatus, orderId],

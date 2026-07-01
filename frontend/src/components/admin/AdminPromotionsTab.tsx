@@ -8,22 +8,43 @@ import {
   Loader2,
   Plus,
   RefreshCw,
-  Tag,
   Trash2,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { adminApi } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Promotion, Service } from "@/types";
 
-const emptyPromotionForm = {
-  serviceId: "",
+type PromotionFormItem = {
+  serviceId: string;
+  quantity: string;
+};
+
+type PromotionForm = {
+  slug: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  badge: string;
+  promoPrice: string;
+  compareAtPrice: string;
+  maxUses: string;
+  startsAt: string;
+  expiresAt: string;
+  isActive: boolean;
+  sortOrder: string;
+  items: PromotionFormItem[];
+};
+
+const emptyItem = (): PromotionFormItem => ({ serviceId: "", quantity: "1000" });
+
+const emptyPromotionForm = (): PromotionForm => ({
   slug: "",
   title: "",
   description: "",
   imageUrl: "/seguidores.png",
   badge: "OFERTA",
-  quantity: "1000",
   promoPrice: "",
   compareAtPrice: "",
   maxUses: "",
@@ -31,9 +52,8 @@ const emptyPromotionForm = {
   expiresAt: "",
   isActive: true,
   sortOrder: "0",
-};
-
-type PromotionForm = typeof emptyPromotionForm;
+  items: [emptyItem()],
+});
 
 const toLocalDateTimeValue = (value?: string | null) =>
   value ? String(value).slice(0, 16) : "";
@@ -53,9 +73,9 @@ export default function AdminPromotionsTab() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [newPromotion, setNewPromotion] = useState<PromotionForm>(emptyPromotionForm);
+  const [newPromotion, setNewPromotion] = useState<PromotionForm>(emptyPromotionForm());
   const [editingPromotion, setEditingPromotion] = useState<string | null>(null);
-  const [promotionForm, setPromotionForm] = useState<PromotionForm>(emptyPromotionForm);
+  const [promotionForm, setPromotionForm] = useState<PromotionForm>(emptyPromotionForm());
 
   const serviceOptions = useMemo(
     () => services.filter((service) => service.is_active !== false),
@@ -82,43 +102,56 @@ export default function AdminPromotionsTab() {
     loadData();
   }, []);
 
-  const selectedService = (form: PromotionForm) =>
-    services.find((service) => service.id === form.serviceId);
+  const serviceById = (serviceId: string) =>
+    services.find((service) => service.id === serviceId);
 
-  const promotionPayload = (form: PromotionForm) => ({
-    serviceId: form.serviceId,
-    slug: slugify(form.slug || form.title),
-    title: form.title.trim(),
-    description: form.description.trim() || null,
-    imageUrl: form.imageUrl.trim() || null,
-    badge: form.badge.trim() || null,
-    quantity: Number(form.quantity),
-    promoPrice: Number(form.promoPrice),
-    compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : null,
-    maxUses: form.maxUses ? Number(form.maxUses) : null,
-    startsAt: form.startsAt || null,
-    expiresAt: form.expiresAt || null,
-    isActive: form.isActive,
-    sortOrder: Number(form.sortOrder || 0),
-  });
+  const promotionPayload = (form: PromotionForm) => {
+    const items = form.items.map((item, index) => ({
+      serviceId: item.serviceId,
+      quantity: Number(item.quantity),
+      sortOrder: index,
+    }));
+    const firstItem = items[0];
+
+    return {
+      serviceId: firstItem?.serviceId,
+      quantity: firstItem?.quantity,
+      items,
+      slug: slugify(form.slug || form.title),
+      title: form.title.trim(),
+      description: form.description.trim() || null,
+      imageUrl: form.imageUrl.trim() || null,
+      badge: form.badge.trim() || null,
+      promoPrice: Number(form.promoPrice),
+      compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : null,
+      maxUses: form.maxUses ? Number(form.maxUses) : null,
+      startsAt: form.startsAt || null,
+      expiresAt: form.expiresAt || null,
+      isActive: form.isActive,
+      sortOrder: Number(form.sortOrder || 0),
+    };
+  };
 
   const validatePromotionForm = (form: PromotionForm) => {
-    if (!form.serviceId) return "Seleccioná un servicio";
+    if (!form.items.length) return "Agregá al menos un servicio al pack";
+    for (const [index, item] of form.items.entries()) {
+      if (!item.serviceId) return `Seleccioná el servicio #${index + 1}`;
+      if (!item.quantity || Number(item.quantity) <= 0) {
+        return `La cantidad del servicio #${index + 1} debe ser mayor a 0`;
+      }
+      const service = serviceById(item.serviceId);
+      if (service) {
+        const qty = Number(item.quantity);
+        if (qty < service.min_quantity || qty > service.max_quantity) {
+          return `La cantidad de ${service.name} debe estar entre ${service.min_quantity} y ${service.max_quantity}`;
+        }
+      }
+    }
     if (!form.title.trim()) return "El título es requerido";
     if (!slugify(form.slug || form.title)) return "El slug es requerido";
-    if (!form.quantity || Number(form.quantity) <= 0) return "La cantidad debe ser mayor a 0";
     if (!form.promoPrice || Number(form.promoPrice) <= 0) return "El precio promocional debe ser mayor a 0";
     if (form.compareAtPrice && Number(form.compareAtPrice) <= 0) return "El precio anterior debe ser mayor a 0";
     if (form.maxUses && Number(form.maxUses) <= 0) return "El límite de usos debe ser mayor a 0";
-
-    const service = selectedService(form);
-    if (service) {
-      const qty = Number(form.quantity);
-      if (qty < service.min_quantity || qty > service.max_quantity) {
-        return `La cantidad debe estar entre ${service.min_quantity} y ${service.max_quantity} para este servicio`;
-      }
-    }
-
     return null;
   };
 
@@ -133,7 +166,7 @@ export default function AdminPromotionsTab() {
     try {
       await adminApi.createPromotion(promotionPayload(newPromotion));
       toast.success("Promoción creada");
-      setNewPromotion(emptyPromotionForm);
+      setNewPromotion(emptyPromotionForm());
       loadData();
     } catch (err: unknown) {
       const msg =
@@ -148,13 +181,11 @@ export default function AdminPromotionsTab() {
   const startEditPromotion = (promotion: Promotion) => {
     setEditingPromotion(promotion.id);
     setPromotionForm({
-      serviceId: promotion.service_id,
       slug: promotion.slug,
       title: promotion.title,
       description: promotion.description ?? "",
       imageUrl: promotion.image_url ?? "",
       badge: promotion.badge ?? "",
-      quantity: String(promotion.quantity),
       promoPrice: String(promotion.promo_price),
       compareAtPrice:
         promotion.compare_at_price == null ? "" : String(promotion.compare_at_price),
@@ -163,6 +194,12 @@ export default function AdminPromotionsTab() {
       expiresAt: toLocalDateTimeValue(promotion.expires_at),
       isActive: promotion.is_active !== false,
       sortOrder: String(promotion.sort_order ?? 0),
+      items: promotion.items?.length
+        ? promotion.items.map((item) => ({
+            serviceId: item.service_id,
+            quantity: String(item.quantity),
+          }))
+        : [{ serviceId: promotion.service_id, quantity: String(promotion.quantity) }],
     });
   };
 
@@ -213,6 +250,36 @@ export default function AdminPromotionsTab() {
     }
   };
 
+  const updateFormItem = (
+    form: PromotionForm,
+    setForm: (form: PromotionForm) => void,
+    index: number,
+    patch: Partial<PromotionFormItem>,
+  ) => {
+    setForm({
+      ...form,
+      items: form.items.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    });
+  };
+
+  const addFormItem = (form: PromotionForm, setForm: (form: PromotionForm) => void) => {
+    setForm({ ...form, items: [...form.items, emptyItem()] });
+  };
+
+  const removeFormItem = (
+    form: PromotionForm,
+    setForm: (form: PromotionForm) => void,
+    index: number,
+  ) => {
+    if (form.items.length <= 1) {
+      toast.error("La promoción necesita al menos un servicio");
+      return;
+    }
+    setForm({ ...form, items: form.items.filter((_, itemIndex) => itemIndex !== index) });
+  };
+
   const PromotionFormFields = ({
     form,
     setForm,
@@ -223,22 +290,77 @@ export default function AdminPromotionsTab() {
     compact?: boolean;
   }) => (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-        <div className="lg:col-span-2">
-          <label className="text-slate-400 text-sm mb-1.5 block">Servicio</label>
-          <select
-            value={form.serviceId}
-            onChange={(event) => setForm({ ...form, serviceId: event.target.value })}
-            className="input-field"
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 sm:p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-white font-semibold text-sm">Servicios incluidos</h3>
+            <p className="text-slate-500 text-xs mt-0.5">
+              Podés combinar seguidores, likes, vistas u otros servicios en un solo pack.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => addFormItem(form, setForm)}
+            className="btn-secondary px-3 py-2 text-xs flex items-center gap-1.5"
           >
-            <option value="">Seleccionar servicio</option>
-            {serviceOptions.map((service) => (
-              <option key={service.id} value={service.id}>
-                {service.name} ({service.platform} - {service.category})
-              </option>
-            ))}
-          </select>
+            <Plus className="w-3.5 h-3.5" /> Agregar
+          </button>
         </div>
+
+        {form.items.map((item, index) => {
+          const service = serviceById(item.serviceId);
+          return (
+            <div key={index} className="grid grid-cols-1 lg:grid-cols-[1fr_150px_auto] gap-2 items-end">
+              <div>
+                <label className="text-slate-400 text-xs mb-1.5 block">
+                  Servicio #{index + 1}
+                </label>
+                <select
+                  value={item.serviceId}
+                  onChange={(event) =>
+                    updateFormItem(form, setForm, index, { serviceId: event.target.value })
+                  }
+                  className="input-field"
+                >
+                  <option value="">Seleccionar servicio</option>
+                  {serviceOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name} ({option.platform} - {option.category})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-slate-400 text-xs mb-1.5 block">Cantidad</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={item.quantity}
+                  onChange={(event) =>
+                    updateFormItem(form, setForm, index, { quantity: event.target.value })
+                  }
+                  className="input-field"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeFormItem(form, setForm, index)}
+                className="btn-secondary px-3 py-3 text-red-400 hover:text-red-300"
+                title="Quitar servicio"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              {service && (
+                <p className="lg:col-span-3 text-slate-500 text-[11px] -mt-1">
+                  Rango permitido: {service.min_quantity.toLocaleString("es-AR")} - {service.max_quantity.toLocaleString("es-AR")}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="lg:col-span-2">
           <label className="text-slate-400 text-sm mb-1.5 block">Título público</label>
           <input
@@ -251,7 +373,7 @@ export default function AdminPromotionsTab() {
               })
             }
             className="input-field"
-            placeholder="5.000 seguidores Instagram"
+            placeholder="1000 seguidores + 1000 likes"
           />
         </div>
         <div>
@@ -260,7 +382,7 @@ export default function AdminPromotionsTab() {
             value={form.slug}
             onChange={(event) => setForm({ ...form, slug: slugify(event.target.value) })}
             className="input-field font-mono"
-            placeholder="ig-5000"
+            placeholder="combo-instagram"
           />
         </div>
         <div>
@@ -269,22 +391,21 @@ export default function AdminPromotionsTab() {
             value={form.badge}
             onChange={(event) => setForm({ ...form, badge: event.target.value })}
             className="input-field"
-            placeholder="OFERTA"
+            placeholder="COMBO"
+          />
+        </div>
+        <div>
+          <label className="text-slate-400 text-sm mb-1.5 block">Orden</label>
+          <input
+            type="number"
+            value={form.sortOrder}
+            onChange={(event) => setForm({ ...form, sortOrder: event.target.value })}
+            className="input-field"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-        <div>
-          <label className="text-slate-400 text-sm mb-1.5 block">Cantidad</label>
-          <input
-            type="number"
-            min="1"
-            value={form.quantity}
-            onChange={(event) => setForm({ ...form, quantity: event.target.value })}
-            className="input-field"
-          />
-        </div>
         <div>
           <label className="text-slate-400 text-sm mb-1.5 block">Precio promo</label>
           <input
@@ -294,7 +415,7 @@ export default function AdminPromotionsTab() {
             value={form.promoPrice}
             onChange={(event) => setForm({ ...form, promoPrice: event.target.value })}
             className="input-field"
-            placeholder="9999"
+            placeholder="3000"
           />
         </div>
         <div>
@@ -320,13 +441,13 @@ export default function AdminPromotionsTab() {
             placeholder="Sin límite"
           />
         </div>
-        <div>
-          <label className="text-slate-400 text-sm mb-1.5 block">Orden</label>
+        <div className="lg:col-span-2">
+          <label className="text-slate-400 text-sm mb-1.5 block">Imagen pública</label>
           <input
-            type="number"
-            value={form.sortOrder}
-            onChange={(event) => setForm({ ...form, sortOrder: event.target.value })}
+            value={form.imageUrl}
+            onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
             className="input-field"
+            placeholder="/seguidores.png"
           />
         </div>
         <label className="flex items-center gap-2 text-slate-300 text-sm pt-7">
@@ -340,17 +461,8 @@ export default function AdminPromotionsTab() {
         </label>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-        <div className="lg:col-span-2">
-          <label className="text-slate-400 text-sm mb-1.5 block">Imagen pública</label>
-          <input
-            value={form.imageUrl}
-            onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
-            className="input-field"
-            placeholder="/seguidores.png"
-          />
-        </div>
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
           <label className="text-slate-400 text-sm mb-1.5 block">Inicia</label>
           <input
             type="datetime-local"
@@ -359,7 +471,7 @@ export default function AdminPromotionsTab() {
             className="input-field"
           />
         </div>
-        <div className="lg:col-span-2">
+        <div>
           <label className="text-slate-400 text-sm mb-1.5 block">Finaliza</label>
           <input
             type="datetime-local"
@@ -376,7 +488,7 @@ export default function AdminPromotionsTab() {
           value={form.description}
           onChange={(event) => setForm({ ...form, description: event.target.value })}
           className="input-field min-h-[90px]"
-          placeholder="Ideal para impulsar tu perfil con entrega progresiva y segura."
+          placeholder="Combo especial para impulsar tu perfil y una publicación clave."
         />
       </div>
 
@@ -403,7 +515,7 @@ export default function AdminPromotionsTab() {
         <div>
           <h1 className="text-2xl font-black text-white">Promociones</h1>
           <p className="text-slate-400 text-sm mt-1">
-            Configurá ofertas visibles para clientes con precio cerrado y checkout propio.
+            Configurá ofertas simples o combos con varios servicios en un solo checkout.
           </p>
         </div>
         <button
@@ -431,7 +543,21 @@ export default function AdminPromotionsTab() {
       </div>
 
       <div className="space-y-3">
-        {promotions.map((promotion) => (
+        {promotions.map((promotion) => {
+          const items = promotion.items?.length
+            ? promotion.items
+            : [{
+                id: promotion.id,
+                promotion_id: promotion.id,
+                service_id: promotion.service_id,
+                quantity: promotion.quantity,
+                sort_order: 0,
+                service_name: promotion.service_name,
+                service_platform: promotion.service_platform,
+                service_category: promotion.service_category,
+              }];
+
+          return (
           <div key={promotion.id} className="glass-card p-4 sm:p-5">
             {editingPromotion === promotion.id ? (
               <div className="space-y-4">
@@ -478,18 +604,17 @@ export default function AdminPromotionsTab() {
                     </span>
                     <code className="text-primary-300 text-xs font-mono">/{promotion.slug}</code>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+                  <div className="mb-3 flex flex-wrap gap-1.5">
+                    {items.map((item) => (
+                      <span key={item.id} className="text-[11px] px-2 py-1 rounded-full bg-white/[0.05] text-slate-300 border border-white/[0.08]">
+                        {Number(item.quantity).toLocaleString("es-AR")} · {item.service_name ?? "Servicio"}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                     <div>
-                      <div className="text-slate-500">Servicio</div>
-                      <div className="text-slate-200 font-medium truncate">
-                        {promotion.service_name ?? "Sin servicio"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Cantidad</div>
-                      <div className="text-slate-200 font-medium">
-                        {promotion.quantity.toLocaleString("es-AR")}
-                      </div>
+                      <div className="text-slate-500">Ítems</div>
+                      <div className="text-slate-200 font-medium">{items.length}</div>
                     </div>
                     <div>
                       <div className="text-slate-500">Precio</div>
@@ -536,7 +661,8 @@ export default function AdminPromotionsTab() {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
 
         {promotions.length === 0 && (
           <div className="glass-card p-10 text-center">

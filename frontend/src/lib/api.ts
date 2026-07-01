@@ -75,7 +75,8 @@ export const paymentsApi = {
   createDeposit: (amount: number) => apiClient.post('/payments/deposit', { amount }),
   createPromoCheckout: (data: {
     promotionId: string;
-    link: string;
+    link?: string;
+    targets?: Array<{ promotionItemId: string; link: string }>;
     email: string;
     paymentMethod: 'balance' | 'mercadopago';
   }) => apiClient.post('/payments/promo-checkout', data),
